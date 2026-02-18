@@ -1,0 +1,25 @@
+# Build and Temporary Files
+.gradle/
+build/
+bin/
+out/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# macOS System Files
+.DS_Store
+
+# Local Configuration
+local.properties
+
+# Log files
+*.log
+
+# Captures and Android residues (just in case)
+/captures
+.externalNativeBuild
+.cxx
