@@ -66,7 +66,7 @@ publishing {
     repositories {
         maven {
             name = "Staging"
-            url = layout.buildDirectory.dir("repos/bundles")
+            url = rootProject.layout.buildDirectory.dir("central-bundle")
         }
     }
 }
