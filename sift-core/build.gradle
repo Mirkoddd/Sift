@@ -1,0 +1,69 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'signing'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    withJavadocJar()
+    withSourcesJar()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'sift-core'
+            from components.java
+
+            pom {
+                name = 'Sift Core'
+                description = 'A Fluent Regex Builder for Java based on SOLID principles.'
+                url = 'https://github.com/mirkoddd/Sift'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'mirko_ddd'
+                        name = 'Mirko Dimartino'
+                        email = 'mirkoddd@gmail.com'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/mirkoddd/Sift.git'
+                    developerConnection = 'scm:git:ssh://github.com:mirkoddd/Sift.git'
+                    url = 'https://github.com/mirkoddd/Sift'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "Staging"
+            url = layout.buildDirectory.dir("repos/bundles")
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}
