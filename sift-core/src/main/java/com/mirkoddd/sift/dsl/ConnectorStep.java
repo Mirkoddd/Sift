@@ -21,7 +21,7 @@ package com.mirkoddd.sift.dsl;
  * This interface represents a state where a token has just been defined (e.g., "digits").
  * From here, you can:
  * <ul>
- * <li>Refine the current token (using {@code including} or {@code butNot}).</li>
+ * <li>Refine the current token (using {@code including} or {@code excluding}).</li>
  * <li>Append a new literal or pattern (using {@code followedBy(...)}).</li>
  * <li>Transition back to a quantifier for a new token (using {@code followedBy()}).</li>
  * <li>Finalize the regex structure (using {@code untilEnd()}).</li>

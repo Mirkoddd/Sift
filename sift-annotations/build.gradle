@@ -1,0 +1,76 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'signing'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    withJavadocJar()
+    withSourcesJar()
+}
+
+dependencies {
+    api project(':sift-core')
+
+    compileOnly 'jakarta.validation:jakarta.validation-api:3.0.2'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.hibernate.validator:hibernate-validator:8.0.1.Final'
+    testImplementation 'org.glassfish:jakarta.el:4.0.2'
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'sift-annotations'
+            from components.java
+
+            pom {
+                name = 'Sift Annotations'
+                description = 'Jakarta Validation annotations powered by Sift Fluent Regex Builder.'
+                url = 'https://github.com/mirkoddd/Sift'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'mirko_ddd'
+                        name = 'Mirko Dimartino'
+                        email = 'mirkoddd@gmail.com'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/mirkoddd/Sift.git'
+                    developerConnection = 'scm:git:ssh://github.com:mirkoddd/Sift.git'
+                    url = 'https://github.com/mirkoddd/Sift'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "Staging"
+            url = layout.buildDirectory.dir("repos/bundles")
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}
