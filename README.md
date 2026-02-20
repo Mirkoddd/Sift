@@ -27,11 +27,13 @@ Sift is modularized to keep your dependency graph clean.
 
 ```groovy
 dependencies {
+   // Replace <latest-version> with the version shown in the Maven Central badge above
+   
     // Core Engine: Fluent API for Regex generation (Zero external dependencies)
-    implementation 'com.mirkoddd:sift-core:1.1.0'
+    implementation 'com.mirkoddd:sift-core:<latest-version>'
     
     // Optional: Integration with Jakarta Validation / Hibernate Validator
-    implementation 'com.mirkoddd:sift-annotations:1.1.0'
+    implementation 'com.mirkoddd:sift-annotations:<latest-version>'
 }
 ```
 
