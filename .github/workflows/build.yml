@@ -43,9 +43,10 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add .github/badges/
-          if git diff-index --quiet HEAD; then
-            echo "No changes to commit"
-          else
+        
+          if [ -n "$(git status --porcelain)" ]; then
             git commit -m "chore: update coverage badge [skip ci]"
             git push
+          else
+            echo "Coverage unchanged. No badge update needed."
           fi
