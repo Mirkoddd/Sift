@@ -6,3 +6,21 @@ allprojects {
         mavenCentral()
     }
 }
+
+subprojects {
+    apply plugin: 'jacoco'
+
+    jacoco {
+        toolVersion = "0.8.11"
+    }
+
+    tasks.withType(JacocoReport).configureEach {
+        dependsOn tasks.withType(Test)
+
+        reports {
+            xml.required = true
+            csv.required = true
+            html.required = true
+        }
+    }
+}
