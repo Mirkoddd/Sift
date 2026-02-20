@@ -334,4 +334,30 @@ class SiftTest {
             assertRegexDoesNotMatch(regex, "scatter");
         }
     }
+
+    @Test
+    @DisplayName("Bugfix: withOptional syntactic sugar should not overwrite previous quantifiers")
+    void syntacticSugarQuantifierBug() {
+        String regex = anywhere()
+                .oneOrMore().digits()
+                .withOptional(literal("A"))
+                .shake();
+
+        // before fix: [0-9]?(?:A)?
+        assertEquals("[0-9]+(?:A)?", regex);
+
+        //from README.md
+        String priceRegex = anywhere()
+                .followedBy(literal("Cost: $"))
+                .followedBy().oneOrMore().digits()
+                .withOptional(
+                        anywhere().followedBy('.').followedBy().exactly(2).digits()
+                )
+                .shake();
+
+
+        assertEquals("Cost: \\$[0-9]+(?:\\.[0-9]{2})?", priceRegex);
+        assertRegexMatches(priceRegex, "Cost: $10");
+        assertRegexMatches(priceRegex, "Cost: $10.99");
+    }
 }

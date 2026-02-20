@@ -107,12 +107,12 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     // --- CONNECTORS ---
     @Override
     public ConnectorStep withOptional(SiftPattern pattern) {
-        return this.optional().followedBy(pattern);
+        return this.followedBy().optional().followedBy(pattern);
     }
 
     @Override
     public ConnectorStep withOptional(char character) {
-        return this.optional().followedBy(character);
+        return this.followedBy().optional().followedBy(character);
     }
 
     @Override

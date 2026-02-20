@@ -70,7 +70,7 @@ String priceRegex = anywhere()
     )
     .shake();
 
-// Result: Cost: \$[0-9]+(?:(?:\\.[0-9]{2}))?
+// Result: Cost: \$[0-9]+(?:\.[0-9]{2})?
 ```
 
 ## API Overview
