@@ -3,8 +3,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.mirkoddd/sift-core)](https://central.sonatype.com/artifact/com.mirkoddd/sift-core)
 [![Maven Central](https://img.shields.io/maven-central/v/com.mirkoddd/sift-annotations)](https://central.sonatype.com/artifact/com.mirkoddd/sift-annotations)
 [![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://adoptium.net/)
-[![Tests](https://github.com/mirkoddd/Sift/actions/workflows/build.yml/badge.svg)](https://github.com/mirkoddd/Sift/actions)
-[![Coverage](https://raw.githubusercontent.com/mirkoddd/Sift/main/.github/badges/jacoco.svg)](https://github.com/mirkoddd/Sift/actions)
+[![Tests](https://github.com/mirkoddd/Sift/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/mirkoddd/Sift/actions)[![Coverage](https://raw.githubusercontent.com/mirkoddd/Sift/main/.github/badges/jacoco.svg)](https://github.com/mirkoddd/Sift/actions)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 **Sift** is a lightweight, type-safe Java library designed to construct complex Regular Expressions through a readable, object-oriented API. It eliminates the maintenance burden of cryptic string-based regex by applying SOLID principles to pattern construction.
