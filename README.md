@@ -1,7 +1,7 @@
 # Sift: A Fluent Regex Builder for Java
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.mirkoddd/sift-core)](https://central.sonatype.com/artifact/com.mirkoddd/sift-core)
-[![Maven Central](https://img.shields.io/maven-central/v/com.mirkoddd/sift-annotations)](https://central.sonatype.com/artifact/com.mirkoddd/sift-annotations)
+[![sift-core](https://img.shields.io/maven-central/v/com.mirkoddd/sift-core?label=sift-core)](https://central.sonatype.com/artifact/com.mirkoddd/sift-core)
+[![sift-annotations](https://img.shields.io/maven-central/v/com.mirkoddd/sift-annotations?label=sift-annotations)](https://central.sonatype.com/artifact/com.mirkoddd/sift-annotations)
 [![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://adoptium.net/)
 [![Tests](https://github.com/mirkoddd/Sift/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/mirkoddd/Sift/actions)[![Coverage](https://raw.githubusercontent.com/mirkoddd/Sift/main/.github/badges/jacoco.svg)](https://github.com/mirkoddd/Sift/actions)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
