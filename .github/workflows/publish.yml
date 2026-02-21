@@ -1,0 +1,44 @@
+name: Publish to Maven Central
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build and generate bundle
+
+        env:
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSWORD }}
+        run: |
+          ./gradlew clean build publishAllPublicationsToStagingRepository
+
+      - name: Zip and Upload to Sonatype Central
+
+        env:
+          SONATYPE_USER: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASS: ${{ secrets.SONATYPE_PASSWORD }}
+        run: |
+          cd build/central-bundle
+          zip -r sift-release.zip *
+          curl -i --fail --request POST \
+            --url "https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC" \
+            --user "$SONATYPE_USER:$SONATYPE_PASS" \
+            --header "Accept: application/json" \
+            --form "bundle=@sift-release.zip"
