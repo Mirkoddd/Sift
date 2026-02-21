@@ -36,7 +36,7 @@ class SiftOcpTest {
         // Adds semantics for [ ... ]
         static SiftPattern bracketed(SiftPattern inner) {
             return anywhere()
-                    .followedBy('[')
+                    .character('[')
                     .followedBy(inner)
                     .followedBy(']');
         }
@@ -44,7 +44,7 @@ class SiftOcpTest {
         // Adds semantics for ' ... '
         static SiftPattern quoted(SiftPattern inner) {
             return anywhere()
-                    .followedBy('\'')
+                    .character('\'')
                     .followedBy(inner)
                     .followedBy('\'');
         }
@@ -52,7 +52,7 @@ class SiftOcpTest {
         // Adds semantics for { ... }
         static SiftPattern braced(SiftPattern inner) {
             return anywhere()
-                    .followedBy('{')
+                    .character('{')
                     .followedBy(inner)
                     .followedBy('}');
         }
@@ -61,8 +61,8 @@ class SiftOcpTest {
         static SiftPattern simpleDate() {
             return anywhere()
                     .exactly(4).digits().followedBy('-')
-                    .followedBy().exactly(2).digits().followedBy('-')
-                    .followedBy().exactly(2).digits();
+                    .then().exactly(2).digits().followedBy('-')
+                    .then().exactly(2).digits();
         }
     }
 
@@ -83,18 +83,15 @@ class SiftOcpTest {
         SiftPattern logLevel   = LogGrammar.bracketed(literal("INFO"));
         SiftPattern timestamp  = LogGrammar.bracketed(LogGrammar.simpleDate());
         SiftPattern username   = LogGrammar.quoted(anywhere().oneOrMore().letters());
-        SiftPattern actionData = LogGrammar.braced(anywhere().followedBy(action).followedBy().oneOrMore().letters());
+        SiftPattern actionData = LogGrammar.braced(anywhere().pattern(action).then().oneOrMore().letters());
 
         // Step B: Compose the final Regex (Declarative & Clean)
         String logRegex = fromStart()
-                .followedBy(logLevel)
-                .withOptional(' ')
+                .pattern(logLevel)
+                .then().optional().character(' ')
                 .followedBy(timestamp)
-                .withOptional(' ')
-                .followedBy(user)
-                .followedBy(username)
-                .followedBy(arrow)
-                .followedBy(actionData)
+                .then().optional().character(' ')
+                .followedBy(user, username, arrow, actionData)
                 .untilEnd()
                 .shake();
 

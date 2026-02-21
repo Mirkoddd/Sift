@@ -59,7 +59,7 @@ public interface ConnectorStep extends SiftPattern {
      *
      * @return The quantifier step for the next element in the chain.
      */
-    QuantifierStep followedBy();
+    QuantifierStep then();
 
     /**
      * Appends a single literal character to the regex.
@@ -72,12 +72,16 @@ public interface ConnectorStep extends SiftPattern {
     ConnectorStep followedBy(char c);
 
     /**
-     * Appends a complex {@link SiftPattern} (e.g., a capture group, an 'anyOf' block, or another Sift chain).
+     * Appends one or more complex {@link SiftPattern} instances in sequence.
+     * <p>
+     * This is a convenient shortcut to chain multiple sub-patterns (e.g., capture groups,
+     * 'anyOf' blocks, or other Sift chains) without repeating the method call.
+     * The patterns are appended in the exact order they are provided.
      *
-     * @param pattern The sub-pattern to append.
+     * @param patterns One or more sub-patterns to append in the specified order.
      * @return The current connector step, allowing immediate chaining.
      */
-    ConnectorStep followedBy(SiftPattern pattern);
+    ConnectorStep followedBy(SiftPattern... patterns);
 
     /**
      * Asserts a <b>Word Boundary</b> {@code \b} at the current position.
@@ -98,36 +102,4 @@ public interface ConnectorStep extends SiftPattern {
      * @return A pattern ready to be finalized.
      */
     SiftPattern untilEnd();
-
-    /**
-     * <b>Syntactic Sugar:</b> Appends an optional complex pattern to the regex.
-     * <p>
-     * This is a convenient shortcut for {@code .followedBy().optional().followedBy(pattern)}.
-     * It allows for a more fluid reading of the code.
-     * <p>
-     * <b>Example:</b>
-     * <pre>
-     * .digits().withOptional(italyPrefix)
-     * </pre>
-     *
-     * @param pattern The complex pattern that should be optional.
-     * @return The current connector step, allowing immediate chaining.
-     */
-    ConnectorStep withOptional(SiftPattern pattern);
-
-    /**
-     * <b>Syntactic Sugar:</b> Appends an optional single character to the regex.
-     * <p>
-     * This is a convenient shortcut for {@code .followedBy().optional().followedBy(character)}.
-     * Useful for optional separators.
-     * <p>
-     * <b>Example:</b>
-     * <pre>
-     * .digits().withOptional(' ')
-     * </pre>
-     *
-     * @param character The character literal that should be optional.
-     * @return The current connector step, allowing immediate chaining.
-     */
-    ConnectorStep withOptional(char character);
 }

@@ -106,17 +106,20 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
 
     // --- CONNECTORS ---
     @Override
-    public ConnectorStep withOptional(SiftPattern pattern) {
-        return this.followedBy().optional().followedBy(pattern);
+    public ConnectorStep followedBy(char c) {
+        return this.then().exactly(1).character(c);
     }
 
     @Override
-    public ConnectorStep withOptional(char character) {
-        return this.followedBy().optional().followedBy(character);
+    public ConnectorStep followedBy(SiftPattern... patterns) {
+        ConnectorStep current = this;
+        for (SiftPattern p : patterns) {
+            current = current.then().exactly(1).pattern(p);
+        }
+        return current;
     }
-
     @Override
-    public ConnectorStep followedBy(char literal) {
+    public ConnectorStep character(char literal) {
         flush();
         StringBuilder esc = new StringBuilder();
         RegexEscaper.escapeString(String.valueOf(literal), esc);
@@ -126,7 +129,7 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     }
 
     @Override
-    public ConnectorStep followedBy(SiftPattern pattern) {
+    public ConnectorStep pattern(SiftPattern pattern) {
         flush();
         // Applies quantifier to the pattern (wrapping in non-capturing group if needed logic is inside the pattern or handled here)
         // Since we don't know the content of SiftPattern, if there is a quantifier we wrap it to be safe.
@@ -143,7 +146,7 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     }
 
     @Override
-    public QuantifierStep followedBy() {
+    public QuantifierStep then() {
         flush();
         return this;
     }

@@ -62,28 +62,10 @@ final class RegexEscaper {
     // --- INTERNAL HELPER ---
 
     private static boolean isSpecial(char c) {
-        switch (c) {
-            case '.':
-            case '?':
-            case '*':
-            case '+':
-            case '^':
-            case '$':
-            case '[':
-            case ']':
-            case '(':
-            case ')':
-            case '{':
-            case '}':
-            case '|':
-            case '\\':
-            case '<':
-            case '>':
-            case '=':
-            case '!':
-                return true;
-            default:
-                return false;
-        }
+        return switch (c) {
+            case '.', '?', '*', '+', '^', '$', '[', ']', '(', ')', '{', '}', '|', '\\', '<', '>',
+                 '=', '!' -> true;
+            default -> false;
+        };
     }
 }

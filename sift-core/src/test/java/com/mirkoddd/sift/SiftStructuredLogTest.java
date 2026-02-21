@@ -58,7 +58,7 @@ class SiftStructuredParsingTest {
          */
         static SiftPattern header(String level, SiftPattern timestampPattern) {
             return anywhere()
-                    .followedBy(literal("[" + level + "]"))
+                    .pattern(literal("[" + level + "]"))
                     .followedBy(literal(" ["))
                     .followedBy(timestampPattern)
                     .followedBy(literal("]"));
@@ -70,7 +70,7 @@ class SiftStructuredParsingTest {
          */
         static SiftPattern userField(SiftPattern namePattern) {
             return anywhere()
-                    .followedBy(literal(" User: '"))
+                    .pattern(literal(" User: '"))
                     .followedBy(namePattern)
                     .followedBy('\'');
         }
@@ -81,7 +81,7 @@ class SiftStructuredParsingTest {
          */
         static SiftPattern actionField(SiftPattern actionPattern) {
             return anywhere()
-                    .followedBy(literal(" -> {Action: "))
+                    .pattern(literal(" -> {Action: "))
                     .followedBy(actionPattern)
                     .followedBy('}');
         }
@@ -113,8 +113,8 @@ class SiftStructuredParsingTest {
 
         SiftPattern datePattern = anywhere()
                 .exactly(4).digits().followedBy('-')
-                .followedBy().exactly(2).digits().followedBy('-')
-                .followedBy().exactly(2).digits();
+                .then().exactly(2).digits().followedBy('-')
+                .then().exactly(2).digits();
 
         SiftPattern wordPattern = anywhere().oneOrMore().letters();
 
@@ -134,7 +134,7 @@ class SiftStructuredParsingTest {
         // --- FINAL ASSEMBLY ---
 
         SiftPattern logParser = anywhere()
-                .followedBy(headerPart)
+                .pattern(headerPart)
                 .followedBy(userPart)
                 .followedBy(actionPart);
 

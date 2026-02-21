@@ -85,22 +85,22 @@ public interface TypeStep {
     /**
      * Applies the pending quantifier to a specific literal character.
      * <p>
-     * Example: {@code .exactly(3).followedBy('a')} will match "aaa".
+     * Example: {@code .exactly(3).character('a')} will match "aaa".
      * Special regex characters are automatically escaped.
      *
      * @param literal The character to match.
      * @return The connector step to continue building.
      */
-    ConnectorStep followedBy(char literal);
+    ConnectorStep character(char literal);
 
     /**
      * Applies the pending quantifier to a complex SiftPattern.
      * <p>
-     * Example: {@code .optional().followedBy(myGroup)} makes the entire group optional.
+     * Example: {@code .optional().pattern(myGroup)} makes the entire group optional.
      * Internally, this wraps the pattern in a non-capturing group {@code (?:...)} if necessary.
      *
      * @param pattern The sub-pattern to apply the quantifier to.
      * @return The connector step to continue building.
      */
-    ConnectorStep followedBy(SiftPattern pattern);
+    ConnectorStep pattern(SiftPattern pattern);
 }

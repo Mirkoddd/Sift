@@ -78,37 +78,4 @@ public interface QuantifierStep extends TypeStep {
      * @return The next step to define WHAT is optional.
      */
     TypeStep optional();
-
-    /**
-     * <b>Syntactic Sugar:</b> Matches the provided {@code pattern} zero or one time.
-     * <p>
-     * This is a shortcut for {@code .optional().followedBy(pattern)}.
-     * It automatically wraps the pattern in a non-capturing group {@code (?:...)?} to ensure
-     * the quantifier applies to the entire block.
-     * <p>
-     * <b>Usage:</b>
-     * <pre>
-     * .withOptional(italyPrefix) // e.g., (?:(?:\+39|0039))?
-     * </pre>
-     *
-     * @param pattern The complex pattern to be made optional.
-     * @return A {@link ConnectorStep} to continue chaining, as the optional block is complete.
-     */
-    ConnectorStep withOptional(SiftPattern pattern);
-
-    /**
-     * <b>Syntactic Sugar:</b> Matches the provided {@code character} zero or one time.
-     * <p>
-     * This is a shortcut for {@code .optional().followedBy(character)}.
-     * Extremely useful for separators like spaces or dashes.
-     * <p>
-     * <b>Usage:</b>
-     * <pre>
-     * .withOptional(' ') // e.g., (?: )? or  ?
-     * </pre>
-     *
-     * @param character The character literal to be made optional.
-     * @return A {@link ConnectorStep} to continue chaining.
-     */
-    ConnectorStep withOptional(char character);
 }

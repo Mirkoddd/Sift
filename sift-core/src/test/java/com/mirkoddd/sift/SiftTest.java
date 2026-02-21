@@ -161,7 +161,7 @@ class SiftTest {
         @DisplayName("Should handle Logical OR (anyOf)")
         void anyOfCheck() {
             String regex = fromStart()
-                    .followedBy(anyOf(
+                    .pattern(anyOf(
                             literal("cat"),
                             literal("dog")
                     ))
@@ -177,10 +177,10 @@ class SiftTest {
         @DisplayName("Should handle Capturing Groups")
         void capturing() {
             String regex = anywhere()
-                    .followedBy(capture(
+                    .pattern(capture(
                             literal("ID-")
                     ))
-                    .followedBy()
+                    .then()
                     .exactly(4).digits()
                     .shake();
 
@@ -190,7 +190,7 @@ class SiftTest {
         @Test
         @DisplayName("Should escape literals automatically")
         void literals() {
-            String regex = anywhere().followedBy(literal("1.50$")).shake();
+            String regex = anywhere().pattern(literal("1.50$")).shake();
 
             assertEquals("1\\.50\\$", regex);
             assertRegexMatches(regex, "Cost is 1.50$");
@@ -221,7 +221,7 @@ class SiftTest {
         void quantifierOnGroup() {
             String regex = anywhere()
                     .oneOrMore()
-                    .followedBy(literal("abc"))
+                    .pattern(literal("abc"))
                     .shake();
 
             assertEquals("(?:abc)+", regex);
@@ -238,7 +238,7 @@ class SiftTest {
         void usernameValidation() {
             String regex = fromStart()
                     .letters()
-                    .followedBy()
+                    .then()
                     .atLeast(3).alphanumeric()
                     .untilEnd()
                     .shake();
@@ -253,7 +253,7 @@ class SiftTest {
         void namedCapturing() {
             // Target: Extract "12345" from "Order: #12345" using group name "orderId"
             String regex = anywhere()
-                    .followedBy(literal("Order: #"))
+                    .pattern(literal("Order: #"))
                     .followedBy(capture("orderId",
                             anywhere().oneOrMore().digits()
                     ))
@@ -271,18 +271,18 @@ class SiftTest {
         void priceExtraction() {
             // Nested pattern for decimals: \.[0-9]{2}
             SiftPattern decimalPart = anywhere()
-                    .followedBy('.')
-                    .followedBy()
+                    .character('.')
+                    .then()
                     .exactly(2).digits();
 
             String regex = fromStart()
-                    .followedBy('$')
-                    .followedBy()
+                    .character('$')
+                    .then()
                     .oneOrMore().digits()
 
-                    .followedBy()
+                    .then()
                     .optional()
-                    .followedBy(decimalPart)
+                    .pattern(decimalPart)
                     .untilEnd()
                     .shake();
 
@@ -301,7 +301,7 @@ class SiftTest {
             String regex = anywhere()
                     .alphanumeric()
                     .followedBy('.')
-                    .followedBy()
+                    .then()
                     .alphanumeric()
                     .shake();
 
@@ -333,31 +333,5 @@ class SiftTest {
             assertRegexDoesNotMatch(regex, "catalog");
             assertRegexDoesNotMatch(regex, "scatter");
         }
-    }
-
-    @Test
-    @DisplayName("Bugfix: withOptional syntactic sugar should not overwrite previous quantifiers")
-    void syntacticSugarQuantifierBug() {
-        String regex = anywhere()
-                .oneOrMore().digits()
-                .withOptional(literal("A"))
-                .shake();
-
-        // before fix: [0-9]?(?:A)?
-        assertEquals("[0-9]+(?:A)?", regex);
-
-        //from README.md
-        String priceRegex = anywhere()
-                .followedBy(literal("Cost: $"))
-                .followedBy().oneOrMore().digits()
-                .withOptional(
-                        anywhere().followedBy('.').followedBy().exactly(2).digits()
-                )
-                .shake();
-
-
-        assertEquals("Cost: \\$[0-9]+(?:\\.[0-9]{2})?", priceRegex);
-        assertRegexMatches(priceRegex, "Cost: $10");
-        assertRegexMatches(priceRegex, "Cost: $10.99");
     }
 }

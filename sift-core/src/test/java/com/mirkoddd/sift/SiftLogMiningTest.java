@@ -65,12 +65,12 @@ class SiftLogMiningTest {
 
         // Matches content enclosed in single quotes: '...'
         static SiftPattern quoted(SiftPattern inner) {
-            return anywhere().followedBy('\'').followedBy(inner).followedBy('\'');
+            return anywhere().character('\'').followedBy(inner).followedBy('\'');
         }
 
         // Matches content enclosed in curly braces: { ... }
         static SiftPattern braced(SiftPattern inner) {
-            return anywhere().followedBy('{').followedBy(inner).followedBy('}');
+            return anywhere().character('{').followedBy(inner).followedBy('}');
         }
     }
 
@@ -116,11 +116,11 @@ class SiftLogMiningTest {
 
         // Define complex domain objects using our Grammar
         SiftPattern validUsername = LogGrammar.quoted(anywhere().oneOrMore().letters());
-        SiftPattern validAction   = LogGrammar.braced(anywhere().followedBy(action).followedBy().oneOrMore().letters());
+        SiftPattern validAction   = LogGrammar.braced(anywhere().pattern(action).then().oneOrMore().letters());
 
         // Build the extraction query: "Find a User... followed by an arrow... followed by an Action"
         SiftPattern userActionQuery = anywhere()
-                .followedBy(userLabel)
+                .pattern(userLabel)
                 .followedBy(validUsername)
                 .followedBy(arrow)
                 .followedBy(validAction);
@@ -145,11 +145,11 @@ class SiftLogMiningTest {
         SiftPattern actionLogin = literal("Action: Login"); // We are looking for this specific literal
 
         // Define the specific target action
-        SiftPattern loginAction = LogGrammar.braced(anywhere().followedBy(actionLogin));
+        SiftPattern loginAction = LogGrammar.braced(anywhere().pattern(actionLogin));
 
         // Build the specific query
         SiftPattern loginQuery = anywhere()
-                .followedBy(userLabel)
+                .pattern(userLabel)
                 .followedBy(LogGrammar.quoted(anywhere().oneOrMore().letters()))
                 .followedBy(arrow)
                 .followedBy(loginAction);
