@@ -94,6 +94,16 @@ public interface ConnectorStep extends SiftPattern {
     ConnectorStep wordBoundary();
 
     /**
+     * Makes the preceding quantifier "possessive", preventing Catastrophic Backtracking (ReDoS).
+     * <p>
+     * A possessive quantifier will match as many characters as possible and will <b>never</b>
+     * give them up to try and match the rest of the pattern.
+     *
+     * @return The current step, allowing further modifications.
+     */
+    ConnectorStep withoutBacktracking();
+
+    /**
      * Anchors the regex to the <b>End of the String</b> using {@code $}.
      * <p>
      * This ensures that no other characters can follow the matched pattern.

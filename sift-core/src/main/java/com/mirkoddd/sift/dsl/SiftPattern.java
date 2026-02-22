@@ -15,6 +15,8 @@
  */
 package com.mirkoddd.sift.dsl;
 
+import com.mirkoddd.sift.internal.RegexSyntax;
+
 /**
  * Represents a component that can be converted into a valid Regex string.
  * <p>
@@ -39,4 +41,17 @@ public interface SiftPattern {
      * @return The compiled regex string (e.g., {@code "^[0-9]+$"}).
      */
     String shake();
+
+    /**
+     * Wraps this pattern in an Atomic Group to prevent Catastrophic Backtracking (ReDoS).
+     * <p>
+     * Once the regex engine finds a match inside an atomic group, it will lock it
+     * and never backtrack into it to try different alternatives, significantly
+     * boosting performance on complex sub-patterns.
+     *
+     * @return A new SiftPattern wrapped in an atomic group {@code (?>...)}.
+     */
+    default SiftPattern withoutBacktracking() {
+        return () -> RegexSyntax.ATOMIC_GROUP_OPEN + this.shake() + RegexSyntax.GROUP_CLOSE;
+    }
 }

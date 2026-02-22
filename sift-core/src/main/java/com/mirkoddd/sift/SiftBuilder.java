@@ -28,7 +28,7 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     private final StringBuilder pendingClass = new StringBuilder();
     private String currentQuantifier = RegexSyntax.EMPTY;
     private boolean isBuildingClass = false;
-
+    private boolean canMakePossessiveToMain = false;
     public SiftBuilder anchorStart() {
         mainPattern.append(RegexSyntax.START_OF_LINE);
         return this;
@@ -100,6 +100,7 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     public ConnectorStep any() {
         flush();
         mainPattern.append(RegexSyntax.ANY_CHAR).append(currentQuantifier);
+        canMakePossessiveToMain = !currentQuantifier.isEmpty();
         currentQuantifier = RegexSyntax.EMPTY;
         return this;
     }
@@ -124,6 +125,7 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
         StringBuilder esc = new StringBuilder();
         RegexEscaper.escapeString(String.valueOf(literal), esc);
         mainPattern.append(esc).append(currentQuantifier);
+        canMakePossessiveToMain = !currentQuantifier.isEmpty();
         currentQuantifier = RegexSyntax.EMPTY;
         return this;
     }
@@ -138,8 +140,10 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
                     .append(pattern.shake())
                     .append(RegexSyntax.GROUP_CLOSE)
                     .append(currentQuantifier);
+            canMakePossessiveToMain = true;
         } else {
             mainPattern.append(pattern.shake());
+            canMakePossessiveToMain = false;
         }
         currentQuantifier = RegexSyntax.EMPTY;
         return this;
@@ -178,6 +182,21 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     }
 
     @Override
+    public ConnectorStep withoutBacktracking() {
+        if (isBuildingClass) {
+            if (!currentQuantifier.isEmpty()) {
+                if (currentQuantifier.equals(RegexSyntax.ONE_OR_MORE) || !currentQuantifier.endsWith(RegexSyntax.POSSESSIVE)) {
+                    currentQuantifier += RegexSyntax.POSSESSIVE;
+                }
+            }
+        } else if (canMakePossessiveToMain) {
+            mainPattern.append(RegexSyntax.POSSESSIVE);
+            canMakePossessiveToMain = false;
+        }
+        return this;
+    }
+
+    @Override
     public SiftPattern untilEnd() {
         flush();
         mainPattern.append(RegexSyntax.END_OF_LINE);
@@ -193,7 +212,7 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     // --- HELPERS ---
 
     private ConnectorStep addToClass(String range) {
-        if (!isBuildingClass) isBuildingClass = true;
+        isBuildingClass = true;
         pendingClass.append(range);
         return this;
     }
@@ -204,9 +223,12 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
                     .append(pendingClass)
                     .append(RegexSyntax.CLASS_CLOSE)
                     .append(currentQuantifier);
+            canMakePossessiveToMain = !currentQuantifier.isEmpty();
             pendingClass.setLength(0);
             isBuildingClass = false;
             currentQuantifier = RegexSyntax.EMPTY;
+        } else {
+            canMakePossessiveToMain = false;
         }
     }
 }

@@ -35,6 +35,7 @@ public final class RegexSyntax {
     public static final String QUANTIFIER_OPEN = "{";
     public static final String QUANTIFIER_CLOSE = "}";
     public static final String COMMA = ",";
+    public static final String POSSESSIVE = "+";
 
     // Groups & Logic
     public static final String NON_CAPTURING_GROUP_OPEN = "(?:";
@@ -42,6 +43,7 @@ public final class RegexSyntax {
     public static final String GROUP_CLOSE = ")";
     public static final String NAMED_GROUP_OPEN = "(?<";
     public static final String NAMED_GROUP_NAME_CLOSE = ">";
+    public static final String ATOMIC_GROUP_OPEN = "(?>";
     public static final String OR = "|";
 
     // Character Classes

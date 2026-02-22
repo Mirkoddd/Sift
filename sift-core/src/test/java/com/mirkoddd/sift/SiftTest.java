@@ -210,6 +210,21 @@ class SiftTest {
         }
 
         @Test
+        @DisplayName("Should throw exception for negative quantifier in atLeast")
+        void negativeQuantifierAtLeast() {
+            assertThrows(IllegalArgumentException.class, () ->
+                    fromStart().atLeast(-1)
+            );
+        }
+
+        @Test
+        @DisplayName("Should gracefully ignore including/excluding when not building a class")
+        void ignoreModifiersWhenNotBuildingClass() {
+            String regex = anywhere().any().including('a').excluding('b').shake();
+            assertEquals(".", regex);
+        }
+
+        @Test
         @DisplayName("Should handle 'any' (dot) correctly")
         void anyChar() {
             String regex = fromStart().exactly(3).any().shake();
@@ -332,6 +347,145 @@ class SiftTest {
             assertRegexMatches(regex, "I have a cat.");
             assertRegexDoesNotMatch(regex, "catalog");
             assertRegexDoesNotMatch(regex, "scatter");
+        }
+    }
+
+    @Nested
+    @DisplayName("7. Security & Performance (Anti-ReDoS)")
+    class SecurityAndPerformance {
+
+        @Test
+        @DisplayName("Should safely ignore withoutBacktracking if no quantifier exists")
+        void possessiveWithoutQuantifier() {
+            String classRegex = anywhere().digits().withoutBacktracking().shake();
+            assertEquals("[0-9]", classRegex);
+
+            String charRegex = anywhere().character('a').withoutBacktracking().shake();
+            assertEquals("a", charRegex);
+
+            String patternRegex = anywhere().pattern(literal("abc")).withoutBacktracking().shake();
+            assertEquals("abc", patternRegex);
+        }
+
+        @Test
+        @DisplayName("Should prevent multiple possessive operators if called twice")
+        void possessiveCalledTwice() {
+            String classRegex = anywhere()
+                    .oneOrMore().digits()
+                    .withoutBacktracking().withoutBacktracking()
+                    .shake();
+            assertEquals("[0-9]++", classRegex);
+
+            String charRegex = anywhere()
+                    .oneOrMore().character('a')
+                    .withoutBacktracking().withoutBacktracking()
+                    .shake();
+            assertEquals("a++", charRegex);
+        }
+
+        @Test
+        @DisplayName("Should generate possessive quantifier for character classes (Lazy)")
+        void possessiveOnClasses() {
+            String regex = anywhere().oneOrMore().digits().withoutBacktracking().shake();
+            assertEquals("[0-9]++", regex);
+        }
+
+        @Test
+        @DisplayName("Should generate possessive quantifier for single characters (Eager)")
+        void possessiveOnCharacters() {
+            String regex = anywhere().zeroOrMore().character('a').withoutBacktracking().shake();
+            assertEquals("a*+", regex);
+        }
+
+        @Test
+        @DisplayName("Should generate possessive quantifier for patterns/groups (Eager)")
+        void possessiveOnGroups() {
+            String regex = anywhere().optional().pattern(literal("abc")).withoutBacktracking().shake();
+            assertEquals("(?:abc)?+", regex);
+        }
+
+        @Test
+        @DisplayName("Should generate possessive for other quantifiers on character classes (Lazy)")
+        void possessiveOnOtherQuantifiersForClasses() {
+            String zeroOrMoreRegex = anywhere().zeroOrMore().digits().withoutBacktracking().shake();
+            assertEquals("[0-9]*+", zeroOrMoreRegex);
+
+            String optionalRegex = anywhere().optional().digits().withoutBacktracking().shake();
+            assertEquals("[0-9]?+", optionalRegex);
+
+            String exactlyRegex = anywhere().exactly(3).digits().withoutBacktracking().shake();
+            assertEquals("[0-9]{3}+", exactlyRegex);
+        }
+
+        @Test
+        @DisplayName("Should actually prevent backtracking in the Java Regex engine")
+        void possessiveBehaviorCheck() {
+            // Case 1: GREEDY (Default).
+            // ^[0-9]+[0-9]$ matches "123" because [0-9]+ consumes "123", fails to match the end,
+            // backtracks (spits out the "3") and allows the second [0-9] to match.
+            String greedyRegex = fromStart()
+                    .oneOrMore().digits()
+                    .then().exactly(1).digits()
+                    .untilEnd().shake();
+
+            assertEquals("^[0-9]+[0-9]$", greedyRegex);
+            assertTrue("123".matches(greedyRegex), "Greedy should backtrack and match");
+
+            // Case 2: POSSESSIVE (No backtracking).
+            // ^[0-9]++[0-9]$ does NOT match "123". [0-9]++ consumes "123", never gives it back,
+            // and the second [0-9] finds nothing. Immediate failure (No ReDoS).
+            String possessiveRegex = fromStart()
+                    .oneOrMore().digits().withoutBacktracking()
+                    .then().exactly(1).digits()
+                    .untilEnd().shake();
+
+            assertEquals("^[0-9]++[0-9]$", possessiveRegex);
+            assertFalse("123".matches(possessiveRegex), "Possessive should NOT backtrack and fail");
+        }
+
+        @Test
+        @DisplayName("Should generate atomic group for standalone SiftPatterns")
+        void atomicGroupSyntax() {
+            // A logical OR wrapped in anti-backtracking protection
+            SiftPattern cat = literal("cat");
+            SiftPattern dog = literal("dog");
+            SiftPattern animal = anyOf(cat, dog).withoutBacktracking();
+
+            String regex = anywhere().pattern(animal).shake();
+
+            // Expects the atomic group (?>...) around the non-capturing group (?:...) of the anyOf
+            assertEquals("(?>(?:cat|dog))", regex);
+        }
+
+        @Test
+        @DisplayName("Should actually prevent backtracking using Atomic Groups")
+        void atomicGroupBehaviorCheck() {
+            SiftPattern a = literal("a");
+            SiftPattern ab = literal("ab");
+            SiftPattern aOrAb = anyOf(a, ab);
+
+            // CASE 1: Normal (Greedy / Backtracking enabled)
+            // Pattern: (?:a|ab)c
+            // The engine tries the first option "a". Then looks for "c", but finds "b". Fails.
+            // BACKTRACKS: Goes back to the OR, tries the second option "ab". Looks for "c", finds it! MATCH!
+            String normalRegex = fromStart()
+                    .pattern(aOrAb)
+                    .followedBy('c')
+                    .untilEnd().shake();
+
+            assertTrue("abc".matches(normalRegex), "Normal OR should backtrack and find 'ab'");
+
+            // CASE 2: Atomic (No Backtracking)
+            // Pattern: (?>a|ab)c
+            // The engine tries the first option "a". It works. LOCKS THE BOX.
+            // Looks for "c", but finds "b". Fails.
+            // NO BACKTRACKING: It will never try the second option "ab". Immediate total failure.
+            String atomicRegex = fromStart()
+                    .pattern(aOrAb.withoutBacktracking())
+                    .followedBy('c')
+                    .untilEnd().shake();
+
+            assertFalse("abc".matches(atomicRegex), "Atomic group should NOT backtrack to 'ab'");
         }
     }
 }
