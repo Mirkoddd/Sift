@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift.dsl;
-
-import com.mirkoddd.sift.internal.RegexSyntax;
+package com.mirkoddd.sift.core.dsl;
 
 /**
  * Represents a component that can be converted into a valid Regex string.
@@ -52,6 +50,8 @@ public interface SiftPattern {
      * @return A new SiftPattern wrapped in an atomic group {@code (?>...)}.
      */
     default SiftPattern withoutBacktracking() {
-        return () -> RegexSyntax.ATOMIC_GROUP_OPEN + this.shake() + RegexSyntax.GROUP_CLOSE;
+        String ATOMIC_OPEN = "(?>";
+        String ATOMIC_CLOSE = ")";
+        return () -> ATOMIC_OPEN + this.shake() + ATOMIC_CLOSE;
     }
 }

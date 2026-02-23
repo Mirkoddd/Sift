@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift;
+package com.mirkoddd.sift.annotations;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Payload;
@@ -31,6 +31,8 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.mirkoddd.sift.core.Sift;
 
 /**
  * Test suite for the {@link SiftMatch} annotation and its associated {@link SiftMatchValidator}.
@@ -72,7 +74,7 @@ class SiftAnnotationTest {
     }
 
     /**
-     * A mock Data Transfer Object (DTO) simulating a real-world usage of the annotation.
+     * A mock DTO simulating a real-world usage of the annotation.
      */
     public record MockRegistrationDto(
             @SiftMatch(
@@ -83,7 +85,7 @@ class SiftAnnotationTest {
     ) {}
 
     // ===================================================================================
-    // TEST CASES
+    // TEST CASES (Standard Validation)
     // ===================================================================================
 
     @Test
@@ -128,6 +130,55 @@ class SiftAnnotationTest {
         // Assert
         assertTrue(violations.isEmpty(),
                 "Expected null values to pass. Null checks should be handled by standard @NotNull annotations.");
+    }
+
+    // ===================================================================================
+    // PATTERN FLAGS TESTS (Testing SiftMatchFlag)
+    // ===================================================================================
+
+    /**
+     * A mock rule enforcing the exact lowercase string "hello".
+     */
+    public static class StrictHelloRule implements SiftRegexProvider {
+        @Override
+        public String getRegex() {
+            return "^hello$";
+        }
+    }
+
+    public record DtoWithoutFlags(
+            @SiftMatch(value = StrictHelloRule.class)
+            String greeting
+    ) {}
+
+    public record DtoWithInsensitiveFlag(
+            @SiftMatch(value = StrictHelloRule.class, flags = {SiftMatchFlag.CASE_INSENSITIVE})
+            String greeting
+    ) {}
+
+    @Test
+    @DisplayName("Should enforce case sensitivity when no flags are provided")
+    void whenNoFlags_thenCaseSensitive() {
+        // Arrange
+        DtoWithoutFlags exactMatch = new DtoWithoutFlags("hello");
+        DtoWithoutFlags caseMismatch = new DtoWithoutFlags("HELLO");
+
+        // Act & Assert
+        assertTrue(validator.validate(exactMatch).isEmpty(), "Exact match should pass.");
+        assertEquals(1, validator.validate(caseMismatch).size(), "Case mismatch should fail without flags.");
+    }
+
+    @Test
+    @DisplayName("Should ignore case when CASE_INSENSITIVE flag is applied")
+    void whenCaseInsensitiveFlag_thenIgnoresCase() {
+        // Arrange
+        DtoWithInsensitiveFlag caseMismatch = new DtoWithInsensitiveFlag("HELLO");
+
+        // Act
+        Set<ConstraintViolation<DtoWithInsensitiveFlag>> violations = validator.validate(caseMismatch);
+
+        // Assert
+        assertTrue(violations.isEmpty(), "Validation should pass for 'HELLO' due to CASE_INSENSITIVE flag.");
     }
 
     // ===================================================================================

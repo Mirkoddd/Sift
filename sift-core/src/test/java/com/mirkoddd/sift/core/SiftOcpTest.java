@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift;
+package com.mirkoddd.sift.core;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import com.mirkoddd.sift.dsl.SiftPattern;
 
-import static com.mirkoddd.sift.Sift.*;
-import static com.mirkoddd.sift.SiftPatterns.*;
+import com.mirkoddd.sift.core.dsl.SiftPattern;
+
+import static com.mirkoddd.sift.core.Sift.*;
+import static com.mirkoddd.sift.core.SiftPatterns.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Open/Closed Principle Showcase")
@@ -35,7 +36,7 @@ class SiftOcpTest {
 
         // Adds semantics for [ ... ]
         static SiftPattern bracketed(SiftPattern inner) {
-            return anywhere()
+            return fromAnywhere()
                     .character('[')
                     .followedBy(inner)
                     .followedBy(']');
@@ -43,7 +44,7 @@ class SiftOcpTest {
 
         // Adds semantics for ' ... '
         static SiftPattern quoted(SiftPattern inner) {
-            return anywhere()
+            return fromAnywhere()
                     .character('\'')
                     .followedBy(inner)
                     .followedBy('\'');
@@ -51,7 +52,7 @@ class SiftOcpTest {
 
         // Adds semantics for { ... }
         static SiftPattern braced(SiftPattern inner) {
-            return anywhere()
+            return fromAnywhere()
                     .character('{')
                     .followedBy(inner)
                     .followedBy('}');
@@ -59,7 +60,7 @@ class SiftOcpTest {
 
         // Reusable timestamp pattern: YYYY-MM-DD
         static SiftPattern simpleDate() {
-            return anywhere()
+            return fromAnywhere()
                     .exactly(4).digits().followedBy('-')
                     .then().exactly(2).digits().followedBy('-')
                     .then().exactly(2).digits();
@@ -82,8 +83,8 @@ class SiftOcpTest {
         SiftPattern action     = SiftPatterns.literal("Action: ");
         SiftPattern logLevel   = LogGrammar.bracketed(literal("INFO"));
         SiftPattern timestamp  = LogGrammar.bracketed(LogGrammar.simpleDate());
-        SiftPattern username   = LogGrammar.quoted(anywhere().oneOrMore().letters());
-        SiftPattern actionData = LogGrammar.braced(anywhere().pattern(action).then().oneOrMore().letters());
+        SiftPattern username   = LogGrammar.quoted(fromAnywhere().oneOrMore().letters());
+        SiftPattern actionData = LogGrammar.braced(fromAnywhere().pattern(action).then().oneOrMore().letters());
 
         // Step B: Compose the final Regex (Declarative & Clean)
         String logRegex = fromStart()
@@ -92,7 +93,7 @@ class SiftOcpTest {
                 .followedBy(timestamp)
                 .then().optional().character(' ')
                 .followedBy(user, username, arrow, actionData)
-                .untilEnd()
+                .andNothingElse()
                 .shake();
 
         System.out.println("OCP Log Regex: " + logRegex);

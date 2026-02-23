@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift;
+package com.mirkoddd.sift.core;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import com.mirkoddd.sift.dsl.SiftPattern;
+import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.mirkoddd.sift.Sift.*;
-import static com.mirkoddd.sift.SiftPatterns.*;
+import static com.mirkoddd.sift.core.Sift.*;
+import static com.mirkoddd.sift.core.SiftPatterns.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DisplayName("Advanced: Structured Log Parsing")
@@ -57,7 +57,7 @@ class SiftStructuredParsingTest {
          * Encapsulates the brackets and spacing.
          */
         static SiftPattern header(String level, SiftPattern timestampPattern) {
-            return anywhere()
+            return fromAnywhere()
                     .pattern(literal("[" + level + "]"))
                     .followedBy(literal(" ["))
                     .followedBy(timestampPattern)
@@ -69,7 +69,7 @@ class SiftStructuredParsingTest {
          * Encapsulates the label, spacing and quotes.
          */
         static SiftPattern userField(SiftPattern namePattern) {
-            return anywhere()
+            return fromAnywhere()
                     .pattern(literal(" User: '"))
                     .followedBy(namePattern)
                     .followedBy('\'');
@@ -80,7 +80,7 @@ class SiftStructuredParsingTest {
          * Encapsulates the arrow, braces and label.
          */
         static SiftPattern actionField(SiftPattern actionPattern) {
-            return anywhere()
+            return fromAnywhere()
                     .pattern(literal(" -> {Action: "))
                     .followedBy(actionPattern)
                     .followedBy('}');
@@ -111,12 +111,12 @@ class SiftStructuredParsingTest {
 
         // --- DEFINITION OF CORE PATTERNS ---
 
-        SiftPattern datePattern = anywhere()
+        SiftPattern datePattern = fromAnywhere()
                 .exactly(4).digits().followedBy('-')
                 .then().exactly(2).digits().followedBy('-')
                 .then().exactly(2).digits();
 
-        SiftPattern wordPattern = anywhere().oneOrMore().letters();
+        SiftPattern wordPattern = fromAnywhere().oneOrMore().letters();
 
         // --- SEMANTIC COMPOSITION ---
         // We compose the log structure using our Grammar methods.
@@ -133,7 +133,7 @@ class SiftStructuredParsingTest {
 
         // --- FINAL ASSEMBLY ---
 
-        SiftPattern logParser = anywhere()
+        SiftPattern logParser = fromAnywhere()
                 .pattern(headerPart)
                 .followedBy(userPart)
                 .followedBy(actionPart);

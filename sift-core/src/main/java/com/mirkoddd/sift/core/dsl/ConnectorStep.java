@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift.dsl;
+package com.mirkoddd.sift.core.dsl;
 
 /**
  * The link between steps in the chain.
@@ -111,5 +111,5 @@ public interface ConnectorStep extends SiftPattern {
      *
      * @return A pattern ready to be finalized.
      */
-    SiftPattern untilEnd();
+    SiftPattern andNothingElse();
 }

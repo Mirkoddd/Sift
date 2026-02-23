@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift;
+package com.mirkoddd.sift.core;
 
-import com.mirkoddd.sift.internal.RegexSyntax;
-
-import com.mirkoddd.sift.dsl.*;
+import com.mirkoddd.sift.core.dsl.*;
 
 /**
  * Internal implementation of the State Machine.
@@ -29,12 +27,11 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     private String currentQuantifier = RegexSyntax.EMPTY;
     private boolean isBuildingClass = false;
     private boolean canMakePossessiveToMain = false;
+
     public SiftBuilder anchorStart() {
         mainPattern.append(RegexSyntax.START_OF_LINE);
         return this;
     }
-
-    // --- QUANTIFIERS ---
 
     @Override
     public TypeStep exactly(int n) {
@@ -69,31 +66,19 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
         return this;
     }
 
-    // --- TYPES ---
-
     @Override
-    public ConnectorStep digits() {
-        return addToClass(RegexSyntax.RANGE_DIGITS);
+    public TypeStep atMost(int max) {
+        if (max < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + max);
+        currentQuantifier = RegexSyntax.QUANTIFIER_OPEN + "0" + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE;
+        return this;
     }
 
     @Override
-    public ConnectorStep letters() {
-        return addToClass(RegexSyntax.RANGE_LETTERS);
-    }
-
-    @Override
-    public ConnectorStep lettersLowercaseOnly() {
-        return addToClass(RegexSyntax.RANGE_LOWERCASE);
-    }
-
-    @Override
-    public ConnectorStep lettersUppercaseOnly() {
-        return addToClass(RegexSyntax.RANGE_UPPERCASE);
-    }
-
-    @Override
-    public ConnectorStep alphanumeric() {
-        return addToClass(RegexSyntax.RANGE_ALPHANUMERIC);
+    public TypeStep between(int min, int max) {
+        if (min < 0 || max < 0) throw new IllegalArgumentException("Quantities cannot be negative");
+        if (min > max) throw new IllegalArgumentException("Min cannot be greater than max");
+        currentQuantifier = RegexSyntax.QUANTIFIER_OPEN + min + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE;
+        return this;
     }
 
     @Override
@@ -105,20 +90,6 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
         return this;
     }
 
-    // --- CONNECTORS ---
-    @Override
-    public ConnectorStep followedBy(char c) {
-        return this.then().exactly(1).character(c);
-    }
-
-    @Override
-    public ConnectorStep followedBy(SiftPattern... patterns) {
-        ConnectorStep current = this;
-        for (SiftPattern p : patterns) {
-            current = current.then().exactly(1).pattern(p);
-        }
-        return current;
-    }
     @Override
     public ConnectorStep character(char literal) {
         flush();
@@ -147,6 +118,140 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
         }
         currentQuantifier = RegexSyntax.EMPTY;
         return this;
+    }
+
+    @Override
+    public ConnectorStep digits() {
+        return addToClass(RegexSyntax.RANGE_DIGITS);
+    }
+
+    @Override
+    public ConnectorStep nonDigits() {
+        return addToClass(RegexSyntax.NON_DIGITS);
+    }
+
+    @Override
+    public ConnectorStep unicodeDigits() {
+        return addToClass(RegexSyntax.UNICODE_DIGITS);
+    }
+
+    @Override
+    public ConnectorStep nonUnicodeDigits() {
+        return addToClass(RegexSyntax.NON_UNICODE_DIGITS);
+    }
+
+    @Override
+    public ConnectorStep letters() {
+        return addToClass(RegexSyntax.RANGE_LETTERS);
+    }
+
+    @Override
+    public ConnectorStep nonLetters() {
+        return addToClass(RegexSyntax.NON_LETTERS);
+    }
+
+    @Override
+    public ConnectorStep lettersUppercaseOnly() {
+        return addToClass(RegexSyntax.RANGE_LETTERS_UPPERCASE_ONLY);
+    }
+
+    @Override
+    public ConnectorStep lettersLowercaseOnly() {
+        return addToClass(RegexSyntax.RANGE_LETTERS_LOWERCASE_ONLY);
+    }
+
+    @Override
+    public ConnectorStep unicodeLetters() {
+        return addToClass(RegexSyntax.UNICODE_LETTERS);
+    }
+
+    @Override
+    public ConnectorStep nonUnicodeLetters() {
+        return addToClass(RegexSyntax.NON_UNICODE_LETTERS);
+    }
+
+    @Override
+    public ConnectorStep unicodeLettersUppercaseOnly() {
+        return addToClass(RegexSyntax.UNICODE_LETTERS_UPPERCASE_ONLY);
+    }
+
+    @Override
+    public ConnectorStep unicodeLettersLowercaseOnly() {
+        return addToClass(RegexSyntax.UNICODE_LETTERS_LOWERCASE_ONLY);
+    }
+
+    @Override
+    public ConnectorStep alphanumeric() {
+        return addToClass(RegexSyntax.RANGE_ALPHANUMERIC);
+    }
+
+    @Override
+    public ConnectorStep nonAlphanumeric() {
+        return addToClass(RegexSyntax.NON_ALPHANUMERIC);
+    }
+
+    @Override
+    public ConnectorStep unicodeAlphanumeric() {
+        return addToClass(RegexSyntax.UNICODE_ALPHANUMERIC);
+    }
+
+    @Override
+    public ConnectorStep nonUnicodeAlphanumeric() {
+        return addToClass(RegexSyntax.NON_UNICODE_ALPHANUMERIC);
+    }
+
+    @Override
+    public ConnectorStep wordCharacters() {
+        return addToClass(RegexSyntax.WORD_CHARACTERS);
+    }
+
+    @Override
+    public ConnectorStep nonWordCharacters() {
+        return addToClass(RegexSyntax.NON_WORD_CHARACTERS);
+    }
+
+    @Override
+    public ConnectorStep unicodeWordCharacters() {
+        return addToClass(RegexSyntax.UNICODE_WORD_CHARACTERS);
+    }
+
+    @Override
+    public ConnectorStep nonUnicodeWordCharacters() {
+        return addToClass(RegexSyntax.NON_UNICODE_WORD_CHARACTERS);
+    }
+
+    @Override
+    public ConnectorStep whitespace() {
+        return addToClass(RegexSyntax.WHITESPACE);
+    }
+
+    @Override
+    public ConnectorStep nonWhitespace() {
+        return addToClass(RegexSyntax.NON_WHITESPACE);
+    }
+
+    @Override
+    public ConnectorStep unicodeWhitespace() {
+        return addToClass(RegexSyntax.UNICODE_WHITESPACE);
+    }
+
+    @Override
+    public ConnectorStep nonUnicodeWhitespace() {
+        return addToClass(RegexSyntax.NON_UNICODE_WHITESPACE);
+    }
+
+    @Override
+    public ConnectorStep followedBy(char c) {
+        return this.then().exactly(1).character(c);
+    }
+
+    @Override
+    public ConnectorStep followedBy(SiftPattern... patterns) {
+        ConnectorStep current = this;
+        for (SiftPattern p : patterns) {
+            current = current.then().exactly(1).pattern(p);
+        }
+        return current;
     }
 
     @Override
@@ -197,7 +302,7 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     }
 
     @Override
-    public SiftPattern untilEnd() {
+    public SiftPattern andNothingElse() {
         flush();
         mainPattern.append(RegexSyntax.END_OF_LINE);
         return this;
@@ -208,8 +313,6 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
         flush();
         return mainPattern.toString();
     }
-
-    // --- HELPERS ---
 
     private ConnectorStep addToClass(String range) {
         isBuildingClass = true;

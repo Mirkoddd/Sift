@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift;
+package com.mirkoddd.sift.core;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,12 +24,12 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
-import static com.mirkoddd.sift.Sift.anywhere;
-import static com.mirkoddd.sift.Sift.fromStart;
-import static com.mirkoddd.sift.SiftPatterns.*;
+import static com.mirkoddd.sift.core.Sift.fromAnywhere;
+import static com.mirkoddd.sift.core.Sift.fromStart;
+import static com.mirkoddd.sift.core.SiftPatterns.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.mirkoddd.sift.dsl.SiftPattern;
+import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 /**
  * Test suite for Sift library.
@@ -55,7 +55,7 @@ class SiftTest {
         @Test
         @DisplayName("Should generate exact quantity matcher")
         void exactQuantity() {
-            String regex = fromStart().exactly(3).digits().untilEnd().shake();
+            String regex = fromStart().exactly(3).digits().andNothingElse().shake();
 
             assertEquals("^[0-9]{3}$", regex);
             assertRegexMatches(regex, "123");
@@ -66,7 +66,7 @@ class SiftTest {
         @Test
         @DisplayName("Should generate 'one or more' (+)")
         void oneOrMoreCheck() {
-            String regex = anywhere().oneOrMore().letters().shake();
+            String regex = fromAnywhere().oneOrMore().letters().shake();
 
             assertEquals("[a-zA-Z]+", regex);
             assertRegexMatches(regex, "a");
@@ -77,7 +77,7 @@ class SiftTest {
         @Test
         @DisplayName("Should generate 'optional' (?)")
         void optionalCheck() {
-            String regex = fromStart().optional().digits().untilEnd().shake();
+            String regex = fromStart().optional().digits().andNothingElse().shake();
 
             assertEquals("^[0-9]?$", regex);
             assertRegexMatches(regex, "1");
@@ -88,7 +88,7 @@ class SiftTest {
         @Test
         @DisplayName("Should generate 'zero or more' (*)")
         void anyTimesCheck() {
-            String regex = fromStart().zeroOrMore().digits().untilEnd().shake();
+            String regex = fromStart().zeroOrMore().digits().andNothingElse().shake();
 
             assertEquals("^[0-9]*$", regex);
             assertRegexMatches(regex, "12345");
@@ -119,10 +119,10 @@ class SiftTest {
         @DisplayName("Should exclude specific characters (Subtraction)")
         void excluding() {
             // Target: Consonants only (letters minus vowels)
-            String regex = anywhere()
+            String regex = fromAnywhere()
                     .oneOrMore().lettersLowercaseOnly()
                     .excluding('a', 'e', 'i', 'o', 'u')
-                    .untilEnd()
+                    .andNothingElse()
                     .shake();
 
             assertEquals("[a-z&&[^aeiou]]+$", regex);
@@ -133,7 +133,7 @@ class SiftTest {
         @Test
         @DisplayName("Should escape special chars inside class")
         void escapeInsideClass() {
-            String regex = anywhere().digits().including('-', ']').shake();
+            String regex = fromAnywhere().digits().including('-', ']').shake();
 
             assertEquals("[0-9\\-\\]]", regex);
             assertRegexMatches(regex, "-");
@@ -143,7 +143,7 @@ class SiftTest {
         @Test
         @DisplayName("Should match uppercase letters only")
         void uppercaseOnly() {
-            String regex = anywhere().oneOrMore().lettersUppercaseOnly().untilEnd().shake();
+            String regex = fromAnywhere().oneOrMore().lettersUppercaseOnly().andNothingElse().shake();
 
             assertEquals("[A-Z]+$", regex);
             assertRegexMatches(regex, "HELLO");
@@ -176,7 +176,7 @@ class SiftTest {
         @Test
         @DisplayName("Should handle Capturing Groups")
         void capturing() {
-            String regex = anywhere()
+            String regex = fromAnywhere()
                     .pattern(capture(
                             literal("ID-")
                     ))
@@ -190,7 +190,7 @@ class SiftTest {
         @Test
         @DisplayName("Should escape literals automatically")
         void literals() {
-            String regex = anywhere().pattern(literal("1.50$")).shake();
+            String regex = fromAnywhere().pattern(literal("1.50$")).shake();
 
             assertEquals("1\\.50\\$", regex);
             assertRegexMatches(regex, "Cost is 1.50$");
@@ -220,7 +220,7 @@ class SiftTest {
         @Test
         @DisplayName("Should gracefully ignore including/excluding when not building a class")
         void ignoreModifiersWhenNotBuildingClass() {
-            String regex = anywhere().any().including('a').excluding('b').shake();
+            String regex = fromAnywhere().any().including('a').excluding('b').shake();
             assertEquals(".", regex);
         }
 
@@ -234,13 +234,90 @@ class SiftTest {
         @Test
         @DisplayName("Should correctly handle quantifiers on groups")
         void quantifierOnGroup() {
-            String regex = anywhere()
+            String regex = fromAnywhere()
                     .oneOrMore()
                     .pattern(literal("abc"))
                     .shake();
 
             assertEquals("(?:abc)+", regex);
             assertRegexMatches(regex, "abcabc");
+        }
+
+        @Test
+        @DisplayName("Should throw exceptions for invalid bounds in new quantifiers")
+        void testQuantifierExceptions() {
+            // atMost exceptions
+            assertThrows(IllegalArgumentException.class, () -> Sift.fromAnywhere().atMost(-1));
+
+            // between exceptions
+            assertThrows(IllegalArgumentException.class, () -> Sift.fromAnywhere().between(-1, 5));
+            assertThrows(IllegalArgumentException.class, () -> Sift.fromAnywhere().between(2, -1));
+            assertThrows(IllegalArgumentException.class, () -> Sift.fromAnywhere().between(5, 2)); // min > max
+        }
+
+        @Test
+        @DisplayName("Should correctly generate regex for wordChars, whitespace, optionally, and andNothingElse")
+        void testNewTypesAndTerminals() {
+            String regex = Sift.fromStart()
+                    .atMost(3).wordCharacters()
+                    .then()
+                    .between(1, 2).whitespace()
+                    .then()
+                    .optional().nonWordCharacters()
+                    .then()
+                    .exactly(1).nonWhitespace()
+                    .andNothingElse()
+                    .shake();
+
+            // fromStart = ^
+            // atMost(3).wordChars() = [\w]{0,3}
+            // between(1, 2).whitespace() = [\s]{1,2}
+            // optional().nonWordChars() = [\W]?
+            // exactly(1).nonWhitespace() = [\S]
+            // andNothingElse = $
+            assertEquals("^[\\w]{0,3}[\\s]{1,2}[\\W]?[\\S]$", regex);
+
+            // --- VALID MATCHES ---
+            // 3 words ("abc"), 2 spaces (" \t"), 1 non-word ("@"), 1 non-whitespace ("X")
+            assertRegexMatches(regex, "abc \t@X");
+            // 0 words, 2 spaces ("  "), 0 non-words, 1 non-whitespace ("X")
+            assertRegexMatches(regex, "  X");
+            // 1 word ("a"), 1 space (" "), 1 non-word ("@"), 1 non-whitespace ("X")
+            assertRegexMatches(regex, "a @X");
+
+            // --- INVALID MATCHES ---
+            // 4 word chars (fails atMost(3))
+            assertRegexDoesNotMatch(regex, "abcd  X");
+            // 0 whitespaces (fails lower bound of between(1, 2))
+            assertRegexDoesNotMatch(regex, "aX");
+            // 4 whitespaces. Even if [\W]? consumes one space,
+            // the 4th space will fail against the final [\S].
+            assertRegexDoesNotMatch(regex, "a    X");
+            // 2 non-word chars "@@" (fails optional())
+            assertRegexDoesNotMatch(regex, "a  @@X");
+            // Ends with a space (fails exactly(1).nonWhitespace() at the end)
+            assertRegexDoesNotMatch(regex, "a  ");
+        }
+
+        @Test
+        @DisplayName("Should allow modifiers on shorthand character classes")
+        void testModifiersOnShorthands() {
+            String regex = Sift.fromAnywhere()
+                    .wordCharacters().excluding('_')
+                    .shake();
+
+            assertEquals("[\\w&&[^_]]", regex);
+
+            // --- VALID MATCHES ---
+            assertRegexMatches(regex, "a");
+            assertRegexMatches(regex, "Z");
+            assertRegexMatches(regex, "9");
+
+            // --- INVALID MATCHES ---
+            // Should NOT match the excluded character
+            assertRegexDoesNotMatch(regex, "_");
+            // Should NOT match symbols (since they aren't \w to begin with)
+            assertRegexDoesNotMatch(regex, "@");
         }
     }
 
@@ -255,7 +332,7 @@ class SiftTest {
                     .letters()
                     .then()
                     .atLeast(3).alphanumeric()
-                    .untilEnd()
+                    .andNothingElse()
                     .shake();
 
             assertRegexMatches(regex, "User123");
@@ -267,10 +344,10 @@ class SiftTest {
         @DisplayName("Should handle Named Capturing Groups")
         void namedCapturing() {
             // Target: Extract "12345" from "Order: #12345" using group name "orderId"
-            String regex = anywhere()
+            String regex = fromAnywhere()
                     .pattern(literal("Order: #"))
                     .followedBy(capture("orderId",
-                            anywhere().oneOrMore().digits()
+                            fromAnywhere().oneOrMore().digits()
                     ))
                     .shake();
 
@@ -285,7 +362,7 @@ class SiftTest {
         @DisplayName("Scenario: Extracting Prices")
         void priceExtraction() {
             // Nested pattern for decimals: \.[0-9]{2}
-            SiftPattern decimalPart = anywhere()
+            SiftPattern decimalPart = fromAnywhere()
                     .character('.')
                     .then()
                     .exactly(2).digits();
@@ -298,7 +375,7 @@ class SiftTest {
                     .then()
                     .optional()
                     .pattern(decimalPart)
-                    .untilEnd()
+                    .andNothingElse()
                     .shake();
 
             assertEquals("^\\$[0-9]+(?:\\.[0-9]{2})?$", regex);
@@ -313,7 +390,7 @@ class SiftTest {
         @ValueSource(strings = {"test.email", "hello", "123"})
         @DisplayName("Scenario: Custom Domain logic")
         void parameterizedCheck(String input) {
-            String regex = anywhere()
+            String regex = fromAnywhere()
                     .alphanumeric()
                     .followedBy('.')
                     .then()
@@ -337,7 +414,7 @@ class SiftTest {
         @DisplayName("Should respect Word Boundaries (Static & Instance)")
         void wordBoundaries() {
             // Matches exact word "cat" (not "catalog" or "scatter")
-            String regex = Sift.wordBoundary()
+            String regex = Sift.fromWordBoundary()
                     .followedBy(literal("cat"))
                     .wordBoundary()
                     .shake();
@@ -357,26 +434,26 @@ class SiftTest {
         @Test
         @DisplayName("Should safely ignore withoutBacktracking if no quantifier exists")
         void possessiveWithoutQuantifier() {
-            String classRegex = anywhere().digits().withoutBacktracking().shake();
+            String classRegex = fromAnywhere().digits().withoutBacktracking().shake();
             assertEquals("[0-9]", classRegex);
 
-            String charRegex = anywhere().character('a').withoutBacktracking().shake();
+            String charRegex = fromAnywhere().character('a').withoutBacktracking().shake();
             assertEquals("a", charRegex);
 
-            String patternRegex = anywhere().pattern(literal("abc")).withoutBacktracking().shake();
+            String patternRegex = fromAnywhere().pattern(literal("abc")).withoutBacktracking().shake();
             assertEquals("abc", patternRegex);
         }
 
         @Test
         @DisplayName("Should prevent multiple possessive operators if called twice")
         void possessiveCalledTwice() {
-            String classRegex = anywhere()
+            String classRegex = fromAnywhere()
                     .oneOrMore().digits()
                     .withoutBacktracking().withoutBacktracking()
                     .shake();
             assertEquals("[0-9]++", classRegex);
 
-            String charRegex = anywhere()
+            String charRegex = fromAnywhere()
                     .oneOrMore().character('a')
                     .withoutBacktracking().withoutBacktracking()
                     .shake();
@@ -386,34 +463,34 @@ class SiftTest {
         @Test
         @DisplayName("Should generate possessive quantifier for character classes (Lazy)")
         void possessiveOnClasses() {
-            String regex = anywhere().oneOrMore().digits().withoutBacktracking().shake();
+            String regex = fromAnywhere().oneOrMore().digits().withoutBacktracking().shake();
             assertEquals("[0-9]++", regex);
         }
 
         @Test
         @DisplayName("Should generate possessive quantifier for single characters (Eager)")
         void possessiveOnCharacters() {
-            String regex = anywhere().zeroOrMore().character('a').withoutBacktracking().shake();
+            String regex = fromAnywhere().zeroOrMore().character('a').withoutBacktracking().shake();
             assertEquals("a*+", regex);
         }
 
         @Test
         @DisplayName("Should generate possessive quantifier for patterns/groups (Eager)")
         void possessiveOnGroups() {
-            String regex = anywhere().optional().pattern(literal("abc")).withoutBacktracking().shake();
+            String regex = fromAnywhere().optional().pattern(literal("abc")).withoutBacktracking().shake();
             assertEquals("(?:abc)?+", regex);
         }
 
         @Test
         @DisplayName("Should generate possessive for other quantifiers on character classes (Lazy)")
         void possessiveOnOtherQuantifiersForClasses() {
-            String zeroOrMoreRegex = anywhere().zeroOrMore().digits().withoutBacktracking().shake();
+            String zeroOrMoreRegex = fromAnywhere().zeroOrMore().digits().withoutBacktracking().shake();
             assertEquals("[0-9]*+", zeroOrMoreRegex);
 
-            String optionalRegex = anywhere().optional().digits().withoutBacktracking().shake();
+            String optionalRegex = fromAnywhere().optional().digits().withoutBacktracking().shake();
             assertEquals("[0-9]?+", optionalRegex);
 
-            String exactlyRegex = anywhere().exactly(3).digits().withoutBacktracking().shake();
+            String exactlyRegex = fromAnywhere().exactly(3).digits().withoutBacktracking().shake();
             assertEquals("[0-9]{3}+", exactlyRegex);
         }
 
@@ -426,7 +503,7 @@ class SiftTest {
             String greedyRegex = fromStart()
                     .oneOrMore().digits()
                     .then().exactly(1).digits()
-                    .untilEnd().shake();
+                    .andNothingElse().shake();
 
             assertEquals("^[0-9]+[0-9]$", greedyRegex);
             assertTrue("123".matches(greedyRegex), "Greedy should backtrack and match");
@@ -437,7 +514,7 @@ class SiftTest {
             String possessiveRegex = fromStart()
                     .oneOrMore().digits().withoutBacktracking()
                     .then().exactly(1).digits()
-                    .untilEnd().shake();
+                    .andNothingElse().shake();
 
             assertEquals("^[0-9]++[0-9]$", possessiveRegex);
             assertFalse("123".matches(possessiveRegex), "Possessive should NOT backtrack and fail");
@@ -451,7 +528,7 @@ class SiftTest {
             SiftPattern dog = literal("dog");
             SiftPattern animal = anyOf(cat, dog).withoutBacktracking();
 
-            String regex = anywhere().pattern(animal).shake();
+            String regex = fromAnywhere().pattern(animal).shake();
 
             // Expects the atomic group (?>...) around the non-capturing group (?:...) of the anyOf
             assertEquals("(?>(?:cat|dog))", regex);
@@ -471,7 +548,7 @@ class SiftTest {
             String normalRegex = fromStart()
                     .pattern(aOrAb)
                     .followedBy('c')
-                    .untilEnd().shake();
+                    .andNothingElse().shake();
 
             assertTrue("abc".matches(normalRegex), "Normal OR should backtrack and find 'ab'");
 
@@ -483,9 +560,141 @@ class SiftTest {
             String atomicRegex = fromStart()
                     .pattern(aOrAb.withoutBacktracking())
                     .followedBy('c')
-                    .untilEnd().shake();
+                    .andNothingElse().shake();
 
             assertFalse("abc".matches(atomicRegex), "Atomic group should NOT backtrack to 'ab'");
+        }
+    }
+
+    @Nested
+    @DisplayName("8. Extended & Unicode Character Classes")
+    class ExtendedAndUnicodeTypes {
+
+        @Test
+        @DisplayName("Should properly restrict and negate ASCII classes")
+        void asciiNegations() {
+            // nonLetters: [^a-zA-Z]
+            String nonLettersRegex = Sift.fromStart().exactly(1).nonLetters().andNothingElse().shake();
+            assertEquals("^[^a-zA-Z]$", nonLettersRegex);
+            assertRegexMatches(nonLettersRegex, "1");
+            assertRegexMatches(nonLettersRegex, "!");
+            assertRegexMatches(nonLettersRegex, "è"); // Valid! 'è' is not an ASCII letter
+            assertRegexDoesNotMatch(nonLettersRegex, "a");
+            assertRegexDoesNotMatch(nonLettersRegex, "Z");
+
+            // nonAlphanumeric: [^a-zA-Z0-9]
+            String nonAlphaRegex = Sift.fromStart().exactly(1).nonAlphanumeric().andNothingElse().shake();
+            assertEquals("^[^a-zA-Z0-9]$", nonAlphaRegex);
+            assertRegexMatches(nonAlphaRegex, " ");
+            assertRegexMatches(nonAlphaRegex, "!");
+            assertRegexDoesNotMatch(nonAlphaRegex, "1");
+            assertRegexDoesNotMatch(nonAlphaRegex, "A");
+
+            // nonDigits: [\D]
+            String nonDigitsRegex = Sift.fromStart().exactly(1).nonDigits().andNothingElse().shake();
+            assertEquals("^[\\D]$", nonDigitsRegex);
+            assertRegexMatches(nonDigitsRegex, "A");
+            assertRegexMatches(nonDigitsRegex, "!");
+            assertRegexMatches(nonDigitsRegex, "è"); // Valid! 'è' is not an ASCII digit
+            assertRegexDoesNotMatch(nonDigitsRegex, "5");
+            assertRegexDoesNotMatch(nonDigitsRegex, "0");
+        }
+
+        @Test
+        @DisplayName("Should correctly handle Unicode Letters and Case Specifics")
+        void unicodeLettersAndCases() {
+            // unicodeLetters: [\p{L}]
+            String uniLetters = Sift.fromStart().oneOrMore().unicodeLetters().andNothingElse().shake();
+            assertEquals("^[\\p{L}]+$", uniLetters);
+            assertRegexMatches(uniLetters, "Aimé");
+            assertRegexMatches(uniLetters, "Müller");
+            assertRegexDoesNotMatch(uniLetters, "123");
+
+            // nonUnicodeLetters: [\P{L}]
+            String nonUniLetters = Sift.fromStart().oneOrMore().nonUnicodeLetters().andNothingElse().shake();
+            assertEquals("^[\\P{L}]+$", nonUniLetters);
+            assertRegexMatches(nonUniLetters, "123 !!");
+            assertRegexDoesNotMatch(nonUniLetters, "è");
+
+            // unicodeLettersUppercaseOnly: [\p{Lu}]
+            String uniUpper = Sift.fromStart().oneOrMore().unicodeLettersUppercaseOnly().andNothingElse().shake();
+            assertEquals("^[\\p{Lu}]+$", uniUpper);
+            assertRegexMatches(uniUpper, "È");
+            assertRegexMatches(uniUpper, "Ñ");
+            assertRegexDoesNotMatch(uniUpper, "è"); // Fails because lowercase
+            assertRegexDoesNotMatch(uniUpper, "A1");
+
+            // unicodeLettersLowercaseOnly: [\p{Ll}]
+            String uniLower = Sift.fromStart().oneOrMore().unicodeLettersLowercaseOnly().andNothingElse().shake();
+            assertEquals("^[\\p{Ll}]+$", uniLower);
+            assertRegexMatches(uniLower, "è");
+            assertRegexMatches(uniLower, "ñ");
+            assertRegexDoesNotMatch(uniLower, "È");
+        }
+
+        @Test
+        @DisplayName("Should correctly handle Unicode Digits and Whitespaces")
+        void unicodeDigitsAndWhitespace() {
+            // unicodeDigits: [\p{Nd}]
+            String uniDigits = Sift.fromStart().exactly(1).unicodeDigits().andNothingElse().shake();
+            assertEquals("^[\\p{Nd}]$", uniDigits);
+            assertRegexMatches(uniDigits, "5");
+            assertRegexMatches(uniDigits, "٣"); // Arabic-Indic digit 3
+            assertRegexDoesNotMatch(uniDigits, "a");
+
+            // nonUnicodeDigits: [\P{Nd}]
+            String nonUniDigits = Sift.fromStart().exactly(1).nonUnicodeDigits().andNothingElse().shake();
+            assertEquals("^[\\P{Nd}]$", nonUniDigits);
+            assertRegexMatches(nonUniDigits, "A");
+            assertRegexDoesNotMatch(nonUniDigits, "٣");
+
+            // unicodeWhitespace: [\p{IsWhite_Space}]
+            String uniSpace = Sift.fromStart().exactly(1).unicodeWhitespace().andNothingElse().shake();
+            assertEquals("^[\\p{IsWhite_Space}]$", uniSpace);
+            assertRegexMatches(uniSpace, " ");
+            assertRegexMatches(uniSpace, "\u00A0"); // Non-breaking space
+            assertRegexDoesNotMatch(uniSpace, "a");
+
+            // nonUnicodeWhitespace: [\P{IsWhite_Space}]
+            String nonUniSpace = Sift.fromStart().exactly(1).nonUnicodeWhitespace().andNothingElse().shake();
+            assertEquals("^[\\P{IsWhite_Space}]$", nonUniSpace);
+            assertRegexMatches(nonUniSpace, "a");
+            assertRegexDoesNotMatch(nonUniSpace, "\u00A0");
+        }
+
+        @Test
+        @DisplayName("Should correctly handle Unicode Word Characters and Alphanumeric")
+        void unicodeAlphanumericAndWords() {
+            // unicodeAlphanumeric: [\p{L}\p{Nd}]
+            String uniAlpha = Sift.fromStart().exactly(1).unicodeAlphanumeric().andNothingElse().shake();
+            assertEquals("^[\\p{L}\\p{Nd}]$", uniAlpha);
+            assertRegexMatches(uniAlpha, "è");
+            assertRegexMatches(uniAlpha, "٣");
+            assertRegexDoesNotMatch(uniAlpha, "_"); // Does NOT include underscore
+
+            // nonUnicodeAlphanumeric: [^\p{L}\p{Nd}]
+            String nonUniAlpha = Sift.fromStart().exactly(1).nonUnicodeAlphanumeric().andNothingElse().shake();
+            assertEquals("^[^\\p{L}\\p{Nd}]$", nonUniAlpha);
+            assertRegexMatches(nonUniAlpha, "!");
+            assertRegexMatches(nonUniAlpha, " ");
+            assertRegexMatches(nonUniAlpha, "_"); // Underscore is NOT alphanumeric, so it matches the negation
+            assertRegexDoesNotMatch(nonUniAlpha, "è");
+            assertRegexDoesNotMatch(nonUniAlpha, "٣");
+
+            // unicodeWordCharacters: [\p{L}\p{Nd}_]
+            String uniWord = Sift.fromStart().exactly(1).unicodeWordCharacters().andNothingElse().shake();
+            assertEquals("^[\\p{L}\\p{Nd}_]$", uniWord);
+            assertRegexMatches(uniWord, "è");
+            assertRegexMatches(uniWord, "٣");
+            assertRegexMatches(uniWord, "_"); // Includes underscore
+            assertRegexDoesNotMatch(uniWord, " ");
+
+            // nonUnicodeWordCharacters: [^\p{L}\p{Nd}_]
+            String nonUniWord = Sift.fromStart().exactly(1).nonUnicodeWordCharacters().andNothingElse().shake();
+            assertEquals("^[^\\p{L}\\p{Nd}_]$", nonUniWord);
+            assertRegexMatches(nonUniWord, "!");
+            assertRegexMatches(nonUniWord, " ");
+            assertRegexDoesNotMatch(nonUniWord, "è");
         }
     }
 }

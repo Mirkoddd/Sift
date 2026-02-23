@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift;
+package com.mirkoddd.sift.core;
 
-import com.mirkoddd.sift.dsl.ConnectorStep;
-import com.mirkoddd.sift.dsl.QuantifierStep;
+import com.mirkoddd.sift.core.dsl.ConnectorStep;
+import com.mirkoddd.sift.core.dsl.QuantifierStep;
 
 /**
  * <h2>Sift - Fluent Regex Builder</h2>
@@ -30,14 +30,14 @@ import com.mirkoddd.sift.dsl.QuantifierStep;
  * {@code
  * String regex = Sift.fromStart()
  * .exactly(3).digits()
- * .followedBy()
+ * .then()
  * .oneOrMore().letters()
  * .shake();
  * }
  * </pre>
  *
  * @author Mirko Dimartino
- * @version 1.0
+ * @version 1.4.0
  */
 public class Sift {
 
@@ -61,7 +61,7 @@ public class Sift {
      *
      * @return A builder configured for free-floating search (no anchors).
      */
-    public static QuantifierStep anywhere() {
+    public static QuantifierStep fromAnywhere() {
         return new SiftBuilder();
     }
 
@@ -74,7 +74,7 @@ public class Sift {
      *
      * @return A connector step ready to append the word to match.
      */
-    public static ConnectorStep wordBoundary() {
+    public static ConnectorStep fromWordBoundary() {
         return new SiftBuilder().wordBoundary();
     }
 }

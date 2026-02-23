@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift;
+package com.mirkoddd.sift.annotations;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
@@ -39,7 +39,7 @@ import java.lang.annotation.Target;
 public @interface SiftMatch {
 
     /**
-     * The class implementing {@link SiftRegexProvider} that contains the {@link SiftBuilder} logic.
+     * The class implementing {@link SiftRegexProvider} that contains the Sift pattern logic.
      * The referenced class must have a public no-args constructor.
      *
      * @return the provider class
@@ -60,4 +60,14 @@ public @interface SiftMatch {
      * @return the payload associated to the constraint
      */
     Class<? extends Payload>[] payload() default {};
+
+    /**
+     * Allows passing compilation flags (e.g., CASE_INSENSITIVE, MULTILINE).
+     * <p>
+     * Example: {@code @SiftMatch(value = MyPattern.class, flags = {SiftMatchFlag.CASE_INSENSITIVE})}
+     *
+     * @return an array of {@link SiftMatchFlag} to be applied during regex compilation
+     * @since 1.4.0
+     */
+    SiftMatchFlag[] flags() default {};
 }

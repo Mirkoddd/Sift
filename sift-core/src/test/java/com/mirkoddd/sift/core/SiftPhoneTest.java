@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift;
+package com.mirkoddd.sift.core;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static com.mirkoddd.sift.Sift.*;
-import static com.mirkoddd.sift.SiftPatterns.*;
+import static com.mirkoddd.sift.core.Sift.*;
+import static com.mirkoddd.sift.core.SiftPatterns.*;
 
-import com.mirkoddd.sift.dsl.SiftPattern;
+import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 @DisplayName("Phone Number Validation Tests")
 class SiftPhoneTest {
@@ -37,7 +37,7 @@ class SiftPhoneTest {
         );
 
         // 1. Define the prefix block: may contain a space after the prefix
-        SiftPattern prefixBlock = anywhere()
+        SiftPattern prefixBlock = fromAnywhere()
                 .pattern(italyPrefix)
                 .then().optional().character(' ');
 
@@ -55,7 +55,7 @@ class SiftPhoneTest {
         String regexPhone = fromStart()
                 .optional().pattern(prefixBlock)
                 .then().exactly(10).digits()
-                .untilEnd()
+                .andNothingElse()
                 .shake();
 
         // Matches

@@ -1,0 +1,292 @@
+/*
+ * Copyright 2026 Mirko Dimartino
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.mirkoddd.sift.core.dsl;
+
+/**
+ * Defines the <b>TYPE</b> of character or pattern to match.
+ * <p>
+ * This interface represents the state immediately after a quantifier has been set
+ * (e.g., {@code exactly(3)} or {@code oneOrMore()}). The method selected here defines
+ * <i>what</i> exactly applies to that quantifier.
+ * <p>
+ * Selecting a type consumes the pending quantifier and transitions the builder to the
+ * {@link ConnectorStep}.
+ */
+public interface TypeStep {
+
+    /**
+     * Matches <b>ANY</b> single character (the Dot {@code .}).
+     * <p>
+     * <b>Note:</b> This usually includes whitespace and symbols, but excludes line terminators
+     * (like {@code \n}) unless specific matcher flags are enabled.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep any();
+
+    /**
+     * Applies the pending quantifier to a specific literal character.
+     * <p>
+     * Example: {@code .exactly(3).character('a')} will match "aaa".
+     * Special regex characters are automatically escaped.
+     *
+     * @param literal The character to match.
+     * @return The connector step to continue building.
+     */
+    ConnectorStep character(char literal);
+
+    /**
+     * Applies the pending quantifier to a complex SiftPattern.
+     * <p>
+     * Example: {@code .optional().pattern(myGroup)} makes the entire group optional.
+     * Internally, this wraps the pattern in a non-capturing group {@code (?:...)} if necessary.
+     *
+     * @param pattern The sub-pattern to apply the quantifier to.
+     * @return The connector step to continue building.
+     */
+    ConnectorStep pattern(SiftPattern pattern);
+
+    /**
+     * Matches any ASCII numeric digit.
+     * <p>
+     * Equivalent to the regex range {@code [0-9]}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep digits();
+
+    /**
+     * Matches any character that is NOT an ASCII digit.
+     * <p>
+     * Equivalent to the regex {@code \D}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep nonDigits();
+
+    /**
+     * Matches any Unicode decimal digit.
+     * <p>
+     * Equivalent to the regex {@code \p{Nd}}.
+     * Unlike {@link #digits()} which is strictly ASCII {@code [0-9]},
+     * this matches digits from other scripts (e.g., Arabic-Indic digits).
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep unicodeDigits();
+
+    /**
+     * Matches any character that is NOT a Unicode decimal digit.
+     * <p>
+     * Equivalent to the regex {@code \P{Nd}}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep nonUnicodeDigits();
+
+    /**
+     * Matches any ASCII letter from the English alphabet (both uppercase and lowercase).
+     * <p>
+     * Equivalent to the regex range {@code [a-zA-Z]}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep letters();
+
+    /**
+     * Matches any character that is NOT an ASCII letter.
+     * <p>
+     * Equivalent to the regex {@code [^a-zA-Z]}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep nonLetters();
+
+    /**
+     * Matches only uppercase ASCII letters.
+     * <p>
+     * Equivalent to the regex range {@code [A-Z]}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep lettersUppercaseOnly();
+
+    /**
+     * Matches only lowercase ASCII letters.
+     * <p>
+     * Equivalent to the regex range {@code [a-z]}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep lettersLowercaseOnly();
+
+    /**
+     * Matches any Unicode letter from any language or script.
+     * <p>
+     * Equivalent to the regex {@code \p{L}}.
+     * Unlike {@link #letters()} which is strictly ASCII {@code [a-zA-Z]},
+     * this correctly matches international characters like 'è', 'ñ', or 'ç'.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep unicodeLetters();
+
+    /**
+     * Matches any character that is NOT a Unicode letter.
+     * <p>
+     * Equivalent to the regex {@code \P{L}}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep nonUnicodeLetters();
+
+    /**
+     * Matches any uppercase Unicode letter from any language.
+     * <p>
+     * Equivalent to the regex {@code \p{Lu}}.
+     * Unlike {@link #lettersUppercaseOnly()} which is strictly ASCII {@code [A-Z]},
+     * this correctly matches uppercase international characters like 'È' or 'Ñ'.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep unicodeLettersUppercaseOnly();
+
+    /**
+     * Matches any lowercase Unicode letter from any language.
+     * <p>
+     * Equivalent to the regex {@code \p{Ll}}.
+     * Unlike {@link #lettersLowercaseOnly()} which is strictly ASCII {@code [a-z]},
+     * this correctly matches lowercase international characters like 'è' or 'ñ'.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep unicodeLettersLowercaseOnly();
+
+    /**
+     * Matches any ASCII alphanumeric character (letters and digits).
+     * <p>
+     * Equivalent to the regex range {@code [a-zA-Z0-9]}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep alphanumeric();
+
+    /**
+     * Matches any character that is NOT an ASCII alphanumeric character.
+     * <p>
+     * Equivalent to the regex {@code [^a-zA-Z0-9]}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep nonAlphanumeric();
+
+    /**
+     * Matches any Unicode alphanumeric character (Unicode letters and Unicode digits).
+     * <p>
+     * Equivalent to the regex {@code [\p{L}\p{Nd}]}.
+     * Unlike {@link #unicodeWordCharacters()}, this does NOT include the underscore.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep unicodeAlphanumeric();
+
+    /**
+     * Matches any character that is NOT a Unicode alphanumeric character.
+     * <p>
+     * Equivalent to the regex {@code [^\p{L}\p{Nd}]}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep nonUnicodeAlphanumeric();
+
+    /**
+     * Matches any ASCII word character (ASCII letters, digits, and underscores).
+     * <p>
+     * Equivalent to the regex {@code \w}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep wordCharacters();
+
+    /**
+     * Matches any character that is NOT an ASCII word character.
+     * <p>
+     * Equivalent to the regex {@code \W}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep nonWordCharacters();
+
+    /**
+     * Matches any Unicode word character (Unicode letters, Unicode digits, and the underscore).
+     * <p>
+     * Equivalent to the regex {@code [\p{L}\p{Nd}_]}.
+     * Unlike {@link #wordCharacters()} which is strictly ASCII {@code \w},
+     * this correctly identifies words in international texts.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep unicodeWordCharacters();
+
+    /**
+     * Matches any character that is NOT a Unicode word character.
+     * <p>
+     * Equivalent to the regex {@code [^\p{L}\p{Nd}_]}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep nonUnicodeWordCharacters();
+
+    // ===================================================================================
+    // WHITESPACE
+    // ===================================================================================
+
+    /**
+     * Matches any ASCII whitespace character (spaces, tabs, line breaks).
+     * <p>
+     * Equivalent to the regex {@code \s}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep whitespace();
+
+    /**
+     * Matches any character that is NOT an ASCII whitespace.
+     * <p>
+     * Equivalent to the regex {@code \S}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep nonWhitespace();
+
+    /**
+     * Matches any Unicode whitespace character (including non-breaking spaces, em-spaces, etc.).
+     * <p>
+     * Equivalent to the regex {@code \p{IsWhite_Space}}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep unicodeWhitespace();
+
+    /**
+     * Matches any character that is NOT a Unicode whitespace.
+     * <p>
+     * Equivalent to the regex {@code \P{IsWhite_Space}}.
+     *
+     * @return The connector step to continue building.
+     */
+    ConnectorStep nonUnicodeWhitespace();
+}

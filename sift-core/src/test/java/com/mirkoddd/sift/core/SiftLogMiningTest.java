@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift;
+package com.mirkoddd.sift.core;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import com.mirkoddd.sift.dsl.SiftPattern;
+import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.mirkoddd.sift.Sift.*;
-import static com.mirkoddd.sift.SiftPatterns.*;
+import static com.mirkoddd.sift.core.Sift.*;
+import static com.mirkoddd.sift.core.SiftPatterns.*;
 
 /**
  * Demonstrates a "Real World" use case: Data Mining / Log Extraction.
@@ -65,12 +65,12 @@ class SiftLogMiningTest {
 
         // Matches content enclosed in single quotes: '...'
         static SiftPattern quoted(SiftPattern inner) {
-            return anywhere().character('\'').followedBy(inner).followedBy('\'');
+            return fromAnywhere().character('\'').followedBy(inner).followedBy('\'');
         }
 
         // Matches content enclosed in curly braces: { ... }
         static SiftPattern braced(SiftPattern inner) {
-            return anywhere().character('{').followedBy(inner).followedBy('}');
+            return fromAnywhere().character('{').followedBy(inner).followedBy('}');
         }
     }
 
@@ -115,11 +115,11 @@ class SiftLogMiningTest {
         SiftPattern action    = literal("Action: ");
 
         // Define complex domain objects using our Grammar
-        SiftPattern validUsername = LogGrammar.quoted(anywhere().oneOrMore().letters());
-        SiftPattern validAction   = LogGrammar.braced(anywhere().pattern(action).then().oneOrMore().letters());
+        SiftPattern validUsername = LogGrammar.quoted(fromAnywhere().oneOrMore().letters());
+        SiftPattern validAction   = LogGrammar.braced(fromAnywhere().pattern(action).then().oneOrMore().letters());
 
         // Build the extraction query: "Find a User... followed by an arrow... followed by an Action"
-        SiftPattern userActionQuery = anywhere()
+        SiftPattern userActionQuery = fromAnywhere()
                 .pattern(userLabel)
                 .followedBy(validUsername)
                 .followedBy(arrow)
@@ -145,12 +145,12 @@ class SiftLogMiningTest {
         SiftPattern actionLogin = literal("Action: Login"); // We are looking for this specific literal
 
         // Define the specific target action
-        SiftPattern loginAction = LogGrammar.braced(anywhere().pattern(actionLogin));
+        SiftPattern loginAction = LogGrammar.braced(fromAnywhere().pattern(actionLogin));
 
         // Build the specific query
-        SiftPattern loginQuery = anywhere()
+        SiftPattern loginQuery = fromAnywhere()
                 .pattern(userLabel)
-                .followedBy(LogGrammar.quoted(anywhere().oneOrMore().letters()))
+                .followedBy(LogGrammar.quoted(fromAnywhere().oneOrMore().letters()))
                 .followedBy(arrow)
                 .followedBy(loginAction);
 

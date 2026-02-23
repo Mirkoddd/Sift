@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift.dsl;
+package com.mirkoddd.sift.core.dsl;
 
 /**
  * Defines <b>HOW MANY TIMES</b> the next element should appear.
@@ -78,4 +78,23 @@ public interface QuantifierStep extends TypeStep {
      * @return The next step to define WHAT is optional.
      */
     TypeStep optional();
+
+    /**
+     * Matches at most {@code max} times. Generates {@code {0,max}}.
+     *
+     * @param max The maximum number of repetitions (must be >= 0).
+     * @return The next step to define WHAT to repeat.
+     * @throws IllegalArgumentException if max is negative.
+     */
+    TypeStep atMost(int max);
+
+    /**
+     * Matches between {@code min} and {@code max} times inclusive. Generates {@code {min,max}}.
+     *
+     * @param min The minimum number of repetitions (must be >= 0).
+     * @param max The maximum number of repetitions (must be >= min).
+     * @return The next step to define WHAT to repeat.
+     * @throws IllegalArgumentException if boundaries are invalid.
+     */
+    TypeStep between(int min, int max);
 }

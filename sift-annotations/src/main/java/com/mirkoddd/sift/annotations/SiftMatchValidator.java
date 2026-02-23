@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift;
+package com.mirkoddd.sift.annotations;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
@@ -32,11 +32,18 @@ public final class SiftMatchValidator implements ConstraintValidator<SiftMatch, 
     private Pattern compiledPattern;
 
     @Override
+    @SuppressWarnings("MagicConstant")
     public void initialize(SiftMatch constraintAnnotation) {
         try {
             SiftRegexProvider provider = constraintAnnotation.value().getDeclaredConstructor().newInstance();
             String rawRegex = provider.getRegex();
-            this.compiledPattern = Pattern.compile(rawRegex);
+
+            int combinedFlags = 0;
+            for (SiftMatchFlag flag : constraintAnnotation.flags()) {
+                combinedFlags |= flag.getValue();
+            }
+
+            this.compiledPattern = Pattern.compile(rawRegex, combinedFlags);
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize SiftRegexProvider: " + constraintAnnotation.value().getName() + ". Ensure it has a public no-args constructor.", e);
         }

@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mirkoddd.sift;
+package com.mirkoddd.sift.core;
 
-import com.mirkoddd.sift.dsl.SiftPattern;
-import com.mirkoddd.sift.internal.RegexSyntax;
+import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 /**
  * <h2>SiftPatterns - Component Factory</h2>
@@ -24,7 +23,7 @@ import com.mirkoddd.sift.internal.RegexSyntax;
  * <p>
  * <b>Usage Recommendation:</b> Statically import methods from this class to keep your code readable.
  * <pre>
- *  {@code import static com.mirkoddd.sift.SiftPatterns.*;}
+ *  {@code import static com.mirkoddd.sift.core.SiftPatterns.*;}
  *  {@code .followedBy(anyOf(literal("A"), literal("B")))}
  * </pre>
  */
