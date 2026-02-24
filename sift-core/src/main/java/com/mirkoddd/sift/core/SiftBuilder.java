@@ -17,6 +17,9 @@ package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Internal implementation of the State Machine.
  */
@@ -27,7 +30,7 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     private String currentQuantifier = RegexSyntax.EMPTY;
     private boolean isBuildingClass = false;
     private boolean canMakePossessiveToMain = false;
-
+    private final Set<String> registeredGroups = new HashSet<>();
     /**
      * Default constructor for standard builder.
      */
@@ -97,6 +100,37 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
         if (min < 0 || max < 0) throw new IllegalArgumentException("Quantities cannot be negative");
         if (min > max) throw new IllegalArgumentException("Min cannot be greater than max");
         currentQuantifier = RegexSyntax.QUANTIFIER_OPEN + min + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE;
+        return this;
+    }
+
+    @Override
+    public ConnectorStep namedCapture(NamedCapture group) {
+        if (group == null) throw new IllegalArgumentException("NamedCapture cannot be null.");
+
+        registeredGroups.add(group.getName());
+
+        mainPattern.append(RegexSyntax.NAMED_GROUP_OPEN)
+                .append(group.getName())
+                .append(RegexSyntax.NAMED_GROUP_NAME_CLOSE)
+                .append(group.getPattern().shake())
+                .append(RegexSyntax.GROUP_CLOSE);
+
+        return this;
+    }
+
+    @Override
+    public ConnectorStep backreference(NamedCapture group) {
+        if (group == null) throw new IllegalArgumentException("Backreference group cannot be null.");
+
+        if (!registeredGroups.contains(group.getName())) {
+            throw new IllegalStateException("The group '" + group.getName() +
+                    "' must be captured with .namedCapture() before it can be referenced.");
+        }
+
+        mainPattern.append(RegexSyntax.NAMED_BACKREFERENCE_OPEN)
+                .append(group.getName())
+                .append(RegexSyntax.NAMED_BACKREFERENCE_CLOSE);
+
         return this;
     }
 

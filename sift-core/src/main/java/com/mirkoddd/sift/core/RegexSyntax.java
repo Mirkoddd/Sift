@@ -58,12 +58,15 @@ final class RegexSyntax {
     public static final String NAMED_GROUP_NAME_CLOSE = ">";
     public static final String OR = "|";
     public static final String INLINE_FLAG_OPEN = "(?";
+    public static final String NAMED_BACKREFERENCE_OPEN = "\\k<";
+    public static final String NAMED_BACKREFERENCE_CLOSE = ">";
     // ===================================================================================
     // CHARACTER CLASSES (SYNTAX)
     // ===================================================================================
     public static final String CLASS_OPEN = "[";
     public static final String CLASS_CLOSE = "]";
     public static final String CLASS_INTERSECTION_NEGATION = "&&[^";
+    public static final String NEGATION = "^";
 
     // ===================================================================================
     // ASCII TYPES (Default)

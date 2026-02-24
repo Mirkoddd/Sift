@@ -75,19 +75,19 @@ public final class SiftPatterns {
     }
 
     /**
-     * Wraps a pattern in a <b>Named Capturing Group</b> {@code (?<name>...)}.
+     * Defines a <b>Named Capturing Group</b> {@code (?<name>...)}.
      * <p>
-     * Named groups allow you to extract data by name instead of index, making the
-     * extraction code more readable (e.g., {@code Matcher.group("userId")}).
+     * This method returns a definition that must be passed to
+     * {@code .namedCapture(NamedCapture)} in the builder.
      *
-     * @param groupName The unique name for this group (must differ from other group names).
-     * @param pattern   The pattern to capture.
-     * @return A SiftPattern wrapped in a named group.
-     */
-    public static SiftPattern capture(String groupName, SiftPattern pattern) {
-        return () -> RegexSyntax.NAMED_GROUP_OPEN +
-                groupName + RegexSyntax.NAMED_GROUP_NAME_CLOSE +
-                pattern.shake() + RegexSyntax.GROUP_CLOSE;
+     * @param groupName The unique name for this group. Must start with a letter and contain only alphanumeric characters.
+     * @param pattern   The pattern to capture within this group.
+     * @return A NamedCapture definition.
+     * @throws IllegalArgumentException if {@code groupName} is null, empty, starts with a digit, or contains non-alphanumeric characters (e.g., spaces, underscores, or symbols).
+     * */
+    public static NamedCapture capture(String groupName, SiftPattern pattern) {
+        GroupName validatedName = GroupName.of(groupName);
+        return NamedCapture.create(validatedName, pattern);
     }
 
     /**
@@ -107,4 +107,19 @@ public final class SiftPatterns {
         };
     }
 
+    public static SiftPattern anythingBut(String chars) {
+        return () -> {
+            StringBuilder sb = new StringBuilder();
+            sb.append(RegexSyntax.CLASS_OPEN);
+            sb.append(RegexSyntax.NEGATION); // Assicurati di avere '^' in RegexSyntax
+
+            for (char c : chars.toCharArray()) {
+                // Usiamo il tuo escaper esistente per sicurezza
+                RegexEscaper.escapeInsideBrackets(c, sb);
+            }
+
+            sb.append(RegexSyntax.CLASS_CLOSE);
+            return sb.toString();
+        };
+    }
 }

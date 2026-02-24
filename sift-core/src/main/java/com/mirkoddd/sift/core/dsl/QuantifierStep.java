@@ -15,6 +15,8 @@
  */
 package com.mirkoddd.sift.core.dsl;
 
+import com.mirkoddd.sift.core.NamedCapture;
+
 /**
  * Defines <b>HOW MANY TIMES</b> the next element should appear.
  * <p>
@@ -97,4 +99,19 @@ public interface QuantifierStep extends TypeStep {
      * @throws IllegalArgumentException if boundaries are invalid.
      */
     TypeStep between(int min, int max);
+
+    /**
+     * Starts a named capturing group using the provided definition.
+     * @param group The named capture definition (name + pattern).
+     * @return A connector step to continue the chain.
+     */
+    ConnectorStep namedCapture(NamedCapture group);
+
+    /**
+     * References a previously captured group by its name.
+     * @param group The named capture definition to refer back to.
+     * @return A connector step to continue the chain.
+     * @throws IllegalStateException if the group has not been captured yet in this builder.
+     */
+    ConnectorStep backreference(NamedCapture group);
 }

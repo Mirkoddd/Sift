@@ -29,6 +29,7 @@ import static com.mirkoddd.sift.core.Sift.fromStart;
 import static com.mirkoddd.sift.core.SiftPatterns.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.mirkoddd.sift.core.dsl.ConnectorStep;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 /**
@@ -345,11 +346,14 @@ class SiftTest {
         @DisplayName("Should handle Named Capturing Groups")
         void namedCapturing() {
             // Target: Extract "12345" from "Order: #12345" using group name "orderId"
+            NamedCapture orderIdGroup = SiftPatterns.capture("orderId",
+                    fromAnywhere().oneOrMore().digits()
+            );
+
             String regex = fromAnywhere()
                     .pattern(literal("Order: #"))
-                    .followedBy(capture("orderId",
-                            fromAnywhere().oneOrMore().digits()
-                    ))
+                    .then()
+                    .namedCapture(orderIdGroup)
                     .shake();
 
             assertEquals("Order: #(?<orderId>[0-9]+)", regex);
@@ -357,6 +361,12 @@ class SiftTest {
             Matcher m = Pattern.compile(regex).matcher("Status for Order: #9988");
             assertTrue(m.find());
             assertEquals("9988", m.group("orderId"));
+        }
+
+        @Test
+        @DisplayName("namedCapture should throw exception when group is null")
+        void namedCaptureNullFailure() {
+            assertThrows(IllegalArgumentException.class, () -> Sift.fromStart().namedCapture(null), "Passing a null NamedCapture should trigger an IllegalArgumentException");
         }
 
         @Test
@@ -404,6 +414,103 @@ class SiftTest {
             } else {
                 assertFalse(p.matcher(input).find());
             }
+        }
+
+        @Test
+        @DisplayName("Should successfully match symmetric text using backreferences (XML-style)")
+        void backreferenceSuccess() {
+
+            ConnectorStep tagContent = fromAnywhere().oneOrMore().letters();
+            NamedCapture tagGroup = SiftPatterns.capture("tag", tagContent);
+
+            SiftPattern open = literal("<");
+            SiftPattern slashOpen = literal("</");
+            SiftPattern close = literal(">");
+
+             String regex = fromStart()
+                    .pattern(open).then().namedCapture(tagGroup).then().pattern(close)             // <tag>
+                    .then().zeroOrMore().any()                                                     // content
+                    .then().pattern(slashOpen).then().backreference(tagGroup).then().pattern(close)// </tag>
+                    .shake();
+
+            assertEquals("^\\<(?<tag>[a-zA-Z]+)\\>.*\\</\\k<tag>\\>", regex);
+
+            assertTrue(Pattern.compile(regex).matcher("<div>content</div>").find());
+            assertTrue(Pattern.compile(regex).matcher("<div></div>").find());
+            assertTrue(Pattern.compile(regex).matcher("<section>more content</section>").find());
+
+            assertFalse(Pattern.compile(regex).matcher("<div>content</span>").find());
+            assertFalse(Pattern.compile(regex).matcher("<div>content<div>").find());
+        }
+
+        @Test
+        @DisplayName("Should match symmetric text with possessive quantifier for performance")
+        void backreferencePossessiveSuccess() {
+            // same test as above but accounting for possessive
+            ConnectorStep tagContent = fromAnywhere().oneOrMore().letters();
+            NamedCapture tagGroup = SiftPatterns.capture("tag", tagContent);
+
+            SiftPattern open = literal("<");
+            SiftPattern slashOpen = literal("</");
+            SiftPattern close = literal(">");
+
+            SiftPattern contentExceptTag = anythingBut("<");
+
+            String regex = fromStart()
+                    .pattern(open).then().namedCapture(tagGroup).then().pattern(close)
+                    .then().zeroOrMore().pattern(contentExceptTag).withoutBacktracking() // Added possessive check here
+                    .then().pattern(slashOpen).then().backreference(tagGroup).then().pattern(close)
+                    .shake();
+
+            String expected = "^\\<(?<tag>[a-zA-Z]+)\\>(?:[^<])*+\\</\\k<tag>\\>";
+            assertEquals(expected, regex);
+            // Validation
+            assertTrue(Pattern.compile(regex).matcher("<div></div>").find());
+            assertTrue(Pattern.compile(regex).matcher("<div>content</div>").find());
+            assertFalse(Pattern.compile(regex).matcher("<div>content</span>").find());
+            assertFalse(Pattern.compile(regex).matcher("<div>content<div>").find());
+
+            String nestedInput = "<div>first</div><div>second</div>";
+            assertTrue(Pattern.compile(regex).matcher(nestedInput).find());
+
+            var matcher = Pattern.compile(regex).matcher(nestedInput);
+            if (matcher.find()) {
+                assertEquals("<div>first</div>", matcher.group(),
+                        "Possessive + Negated Set should stop at the first closing tag");
+            }
+        }
+
+        @Test
+        @DisplayName("Should throw IllegalStateException when backreference is called before capture")
+        void backreferenceOrderValidation() {
+            NamedCapture userGroup = SiftPatterns.capture("user", literal("admin"));
+
+            Exception exception = assertThrows(IllegalStateException.class, () ->
+                    fromStart()
+                    .backreference(userGroup) // throws IllegalStateException
+                    .then()
+                    .namedCapture(userGroup)
+                    .shake());
+
+            assertTrue(exception.getMessage().contains("must be captured"));
+        }
+
+        @Test
+        @DisplayName("backreference should throw exception when group is null")
+        void backreferenceNullFailure() {
+            assertThrows(IllegalArgumentException.class, () ->
+                    Sift.fromStart().backreference(null),
+                    "Passing a null NamedCapture to backreference should trigger an IllegalArgumentException");
+        }
+
+        @Test
+        @DisplayName("backreference should throw exception when group is not registered yet")
+        void backreferenceNotRegisteredFailure() {
+            NamedCapture myGroup = SiftPatterns.capture("myTag", SiftPatterns.literal("test"));
+
+            assertThrows(IllegalStateException.class, () ->
+                    Sift.fromStart().backreference(myGroup),
+                    "Should throw IllegalStateException if the group wasn't captured before being referenced");
         }
     }
 
