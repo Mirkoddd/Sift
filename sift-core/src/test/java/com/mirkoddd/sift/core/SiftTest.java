@@ -911,4 +911,67 @@ class SiftTest {
         constructor.setAccessible(true);
         constructor.newInstance();
     }
+
+    @Nested
+    @DisplayName("10. Lookarounds (Lookahead & Lookbehind)")
+    class Lookarounds {
+
+        @Test
+        @DisplayName("Positive Lookahead: Match 'q' only if followed by 'u'")
+        void positiveLookaheadTest() {
+            String regex = fromAnywhere()
+                    .character('q')
+                    .then()
+                    .pattern(positiveLookahead(literal("u")))
+                    .shake();
+
+            assertEquals("q(?=u)", regex);
+            assertRegexMatches(regex, "question"); // 'q' is followed by 'u'
+            assertRegexDoesNotMatch(regex, "qatar"); // 'q' is followed by 'a'
+        }
+
+        @Test
+        @DisplayName("Negative Lookahead: Match 'foo' only if NOT followed by 'bar'")
+        void negativeLookaheadTest() {
+            String regex = fromStart()
+                    .pattern(literal("foo"))
+                    .then()
+                    .pattern(negativeLookahead(literal("bar")))
+                    .shake();
+
+            assertEquals("^foo(?!bar)", regex);
+            assertRegexMatches(regex, "foobaz");
+            assertRegexMatches(regex, "foo");
+            assertRegexDoesNotMatch(regex, "foobar");
+        }
+
+        @Test
+        @DisplayName("Positive Lookbehind: Match 'apple' only if preceded by 'green '")
+        void positiveLookbehindTest() {
+            String regex = fromAnywhere()
+                    .pattern(positiveLookbehind(literal("green ")))
+                    .then()
+                    .pattern(literal("apple"))
+                    .shake();
+
+            assertEquals("(?<=green )apple", regex);
+            assertRegexMatches(regex, "I like my green apple.");
+            assertRegexDoesNotMatch(regex, "I like my red apple.");
+        }
+
+        @Test
+        @DisplayName("Negative Lookbehind: Match 'cat' only if NOT preceded by 'super'")
+        void negativeLookbehindTest() {
+            String regex = fromAnywhere()
+                    .pattern(negativeLookbehind(literal("super")))
+                    .then()
+                    .pattern(literal("cat"))
+                    .shake();
+
+            assertEquals("(?<!super)cat", regex);
+            assertRegexMatches(regex, "tomcat");
+            assertRegexMatches(regex, "cat");
+            assertRegexDoesNotMatch(regex, "supercat");
+        }
+    }
 }

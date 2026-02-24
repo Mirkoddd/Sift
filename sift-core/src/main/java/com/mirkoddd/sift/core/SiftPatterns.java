@@ -75,6 +75,54 @@ public final class SiftPatterns {
     }
 
     /**
+     * Creates a <b>Positive Lookahead</b> {@code (?=...)}.
+     * <p>
+     * Asserts that the given pattern CAN be matched next, but does not consume any characters.
+     *
+     * @param pattern The pattern that must follow.
+     * @return A SiftPattern representing the positive lookahead.
+     */
+    public static SiftPattern positiveLookahead(SiftPattern pattern) {
+        return () -> RegexSyntax.POSITIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
+    }
+
+    /**
+     * Creates a <b>Negative Lookahead</b> {@code (?!...)}.
+     * <p>
+     * Asserts that the given pattern CANNOT be matched next, and does not consume any characters.
+     *
+     * @param pattern The pattern that must not follow.
+     * @return A SiftPattern representing the negative lookahead.
+     */
+    public static SiftPattern negativeLookahead(SiftPattern pattern) {
+        return () -> RegexSyntax.NEGATIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
+    }
+
+    /**
+     * Creates a <b>Positive Lookbehind</b> {@code (?<=...)}.
+     * <p>
+     * Asserts that the given pattern CAN be matched immediately before the current position.
+     *
+     * @param pattern The pattern that must precede.
+     * @return A SiftPattern representing the positive lookbehind.
+     */
+    public static SiftPattern positiveLookbehind(SiftPattern pattern) {
+        return () -> RegexSyntax.POSITIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
+    }
+
+    /**
+     * Creates a <b>Negative Lookbehind</b> {@code (?<!...)}.
+     * <p>
+     * Asserts that the given pattern CANNOT be matched immediately before the current position.
+     *
+     * @param pattern The pattern that must not precede.
+     * @return A SiftPattern representing the negative lookbehind.
+     */
+    public static SiftPattern negativeLookbehind(SiftPattern pattern) {
+        return () -> RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
+    }
+
+    /**
      * Defines a <b>Named Capturing Group</b> {@code (?<name>...)}.
      * <p>
      * This method returns a definition that must be passed to
@@ -111,10 +159,9 @@ public final class SiftPatterns {
         return () -> {
             StringBuilder sb = new StringBuilder();
             sb.append(RegexSyntax.CLASS_OPEN);
-            sb.append(RegexSyntax.NEGATION); // Assicurati di avere '^' in RegexSyntax
+            sb.append(RegexSyntax.NEGATION);
 
             for (char c : chars.toCharArray()) {
-                // Usiamo il tuo escaper esistente per sicurezza
                 RegexEscaper.escapeInsideBrackets(c, sb);
             }
 

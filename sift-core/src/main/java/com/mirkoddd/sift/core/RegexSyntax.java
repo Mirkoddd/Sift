@@ -60,6 +60,15 @@ final class RegexSyntax {
     public static final String INLINE_FLAG_OPEN = "(?";
     public static final String NAMED_BACKREFERENCE_OPEN = "\\k<";
     public static final String NAMED_BACKREFERENCE_CLOSE = ">";
+
+    // ===================================================================================
+    // LOOKAROUNDS
+    // ===================================================================================
+    public static final String POSITIVE_LOOKAHEAD_OPEN = "(?=";
+    public static final String NEGATIVE_LOOKAHEAD_OPEN = "(?!";
+    public static final String POSITIVE_LOOKBEHIND_OPEN = "(?<=";
+    public static final String NEGATIVE_LOOKBEHIND_OPEN = "(?<!";
+
     // ===================================================================================
     // CHARACTER CLASSES (SYNTAX)
     // ===================================================================================
