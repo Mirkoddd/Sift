@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -27,7 +28,19 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.mirkoddd.sift.core.dsl.SiftPattern;
+
 class SiftPatternsTest {
+
+    private void assertRegexMatches(String regex, String input) {
+        assertTrue(Pattern.compile(regex).matcher(input).find(),
+                "Expected regex [" + regex + "] to match input [" + input + "]");
+    }
+
+    private void assertRegexDoesNotMatch(String regex, String input) {
+        assertFalse(Pattern.compile(regex).matcher(input).find(),
+                "Expected regex [" + regex + "] NOT to match input [" + input + "]");
+    }
 
     @Test
     void testPrivateConstructorIsPrivateAndInvokable() throws Exception {
@@ -96,5 +109,26 @@ class SiftPatternsTest {
         assertFalse(group1.equals(null), "equals(null) must explicitly return false");
 
         assertFalse(group1.equals(new Object()), "equals(differentClass) must explicitly return false");
+    }
+
+    @Test
+    @DisplayName("group() should combine multiple patterns into a non-capturing block")
+    void groupTest() {
+        SiftPattern grouped = SiftPatterns.group(
+                SiftPatterns.literal("Mr."),
+                Sift.fromAnywhere().whitespace()
+        );
+
+        assertEquals("(?:Mr\\.[\\s])", grouped.shake());
+
+        String regex = Sift.fromStart()
+                .optional().pattern(grouped)
+                .then().oneOrMore().letters()
+                .andNothingElse()
+                .shake();
+
+        assertRegexMatches(regex, "Mr. John");
+        assertRegexMatches(regex, "John");
+        assertRegexDoesNotMatch(regex, "Mr.123");
     }
 }

@@ -139,6 +139,32 @@ public final class SiftPatterns {
     }
 
     /**
+     * Combines multiple patterns into a single Non-Capturing Group {@code (?:...)}.
+     * <p>
+     * By requiring at least one mandatory pattern, this method prevents the creation
+     * of empty groups at compile-time.
+     *
+     * @param first The first required pattern.
+     * @param then  Optional additional patterns to include in the same group.
+     * @return A SiftPattern representing the concatenated non-capturing group.
+     */
+    public static SiftPattern group(SiftPattern first, SiftPattern... then) {
+        return () -> {
+            StringBuilder sb = new StringBuilder();
+            sb.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN);
+
+            sb.append(first.shake());
+
+            for (SiftPattern p : then) {
+                sb.append(p.shake());
+            }
+
+            sb.append(RegexSyntax.GROUP_CLOSE);
+            return sb.toString();
+        };
+    }
+
+    /**
      * Creates a literal pattern, automatically escaping special regex characters.
      * <p>
      * This ensures that characters like {@code .}, {@code *}, {@code +}, or {@code ?} are treated
@@ -155,6 +181,16 @@ public final class SiftPatterns {
         };
     }
 
+    /**
+     * Creates a <b>Negated Character Class</b> {@code [^...]}.
+     * <p>
+     * Matches any single character that is <b>not</b> present in the provided string.
+     * Special characters are automatically safely escaped to ensure they are treated
+     * as literals within the regex brackets.
+     *
+     * @param chars A string containing the exact characters to exclude (e.g., "aeiou" to exclude vowels).
+     * @return A SiftPattern representing the negated character set.
+     */
     public static SiftPattern anythingBut(String chars) {
         return () -> {
             StringBuilder sb = new StringBuilder();
