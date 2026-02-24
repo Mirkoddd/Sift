@@ -35,21 +35,27 @@ public final class SiftPatterns {
      * Creates a pattern that matches ANY ONE of the provided options (Logical OR).
      * <p>
      * This generates a non-capturing group: {@code (?:pattern1|pattern2|...)}.
-     * Useful for matching specific sets of words or sub-patterns.
+     * Requires at least two options to form a valid logical OR expression.
      *
-     * @param options The alternative patterns to match.
-     * @return A composable {@link SiftPattern} representing the logic OR.
+     * @param option1           The first mandatory alternative.
+     * @param option2           The second mandatory alternative.
+     * @param additionalOptions Any further alternative patterns.
+     * @return A composable {@link SiftPattern} representing the logical OR.
      */
-    public static SiftPattern anyOf(SiftPattern... options) {
+    public static SiftPattern anyOf(SiftPattern option1, SiftPattern option2, SiftPattern... additionalOptions) {
         return () -> {
             StringBuilder sb = new StringBuilder();
             sb.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN);
-            for (int i = 0; i < options.length; i++) {
-                sb.append(options[i].shake());
-                if (i < options.length - 1) {
-                    sb.append(RegexSyntax.OR);
-                }
+
+            sb.append(option1.shake());
+            sb.append(RegexSyntax.OR);
+            sb.append(option2.shake());
+
+            for (SiftPattern opt : additionalOptions) {
+                sb.append(RegexSyntax.OR);
+                sb.append(opt.shake());
             }
+
             sb.append(RegexSyntax.GROUP_CLOSE);
             return sb.toString();
         };

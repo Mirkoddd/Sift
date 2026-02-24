@@ -28,6 +28,25 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     private boolean isBuildingClass = false;
     private boolean canMakePossessiveToMain = false;
 
+    /**
+     * Default constructor for standard builder.
+     */
+    SiftBuilder() {
+    }
+
+    /**
+     * Constructor that initializes the pattern with global inline flags.
+     *
+     * @param flags The flags to apply (guaranteed to be at least one by the public API).
+     */
+    SiftBuilder(SiftGlobalFlag... flags) {
+        mainPattern.append(RegexSyntax.INLINE_FLAG_OPEN);
+        for (SiftGlobalFlag flag : flags) {
+            mainPattern.append(flag.getSymbol());
+        }
+        mainPattern.append(RegexSyntax.GROUP_CLOSE);
+    }
+
     public SiftBuilder anchorStart() {
         mainPattern.append(RegexSyntax.START_OF_LINE);
         return this;
@@ -246,11 +265,13 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     }
 
     @Override
-    public ConnectorStep followedBy(SiftPattern... patterns) {
-        ConnectorStep current = this;
-        for (SiftPattern p : patterns) {
+    public ConnectorStep followedBy(SiftPattern pattern, SiftPattern... additionalPatterns) {
+        ConnectorStep current = this.then().exactly(1).pattern(pattern);
+
+        for (SiftPattern p : additionalPatterns) {
             current = current.then().exactly(1).pattern(p);
         }
+
         return current;
     }
 
@@ -261,18 +282,27 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
     }
 
     @Override
-    public ConnectorStep including(char... extra) {
+    public ConnectorStep including(char extra, char... additionalExtras) {
         if (isBuildingClass) {
-            for (char c : extra) RegexEscaper.escapeInsideBrackets(c, pendingClass);
+            RegexEscaper.escapeInsideBrackets(extra, pendingClass);
+
+            for (char c : additionalExtras) {
+                RegexEscaper.escapeInsideBrackets(c, pendingClass);
+            }
         }
         return this;
     }
 
     @Override
-    public ConnectorStep excluding(char... excluded) {
+    public ConnectorStep excluding(char excluded, char... additionalExcluded) {
         if (isBuildingClass) {
             pendingClass.append(RegexSyntax.CLASS_INTERSECTION_NEGATION);
-            for (char c : excluded) RegexEscaper.escapeInsideBrackets(c, pendingClass);
+            RegexEscaper.escapeInsideBrackets(excluded, pendingClass);
+
+            for (char c : additionalExcluded) {
+                RegexEscaper.escapeInsideBrackets(c, pendingClass);
+            }
+
             pendingClass.append(RegexSyntax.CLASS_CLOSE);
         }
         return this;

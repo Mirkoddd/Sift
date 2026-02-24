@@ -35,10 +35,11 @@ public interface ConnectorStep extends SiftPattern {
      * This transforms a standard class into a custom set.
      * <br>Example: {@code .digits().including('.')} creates {@code [0-9.]}.
      *
-     * @param extra The characters to add to the class.
+     * @param extra            The first mandatory character to add to the class.
+     * @param additionalExtras Additional optional characters to add.
      * @return The current step, allowing further modifications.
      */
-    ConnectorStep including(char... extra);
+    ConnectorStep including(char extra, char... additionalExtras);
 
     /**
      * Excludes specific characters from the preceding character class.
@@ -46,10 +47,11 @@ public interface ConnectorStep extends SiftPattern {
      * <br>Example: {@code .letters().excluding('x', 'y')} creates a class that matches
      * all letters <b>except</b> 'x' and 'y'.
      *
-     * @param excluded The characters to forbid.
+     * @param excluded           The first mandatory character to forbid.
+     * @param additionalExcluded Additional optional characters to forbid.
      * @return The current step, allowing further modifications.
      */
-    ConnectorStep excluding(char... excluded);
+    ConnectorStep excluding(char excluded, char... additionalExcluded);
 
     /**
      * Transitions back to the {@link QuantifierStep} to begin defining a <b>NEW</b> token.
@@ -78,10 +80,11 @@ public interface ConnectorStep extends SiftPattern {
      * 'anyOf' blocks, or other Sift chains) without repeating the method call.
      * The patterns are appended in the exact order they are provided.
      *
-     * @param patterns One or more sub-patterns to append in the specified order.
+     * @param pattern            The first mandatory sub-pattern to append.
+     * @param additionalPatterns Any further sub-patterns to append in the specified order.
      * @return The current connector step, allowing immediate chaining.
      */
-    ConnectorStep followedBy(SiftPattern... patterns);
+    ConnectorStep followedBy(SiftPattern pattern, SiftPattern... additionalPatterns);
 
     /**
      * Asserts a <b>Word Boundary</b> {@code \b} at the current position.

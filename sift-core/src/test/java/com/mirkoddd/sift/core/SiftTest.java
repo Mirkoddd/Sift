@@ -163,11 +163,12 @@ class SiftTest {
             String regex = fromStart()
                     .pattern(anyOf(
                             literal("cat"),
-                            literal("dog")
+                            literal("dog"),
+                            literal("mouse")
                     ))
                     .shake();
 
-            assertEquals("^(?:cat|dog)", regex);
+            assertEquals("^(?:cat|dog|mouse)", regex);
             assertRegexMatches(regex, "cat");
             assertRegexMatches(regex, "dog");
             assertRegexDoesNotMatch(regex, "bird");
@@ -696,5 +697,111 @@ class SiftTest {
             assertRegexMatches(nonUniWord, " ");
             assertRegexDoesNotMatch(nonUniWord, "è");
         }
+    }
+
+    @Nested
+    @DisplayName("9. Global Inline Flags")
+    class GlobalInlineFlags {
+
+        @Test
+        @DisplayName("Should correctly prepend a single flag (Case Insensitive)")
+        void singleFlag() {
+            String regex = Sift.filteringWith(SiftGlobalFlag.CASE_INSENSITIVE)
+                    .fromStart()
+                    .exactly(5).lettersUppercaseOnly()
+                    .andNothingElse()
+                    .shake();
+
+            assertEquals("(?i)^[A-Z]{5}$", regex);
+
+            // Should match both due to (?i)
+            assertRegexMatches(regex, "PROMO");
+            assertRegexMatches(regex, "promo");
+            assertRegexMatches(regex, "PrOmO");
+
+            // Should fail on invalid characters or length
+            assertRegexDoesNotMatch(regex, "PROMO1");
+            assertRegexDoesNotMatch(regex, "PROM");
+        }
+
+        @Test
+        @DisplayName("Should correctly combine multiple flags")
+        void multipleFlags() {
+            String regex = Sift.filteringWith(SiftGlobalFlag.CASE_INSENSITIVE, SiftGlobalFlag.MULTILINE)
+                    .fromStart()
+                    .oneOrMore().letters()
+                    .andNothingElse()
+                    .shake();
+
+            // Should concatenate the symbols inside the (?...) block
+            assertEquals("(?im)^[a-zA-Z]+$", regex);
+
+            // MULTILINE (?m) changes ^ and $ to match start/end of lines, not just the whole string
+            String multilineInput = "HELLO\nworld\nTEST";
+
+            Matcher matcher = Pattern.compile(regex).matcher(multilineInput);
+            int matchCount = 0;
+            while (matcher.find()) {
+                matchCount++;
+            }
+            // It should find 3 distinct matches, one for each line
+            assertEquals(3, matchCount, "Should match 3 separate lines");
+        }
+
+        @Test
+        @DisplayName("Should handle DOTALL mode correctly")
+        void dotallFlag() {
+            String regex = Sift.filteringWith(SiftGlobalFlag.DOTALL)
+                    .fromStart()
+                    .exactly(3).any()
+                    .andNothingElse()
+                    .shake();
+
+            assertEquals("(?s)^.{3}$", regex);
+
+            // Without (?s), .any() does NOT match \n. With (?s), it does!
+            assertRegexMatches(regex, "A\nB");
+        }
+
+        @Test
+        @DisplayName("Should apply flags when starting from anywhere")
+        void flagsFromAnywhere() {
+            String regex = Sift.filteringWith(SiftGlobalFlag.CASE_INSENSITIVE)
+                    .fromAnywhere()
+                    .exactly(4).lettersUppercaseOnly()
+                    .shake();
+
+            assertEquals("(?i)[A-Z]{4}", regex);
+
+            assertRegexMatches(regex, "some TEST string");
+            assertRegexMatches(regex, "some test string");
+        }
+
+        @Test
+        @DisplayName("Should apply flags when starting from a word boundary")
+        void flagsFromWordBoundary() {
+            String regex = Sift.filteringWith(SiftGlobalFlag.CASE_INSENSITIVE)
+                    .fromWordBoundary()
+                    .then()
+                    .exactly(5).letters()
+                    .shake();
+
+            assertEquals("(?i)\\b[a-zA-Z]{5}", regex);
+
+            assertRegexMatches(regex, "fatal ERROR occurred");
+            assertRegexMatches(regex, "fatal error occurred");
+        }
+    }
+
+    @Test
+    @DisplayName("Utility class Sift should have a private constructor and be instantiable via reflection for coverage")
+    void privateConstructorCoverage() throws Exception {
+        java.lang.reflect.Constructor<Sift> constructor = Sift.class.getDeclaredConstructor();
+
+        assertTrue(java.lang.reflect.Modifier.isPrivate(constructor.getModifiers()),
+                "Sift constructor must be private");
+
+        constructor.setAccessible(true);
+        constructor.newInstance();
     }
 }

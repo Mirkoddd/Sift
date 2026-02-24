@@ -57,7 +57,7 @@ final class RegexSyntax {
     public static final String NAMED_GROUP_OPEN = "(?<";
     public static final String NAMED_GROUP_NAME_CLOSE = ">";
     public static final String OR = "|";
-
+    public static final String INLINE_FLAG_OPEN = "(?";
     // ===================================================================================
     // CHARACTER CLASSES (SYNTAX)
     // ===================================================================================
