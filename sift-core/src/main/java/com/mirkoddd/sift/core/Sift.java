@@ -25,19 +25,24 @@ import com.mirkoddd.sift.core.dsl.QuantifierStep;
  * Sift enforces a state machine flow (Start -> Quantifier -> Type -> Connector) to prevent
  * syntax errors at compile-time.
  * <p>
+ * <b>Thread Safety:</b>
+ * Builder instances returned by this class are <b>not</b> thread-safe.
+ * You should always create a new builder chain for each regular expression generation,
+ * especially in multi-threaded environments like Web Servers (e.g., Spring Boot) or Kotlin Coroutines.
+ * <p>
  * <b>Usage Example:</b>
  * <pre>
  * {@code
  * String regex = Sift.fromStart()
- * .exactly(3).digits()
- * .then()
- * .oneOrMore().letters()
- * .shake();
+ *     .exactly(3).digits()
+ *     .then()
+ *     .oneOrMore().letters()
+ *     .shake();
  * }
  * </pre>
  *
  * @author Mirko Dimartino
- * @version 1.4.0
+ * @version 1.5.0
  */
 public final class Sift {
     private Sift() {

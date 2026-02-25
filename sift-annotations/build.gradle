@@ -12,6 +12,10 @@ java {
     withSourcesJar()
 }
 
+tasks.named('compileJava') {
+    options.release.set(8)
+}
+
 dependencies {
     api project(':sift-core')
 

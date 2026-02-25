@@ -15,12 +15,15 @@
  */
 package com.mirkoddd.sift.core;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 class RegexEscaperTest {
 
@@ -76,5 +79,13 @@ class RegexEscaperTest {
         RegexEscaper.escapeInsideBrackets('_', sb);
 
         assertEquals("a5_", sb.toString());
+    }
+
+    @Test
+    @DisplayName("Should correctly handle and not escape non-ASCII characters")
+    void literalWithNonAsciiCharacters() {
+        SiftPattern pattern = SiftPatterns.literal("Caffè €");
+
+        assertEquals("Caffè €", pattern.shake());
     }
 }

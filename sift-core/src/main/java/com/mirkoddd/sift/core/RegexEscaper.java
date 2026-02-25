@@ -14,12 +14,21 @@
  * limitations under the License.
  */
 package com.mirkoddd.sift.core;
+
 /**
  * Utility class to escape special Regex characters.
  * <p>
- * Optimized for zero-allocation and high performance using direct char comparisons.
+ * Optimized for zero-allocation and high performance using a pre-computed ASCII lookup table.
  */
 final class RegexEscaper {
+    private static final boolean[] SPECIAL_CHAR_TABLE = new boolean[128];
+
+    static {
+        String specialChars = ".?*+^$[](){}|\\<>=!";
+        for (char c : specialChars.toCharArray()) {
+            SPECIAL_CHAR_TABLE[c] = true;
+        }
+    }
 
     private RegexEscaper() {}
 
@@ -27,7 +36,10 @@ final class RegexEscaper {
      * Escapes characters that are special in a general Regex context.
      * <p>
      * Avoids {@code toCharArray()} to prevent object allocation.
-     * Uses a switch statement for O(1) lookup speed.
+     * Uses a boolean array for true O(1) lookup speed on ASCII characters.
+     *
+     * @param text The input string to escape.
+     * @param sb   The StringBuilder to append the escaped string to.
      */
     static void escapeString(String text, StringBuilder sb) {
         final int len = text.length();
@@ -45,6 +57,9 @@ final class RegexEscaper {
      * <p>
      * Inside brackets, only {@code \}, {@code -}, {@code ^}, and {@code ]} need escaping.
      * {@code &} is also escaped to prevent accidental intersection logic ({@code &&}).
+     *
+     * @param c  The character to escape and append.
+     * @param sb The StringBuilder to append to.
      */
     static void escapeInsideBrackets(char c, StringBuilder sb) {
         switch (c) {
@@ -59,13 +74,7 @@ final class RegexEscaper {
         sb.append(c);
     }
 
-    // --- INTERNAL HELPER ---
-
     private static boolean isSpecial(char c) {
-        return switch (c) {
-            case '.', '?', '*', '+', '^', '$', '[', ']', '(', ')', '{', '}', '|', '\\', '<', '>',
-                 '=', '!' -> true;
-            default -> false;
-        };
+        return c < 128 && SPECIAL_CHAR_TABLE[c];
     }
 }
