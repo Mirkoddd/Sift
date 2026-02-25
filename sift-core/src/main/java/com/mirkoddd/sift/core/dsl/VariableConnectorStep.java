@@ -15,15 +15,28 @@
  */
 package com.mirkoddd.sift.core.dsl;
 
+/**
+ * A specialized {@link ConnectorStep} that follows variable-length quantifiers.
+ * <p>
+ * This interface exposes modifiers that are only mathematically or logically valid
+ * when the preceding element has a variable width (e.g., {@code +}, {@code *}, or {@code {min,max}}).
+ *
+ * @author Mirko Dimartino
+ * @since 1.5.0
+ */
 public interface VariableConnectorStep extends ConnectorStep {
+
     /**
-     * Makes the preceding quantifier "possessive", preventing Catastrophic Backtracking (ReDoS).
+     * Makes the preceding quantifier "possessive" (e.g., {@code *+} or {@code ++}),
+     * preventing Catastrophic Backtracking (ReDoS).
      * <p>
      * A possessive quantifier will match as many characters as possible and will <b>never</b>
-     * give them up to try and match the rest of the pattern.
-     * Only available after variable-length quantifiers (e.g., oneOrMore, between).
+     * give them back to the engine to try and satisfy the rest of the pattern.
+     * <p>
+     * <b>Performance Note:</b> Use this when you are certain that the matched sequence
+     * should not be re-evaluated, as it significantly reduces the engine's search space.
      *
-     * @return The current step, allowing further modifications.
+     * @return A standard {@link ConnectorStep}, as possessive modifiers cannot be stacked.
      */
     ConnectorStep withoutBacktracking();
 }
