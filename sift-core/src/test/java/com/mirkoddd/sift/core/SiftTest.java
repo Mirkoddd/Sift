@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -31,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.mirkoddd.sift.core.dsl.ConnectorStep;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
+import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
 
 /**
  * Test suite for Sift library.
@@ -249,18 +252,18 @@ class SiftTest {
         @DisplayName("Should throw exceptions for invalid bounds in new quantifiers")
         void testQuantifierExceptions() {
             // atMost exceptions
-            assertThrows(IllegalArgumentException.class, () -> Sift.fromAnywhere().atMost(-1));
+            assertThrows(IllegalArgumentException.class, () -> fromAnywhere().atMost(-1));
 
             // between exceptions
-            assertThrows(IllegalArgumentException.class, () -> Sift.fromAnywhere().between(-1, 5));
-            assertThrows(IllegalArgumentException.class, () -> Sift.fromAnywhere().between(2, -1));
-            assertThrows(IllegalArgumentException.class, () -> Sift.fromAnywhere().between(5, 2)); // min > max
+            assertThrows(IllegalArgumentException.class, () -> fromAnywhere().between(-1, 5));
+            assertThrows(IllegalArgumentException.class, () -> fromAnywhere().between(2, -1));
+            assertThrows(IllegalArgumentException.class, () -> fromAnywhere().between(5, 2)); // min > max
         }
 
         @Test
         @DisplayName("Should correctly generate regex for wordChars, whitespace, optionally, and andNothingElse")
         void testNewTypesAndTerminals() {
-            String regex = Sift.fromStart()
+            String regex = fromStart()
                     .atMost(3).wordCharacters()
                     .then()
                     .between(1, 2).whitespace()
@@ -304,7 +307,7 @@ class SiftTest {
         @Test
         @DisplayName("Should allow modifiers on shorthand character classes")
         void testModifiersOnShorthands() {
-            String regex = Sift.fromAnywhere()
+            String regex = fromAnywhere()
                     .wordCharacters().excluding('_')
                     .shake();
 
@@ -320,6 +323,40 @@ class SiftTest {
             assertRegexDoesNotMatch(regex, "_");
             // Should NOT match symbols (since they aren't \w to begin with)
             assertRegexDoesNotMatch(regex, "@");
+        }
+
+        @Test
+        @DisplayName("Should ignore possessive modifier on character classes without quantifiers")
+        void coverageIgnorePossessiveOnEmptyQuantifierClass() {
+            // Bypass the compiler by casting to VariableConnectorStep
+            var step = (VariableConnectorStep) Sift.fromAnywhere().digits();
+
+            // isBuildingClass = true, currentQuantifier = empty.
+            // Should gracefully ignore without throwing errors.
+            String regex = step.withoutBacktracking().shake();
+
+            assertEquals("[0-9]", regex);
+        }
+
+        @Test
+        @DisplayName("Should prevent possessive modifier on main pattern if invalid or duplicated")
+        void coverageIgnorePossessiveOnMainPattern() {
+            // No quantifier on a literal (canMakePossessiveToMain = false)
+            var step1 = (VariableConnectorStep) Sift.fromAnywhere().character('a');
+            String regex1 = step1.withoutBacktracking().shake();
+            assertEquals("a", regex1);
+        }
+
+        @Test
+        @DisplayName("Should skip possessive modifier if quantifier already ends with + (Coverage Booster)")
+        void coverageDuplicatePossessiveCondition() {
+            VariableConnectorStep step1 = Sift.fromAnywhere().zeroOrMore().digits();
+
+            ConnectorStep step2 = step1.withoutBacktracking();
+
+            ((VariableConnectorStep) step2).withoutBacktracking();
+
+            assertEquals("[0-9]*+", step2.shake());
         }
     }
 
@@ -346,7 +383,7 @@ class SiftTest {
         @DisplayName("Should handle Named Capturing Groups")
         void namedCapturing() {
             // Target: Extract "12345" from "Order: #12345" using group name "orderId"
-            NamedCapture orderIdGroup = SiftPatterns.capture("orderId",
+            NamedCapture orderIdGroup = capture("orderId",
                     fromAnywhere().oneOrMore().digits()
             );
 
@@ -366,7 +403,7 @@ class SiftTest {
         @Test
         @DisplayName("namedCapture should throw exception when group is null")
         void namedCaptureNullFailure() {
-            assertThrows(IllegalArgumentException.class, () -> Sift.fromStart().namedCapture(null), "Passing a null NamedCapture should trigger an IllegalArgumentException");
+            assertThrows(IllegalArgumentException.class, () -> fromStart().namedCapture(null), "Passing a null NamedCapture should trigger an IllegalArgumentException");
         }
 
         @Test
@@ -421,13 +458,13 @@ class SiftTest {
         void backreferenceSuccess() {
 
             ConnectorStep tagContent = fromAnywhere().oneOrMore().letters();
-            NamedCapture tagGroup = SiftPatterns.capture("tag", tagContent);
+            NamedCapture tagGroup = capture("tag", tagContent);
 
             SiftPattern open = literal("<");
             SiftPattern slashOpen = literal("</");
             SiftPattern close = literal(">");
 
-             String regex = fromStart()
+            String regex = fromStart()
                     .pattern(open).then().namedCapture(tagGroup).then().pattern(close)             // <tag>
                     .then().zeroOrMore().any()                                                     // content
                     .then().pattern(slashOpen).then().backreference(tagGroup).then().pattern(close)// </tag>
@@ -483,14 +520,14 @@ class SiftTest {
         @Test
         @DisplayName("Should throw IllegalStateException when backreference is called before capture")
         void backreferenceOrderValidation() {
-            NamedCapture userGroup = SiftPatterns.capture("user", literal("admin"));
+            NamedCapture userGroup = capture("user", literal("admin"));
 
             Exception exception = assertThrows(IllegalStateException.class, () ->
                     fromStart()
-                    .backreference(userGroup) // throws IllegalStateException
-                    .then()
-                    .namedCapture(userGroup)
-                    .shake());
+                            .backreference(userGroup) // throws IllegalStateException
+                            .then()
+                            .namedCapture(userGroup)
+                            .shake());
 
             assertTrue(exception.getMessage().contains("must be captured"));
         }
@@ -499,17 +536,17 @@ class SiftTest {
         @DisplayName("backreference should throw exception when group is null")
         void backreferenceNullFailure() {
             assertThrows(IllegalArgumentException.class, () ->
-                    Sift.fromStart().backreference(null),
+                            fromStart().backreference(null),
                     "Passing a null NamedCapture to backreference should trigger an IllegalArgumentException");
         }
 
         @Test
         @DisplayName("backreference should throw exception when group is not registered yet")
         void backreferenceNotRegisteredFailure() {
-            NamedCapture myGroup = SiftPatterns.capture("myTag", SiftPatterns.literal("test"));
+            NamedCapture myGroup = capture("myTag", literal("test"));
 
             assertThrows(IllegalStateException.class, () ->
-                    Sift.fromStart().backreference(myGroup),
+                            fromStart().backreference(myGroup),
                     "Should throw IllegalStateException if the group wasn't captured before being referenced");
         }
     }
@@ -540,32 +577,27 @@ class SiftTest {
     class SecurityAndPerformance {
 
         @Test
-        @DisplayName("Should safely ignore withoutBacktracking if no quantifier exists")
-        void possessiveWithoutQuantifier() {
-            String classRegex = fromAnywhere().digits().withoutBacktracking().shake();
-            assertEquals("[0-9]", classRegex);
+        @DisplayName("Should apply possessive quantifier (+) via withoutBacktracking() on variable lengths")
+        void applyPossessiveQuantifier() {
+            // Questo compila perché oneOrMore() restituisce un VariableConnectorStep
+            String regex = Sift.fromAnywhere()
+                    .oneOrMore().digits()
+                    .withoutBacktracking()
+                    .shake();
 
-            String charRegex = fromAnywhere().character('a').withoutBacktracking().shake();
-            assertEquals("a", charRegex);
-
-            String patternRegex = fromAnywhere().pattern(literal("abc")).withoutBacktracking().shake();
-            assertEquals("abc", patternRegex);
+            assertEquals("[0-9]++", regex);
         }
 
         @Test
-        @DisplayName("Should prevent multiple possessive operators if called twice")
-        void possessiveCalledTwice() {
-            String classRegex = fromAnywhere()
-                    .oneOrMore().digits()
-                    .withoutBacktracking().withoutBacktracking()
-                    .shake();
-            assertEquals("[0-9]++", classRegex);
+        @DisplayName("Should wrap pattern in atomic group (?>...) via preventBacktracking()")
+        void applyAtomicGroup() {
+            // Creiamo un pattern base
+            SiftPattern basePattern = Sift.fromAnywhere().exactly(3).digits();
 
-            String charRegex = fromAnywhere()
-                    .oneOrMore().character('a')
-                    .withoutBacktracking().withoutBacktracking()
-                    .shake();
-            assertEquals("a++", charRegex);
+            // Lo blindiamo come gruppo atomico
+            String regex = basePattern.preventBacktracking().shake();
+
+            assertEquals("(?>[0-9]{3})", regex);
         }
 
         @Test
@@ -598,8 +630,8 @@ class SiftTest {
             String optionalRegex = fromAnywhere().optional().digits().withoutBacktracking().shake();
             assertEquals("[0-9]?+", optionalRegex);
 
-            String exactlyRegex = fromAnywhere().exactly(3).digits().withoutBacktracking().shake();
-            assertEquals("[0-9]{3}+", exactlyRegex);
+            String exactlyRegex = fromAnywhere().oneOrMore().digits().withoutBacktracking().shake();
+            assertEquals("[0-9]++", exactlyRegex);
         }
 
         @Test
@@ -634,7 +666,7 @@ class SiftTest {
             // A logical OR wrapped in anti-backtracking protection
             SiftPattern cat = literal("cat");
             SiftPattern dog = literal("dog");
-            SiftPattern animal = anyOf(cat, dog).withoutBacktracking();
+            SiftPattern animal = anyOf(cat, dog).preventBacktracking();
 
             String regex = fromAnywhere().pattern(animal).shake();
 
@@ -666,7 +698,7 @@ class SiftTest {
             // Looks for "c", but finds "b". Fails.
             // NO BACKTRACKING: It will never try the second option "ab". Immediate total failure.
             String atomicRegex = fromStart()
-                    .pattern(aOrAb.withoutBacktracking())
+                    .pattern(aOrAb.preventBacktracking())
                     .followedBy('c')
                     .andNothingElse().shake();
 
@@ -682,7 +714,7 @@ class SiftTest {
         @DisplayName("Should properly restrict and negate ASCII classes")
         void asciiNegations() {
             // nonLetters: [^a-zA-Z]
-            String nonLettersRegex = Sift.fromStart().exactly(1).nonLetters().andNothingElse().shake();
+            String nonLettersRegex = fromStart().exactly(1).nonLetters().andNothingElse().shake();
             assertEquals("^[^a-zA-Z]$", nonLettersRegex);
             assertRegexMatches(nonLettersRegex, "1");
             assertRegexMatches(nonLettersRegex, "!");
@@ -691,7 +723,7 @@ class SiftTest {
             assertRegexDoesNotMatch(nonLettersRegex, "Z");
 
             // nonAlphanumeric: [^a-zA-Z0-9]
-            String nonAlphaRegex = Sift.fromStart().exactly(1).nonAlphanumeric().andNothingElse().shake();
+            String nonAlphaRegex = fromStart().exactly(1).nonAlphanumeric().andNothingElse().shake();
             assertEquals("^[^a-zA-Z0-9]$", nonAlphaRegex);
             assertRegexMatches(nonAlphaRegex, " ");
             assertRegexMatches(nonAlphaRegex, "!");
@@ -699,7 +731,7 @@ class SiftTest {
             assertRegexDoesNotMatch(nonAlphaRegex, "A");
 
             // nonDigits: [\D]
-            String nonDigitsRegex = Sift.fromStart().exactly(1).nonDigits().andNothingElse().shake();
+            String nonDigitsRegex = fromStart().exactly(1).nonDigits().andNothingElse().shake();
             assertEquals("^[\\D]$", nonDigitsRegex);
             assertRegexMatches(nonDigitsRegex, "A");
             assertRegexMatches(nonDigitsRegex, "!");
@@ -712,20 +744,20 @@ class SiftTest {
         @DisplayName("Should correctly handle Unicode Letters and Case Specifics")
         void unicodeLettersAndCases() {
             // unicodeLetters: [\p{L}]
-            String uniLetters = Sift.fromStart().oneOrMore().unicodeLetters().andNothingElse().shake();
+            String uniLetters = fromStart().oneOrMore().unicodeLetters().andNothingElse().shake();
             assertEquals("^[\\p{L}]+$", uniLetters);
             assertRegexMatches(uniLetters, "Aimé");
             assertRegexMatches(uniLetters, "Müller");
             assertRegexDoesNotMatch(uniLetters, "123");
 
             // nonUnicodeLetters: [\P{L}]
-            String nonUniLetters = Sift.fromStart().oneOrMore().nonUnicodeLetters().andNothingElse().shake();
+            String nonUniLetters = fromStart().oneOrMore().nonUnicodeLetters().andNothingElse().shake();
             assertEquals("^[\\P{L}]+$", nonUniLetters);
             assertRegexMatches(nonUniLetters, "123 !!");
             assertRegexDoesNotMatch(nonUniLetters, "è");
 
             // unicodeLettersUppercaseOnly: [\p{Lu}]
-            String uniUpper = Sift.fromStart().oneOrMore().unicodeLettersUppercaseOnly().andNothingElse().shake();
+            String uniUpper = fromStart().oneOrMore().unicodeLettersUppercaseOnly().andNothingElse().shake();
             assertEquals("^[\\p{Lu}]+$", uniUpper);
             assertRegexMatches(uniUpper, "È");
             assertRegexMatches(uniUpper, "Ñ");
@@ -733,7 +765,7 @@ class SiftTest {
             assertRegexDoesNotMatch(uniUpper, "A1");
 
             // unicodeLettersLowercaseOnly: [\p{Ll}]
-            String uniLower = Sift.fromStart().oneOrMore().unicodeLettersLowercaseOnly().andNothingElse().shake();
+            String uniLower = fromStart().oneOrMore().unicodeLettersLowercaseOnly().andNothingElse().shake();
             assertEquals("^[\\p{Ll}]+$", uniLower);
             assertRegexMatches(uniLower, "è");
             assertRegexMatches(uniLower, "ñ");
@@ -744,27 +776,27 @@ class SiftTest {
         @DisplayName("Should correctly handle Unicode Digits and Whitespaces")
         void unicodeDigitsAndWhitespace() {
             // unicodeDigits: [\p{Nd}]
-            String uniDigits = Sift.fromStart().exactly(1).unicodeDigits().andNothingElse().shake();
+            String uniDigits = fromStart().exactly(1).unicodeDigits().andNothingElse().shake();
             assertEquals("^[\\p{Nd}]$", uniDigits);
             assertRegexMatches(uniDigits, "5");
             assertRegexMatches(uniDigits, "٣"); // Arabic-Indic digit 3
             assertRegexDoesNotMatch(uniDigits, "a");
 
             // nonUnicodeDigits: [\P{Nd}]
-            String nonUniDigits = Sift.fromStart().exactly(1).nonUnicodeDigits().andNothingElse().shake();
+            String nonUniDigits = fromStart().exactly(1).nonUnicodeDigits().andNothingElse().shake();
             assertEquals("^[\\P{Nd}]$", nonUniDigits);
             assertRegexMatches(nonUniDigits, "A");
             assertRegexDoesNotMatch(nonUniDigits, "٣");
 
             // unicodeWhitespace: [\p{IsWhite_Space}]
-            String uniSpace = Sift.fromStart().exactly(1).unicodeWhitespace().andNothingElse().shake();
+            String uniSpace = fromStart().exactly(1).unicodeWhitespace().andNothingElse().shake();
             assertEquals("^[\\p{IsWhite_Space}]$", uniSpace);
             assertRegexMatches(uniSpace, " ");
             assertRegexMatches(uniSpace, "\u00A0"); // Non-breaking space
             assertRegexDoesNotMatch(uniSpace, "a");
 
             // nonUnicodeWhitespace: [\P{IsWhite_Space}]
-            String nonUniSpace = Sift.fromStart().exactly(1).nonUnicodeWhitespace().andNothingElse().shake();
+            String nonUniSpace = fromStart().exactly(1).nonUnicodeWhitespace().andNothingElse().shake();
             assertEquals("^[\\P{IsWhite_Space}]$", nonUniSpace);
             assertRegexMatches(nonUniSpace, "a");
             assertRegexDoesNotMatch(nonUniSpace, "\u00A0");
@@ -774,14 +806,14 @@ class SiftTest {
         @DisplayName("Should correctly handle Unicode Word Characters and Alphanumeric")
         void unicodeAlphanumericAndWords() {
             // unicodeAlphanumeric: [\p{L}\p{Nd}]
-            String uniAlpha = Sift.fromStart().exactly(1).unicodeAlphanumeric().andNothingElse().shake();
+            String uniAlpha = fromStart().exactly(1).unicodeAlphanumeric().andNothingElse().shake();
             assertEquals("^[\\p{L}\\p{Nd}]$", uniAlpha);
             assertRegexMatches(uniAlpha, "è");
             assertRegexMatches(uniAlpha, "٣");
             assertRegexDoesNotMatch(uniAlpha, "_"); // Does NOT include underscore
 
             // nonUnicodeAlphanumeric: [^\p{L}\p{Nd}]
-            String nonUniAlpha = Sift.fromStart().exactly(1).nonUnicodeAlphanumeric().andNothingElse().shake();
+            String nonUniAlpha = fromStart().exactly(1).nonUnicodeAlphanumeric().andNothingElse().shake();
             assertEquals("^[^\\p{L}\\p{Nd}]$", nonUniAlpha);
             assertRegexMatches(nonUniAlpha, "!");
             assertRegexMatches(nonUniAlpha, " ");
@@ -790,7 +822,7 @@ class SiftTest {
             assertRegexDoesNotMatch(nonUniAlpha, "٣");
 
             // unicodeWordCharacters: [\p{L}\p{Nd}_]
-            String uniWord = Sift.fromStart().exactly(1).unicodeWordCharacters().andNothingElse().shake();
+            String uniWord = fromStart().exactly(1).unicodeWordCharacters().andNothingElse().shake();
             assertEquals("^[\\p{L}\\p{Nd}_]$", uniWord);
             assertRegexMatches(uniWord, "è");
             assertRegexMatches(uniWord, "٣");
@@ -798,7 +830,7 @@ class SiftTest {
             assertRegexDoesNotMatch(uniWord, " ");
 
             // nonUnicodeWordCharacters: [^\p{L}\p{Nd}_]
-            String nonUniWord = Sift.fromStart().exactly(1).nonUnicodeWordCharacters().andNothingElse().shake();
+            String nonUniWord = fromStart().exactly(1).nonUnicodeWordCharacters().andNothingElse().shake();
             assertEquals("^[^\\p{L}\\p{Nd}_]$", nonUniWord);
             assertRegexMatches(nonUniWord, "!");
             assertRegexMatches(nonUniWord, " ");
@@ -903,9 +935,9 @@ class SiftTest {
     @Test
     @DisplayName("Utility class Sift should have a private constructor and be instantiable via reflection for coverage")
     void privateConstructorCoverage() throws Exception {
-        java.lang.reflect.Constructor<Sift> constructor = Sift.class.getDeclaredConstructor();
+        Constructor<Sift> constructor = Sift.class.getDeclaredConstructor();
 
-        assertTrue(java.lang.reflect.Modifier.isPrivate(constructor.getModifiers()),
+        assertTrue(Modifier.isPrivate(constructor.getModifiers()),
                 "Sift constructor must be private");
 
         constructor.setAccessible(true);

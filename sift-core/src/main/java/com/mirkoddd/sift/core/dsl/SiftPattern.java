@@ -49,7 +49,7 @@ public interface SiftPattern {
      *
      * @return A new SiftPattern wrapped in an atomic group {@code (?>...)}.
      */
-    default SiftPattern withoutBacktracking() {
+    default SiftPattern preventBacktracking() {
         String ATOMIC_OPEN = "(?>";
         String ATOMIC_CLOSE = ")";
         return () -> ATOMIC_OPEN + this.shake() + ATOMIC_CLOSE;

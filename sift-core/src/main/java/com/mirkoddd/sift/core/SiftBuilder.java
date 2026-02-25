@@ -21,7 +21,7 @@ import com.mirkoddd.sift.core.dsl.*;
  * Internal implementation of the State Machine.
  * Orchestrates the DSL flow and delegates regex construction to the PatternAssembler.
  */
-class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
+class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorStep {
 
     private final PatternAssembler assembler;
 
@@ -46,53 +46,68 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
         return this;
     }
 
+    // ===================================================================================
+    // QUANTIFIERS (Fixed length returns ConnectorStep, Variable returns VariableConnectorStep)
+    // ===================================================================================
+
+    @SuppressWarnings("unchecked")
     @Override
-    public TypeStep exactly(int n) {
+    public TypeStep<ConnectorStep> exactly(int n) {
         if (n < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + n);
         assembler.setQuantifier((n == 1) ? RegexSyntax.EMPTY :
                 RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.QUANTIFIER_CLOSE);
-        return this;
+        return (TypeStep<ConnectorStep>) (Object) this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public TypeStep atLeast(int n) {
+    public TypeStep<VariableConnectorStep> atLeast(int n) {
         if (n < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + n);
         assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.COMMA + RegexSyntax.QUANTIFIER_CLOSE);
-        return this;
+        return (TypeStep<VariableConnectorStep>) (Object) this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public TypeStep oneOrMore() {
+    public TypeStep<VariableConnectorStep> oneOrMore() {
         assembler.setQuantifier(RegexSyntax.ONE_OR_MORE);
-        return this;
+        return (TypeStep<VariableConnectorStep>) (Object) this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public TypeStep zeroOrMore() {
+    public TypeStep<VariableConnectorStep> zeroOrMore() {
         assembler.setQuantifier(RegexSyntax.ZERO_OR_MORE);
-        return this;
+        return (TypeStep<VariableConnectorStep>) (Object) this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public TypeStep optional() {
+    public TypeStep<VariableConnectorStep> optional() {
         assembler.setQuantifier(RegexSyntax.OPTIONAL);
-        return this;
+        return (TypeStep<VariableConnectorStep>) (Object) this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public TypeStep atMost(int max) {
+    public TypeStep<VariableConnectorStep> atMost(int max) {
         if (max < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + max);
         assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + "0" + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE);
-        return this;
+        return (TypeStep<VariableConnectorStep>) (Object) this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public TypeStep between(int min, int max) {
+    public TypeStep<VariableConnectorStep> between(int min, int max) {
         if (min < 0 || max < 0) throw new IllegalArgumentException("Quantities cannot be negative");
         if (min > max) throw new IllegalArgumentException("Min cannot be greater than max");
         assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + min + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE);
-        return this;
+        return (TypeStep<VariableConnectorStep>) (Object) this;
     }
+
+    // ===================================================================================
+    // NAMED CAPTURES & BACKREFERENCES
+    // ===================================================================================
 
     @Override
     public ConnectorStep namedCapture(NamedCapture group) {
@@ -107,6 +122,10 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
         assembler.addBackreference(group);
         return this;
     }
+
+    // ===================================================================================
+    // TYPE DEFINITIONS (These return whatever ConnectorStep was passed down)
+    // ===================================================================================
 
     @Override
     public ConnectorStep any() {
@@ -269,6 +288,10 @@ class SiftBuilder implements QuantifierStep, TypeStep, ConnectorStep {
         assembler.addClassRange(RegexSyntax.NON_UNICODE_WHITESPACE);
         return this;
     }
+
+    // ===================================================================================
+    // CONNECTOR METHODS
+    // ===================================================================================
 
     @Override
     public ConnectorStep followedBy(char c) {

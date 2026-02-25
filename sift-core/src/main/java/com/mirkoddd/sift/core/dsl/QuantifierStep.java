@@ -30,7 +30,7 @@ import com.mirkoddd.sift.core.NamedCapture;
  * <li>Sugar: {@code .withOptional(pattern)} (applies quantifier directly to argument)</li>
  * </ul>
  */
-public interface QuantifierStep extends TypeStep {
+public interface QuantifierStep extends TypeStep<ConnectorStep> {
 
     /**
      * Matches exactly {@code n} times. Generates {@code {n}}.
@@ -39,7 +39,7 @@ public interface QuantifierStep extends TypeStep {
      * @return The next step to define WHAT to repeat.
      * @throws IllegalArgumentException if n is negative.
      */
-    TypeStep exactly(int n);
+    TypeStep<ConnectorStep> exactly(int n);
 
     /**
      * Matches at least {@code n} times. Generates {@code {n,}}.
@@ -51,7 +51,7 @@ public interface QuantifierStep extends TypeStep {
      * @return The next step to define WHAT to repeat.
      * @throws IllegalArgumentException if n is negative.
      */
-    TypeStep atLeast(int n);
+    TypeStep<VariableConnectorStep> atLeast(int n);
 
     /**
      * Matches one or more times. Generates {@code +}.
@@ -60,7 +60,7 @@ public interface QuantifierStep extends TypeStep {
      *
      * @return The next step to define WHAT to repeat.
      */
-    TypeStep oneOrMore();
+    TypeStep<VariableConnectorStep> oneOrMore();
 
     /**
      * Matches zero or more times (Greedy). Generates {@code *}.
@@ -69,7 +69,7 @@ public interface QuantifierStep extends TypeStep {
      *
      * @return The next step to define WHAT to repeat.
      */
-    TypeStep zeroOrMore();
+    TypeStep<VariableConnectorStep> zeroOrMore();
 
     /**
      * Matches zero or one time. Generates {@code ?}.
@@ -79,7 +79,7 @@ public interface QuantifierStep extends TypeStep {
      *
      * @return The next step to define WHAT is optional.
      */
-    TypeStep optional();
+    TypeStep<VariableConnectorStep> optional();
 
     /**
      * Matches at most {@code max} times. Generates {@code {0,max}}.
@@ -88,7 +88,7 @@ public interface QuantifierStep extends TypeStep {
      * @return The next step to define WHAT to repeat.
      * @throws IllegalArgumentException if max is negative.
      */
-    TypeStep atMost(int max);
+    TypeStep<VariableConnectorStep> atMost(int max);
 
     /**
      * Matches between {@code min} and {@code max} times inclusive. Generates {@code {min,max}}.
@@ -98,7 +98,7 @@ public interface QuantifierStep extends TypeStep {
      * @return The next step to define WHAT to repeat.
      * @throws IllegalArgumentException if boundaries are invalid.
      */
-    TypeStep between(int min, int max);
+    TypeStep<VariableConnectorStep> between(int min, int max);
 
     /**
      * Starts a named capturing group using the provided definition.

@@ -25,7 +25,7 @@ package com.mirkoddd.sift.core.dsl;
  * Selecting a type consumes the pending quantifier and transitions the builder to the
  * {@link ConnectorStep}.
  */
-public interface TypeStep {
+public interface TypeStep<T extends ConnectorStep> {
 
     /**
      * Matches <b>ANY</b> single character (the Dot {@code .}).
@@ -35,7 +35,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep any();
+    T any();
 
     /**
      * Applies the pending quantifier to a specific literal character.
@@ -46,7 +46,7 @@ public interface TypeStep {
      * @param literal The character to match.
      * @return The connector step to continue building.
      */
-    ConnectorStep character(char literal);
+    T character(char literal);
 
     /**
      * Applies the pending quantifier to a complex SiftPattern.
@@ -57,7 +57,7 @@ public interface TypeStep {
      * @param pattern The sub-pattern to apply the quantifier to.
      * @return The connector step to continue building.
      */
-    ConnectorStep pattern(SiftPattern pattern);
+    T pattern(SiftPattern pattern);
 
     /**
      * Matches any ASCII numeric digit.
@@ -66,7 +66,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep digits();
+    T digits();
 
     /**
      * Matches any character that is NOT an ASCII digit.
@@ -75,7 +75,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep nonDigits();
+    T nonDigits();
 
     /**
      * Matches any Unicode decimal digit.
@@ -86,7 +86,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep unicodeDigits();
+    T unicodeDigits();
 
     /**
      * Matches any character that is NOT a Unicode decimal digit.
@@ -95,7 +95,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep nonUnicodeDigits();
+    T nonUnicodeDigits();
 
     /**
      * Matches any ASCII letter from the English alphabet (both uppercase and lowercase).
@@ -104,7 +104,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep letters();
+    T letters();
 
     /**
      * Matches any character that is NOT an ASCII letter.
@@ -113,7 +113,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep nonLetters();
+    T nonLetters();
 
     /**
      * Matches only uppercase ASCII letters.
@@ -122,7 +122,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep lettersUppercaseOnly();
+    T lettersUppercaseOnly();
 
     /**
      * Matches only lowercase ASCII letters.
@@ -131,7 +131,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep lettersLowercaseOnly();
+    T lettersLowercaseOnly();
 
     /**
      * Matches any Unicode letter from any language or script.
@@ -142,7 +142,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep unicodeLetters();
+    T unicodeLetters();
 
     /**
      * Matches any character that is NOT a Unicode letter.
@@ -151,7 +151,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep nonUnicodeLetters();
+    T nonUnicodeLetters();
 
     /**
      * Matches any uppercase Unicode letter from any language.
@@ -162,7 +162,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep unicodeLettersUppercaseOnly();
+    T unicodeLettersUppercaseOnly();
 
     /**
      * Matches any lowercase Unicode letter from any language.
@@ -173,7 +173,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep unicodeLettersLowercaseOnly();
+    T unicodeLettersLowercaseOnly();
 
     /**
      * Matches any ASCII alphanumeric character (letters and digits).
@@ -182,7 +182,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep alphanumeric();
+    T alphanumeric();
 
     /**
      * Matches any character that is NOT an ASCII alphanumeric character.
@@ -191,7 +191,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep nonAlphanumeric();
+    T nonAlphanumeric();
 
     /**
      * Matches any Unicode alphanumeric character (Unicode letters and Unicode digits).
@@ -201,7 +201,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep unicodeAlphanumeric();
+    T unicodeAlphanumeric();
 
     /**
      * Matches any character that is NOT a Unicode alphanumeric character.
@@ -210,7 +210,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep nonUnicodeAlphanumeric();
+    T nonUnicodeAlphanumeric();
 
     /**
      * Matches any ASCII word character (ASCII letters, digits, and underscores).
@@ -219,7 +219,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep wordCharacters();
+    T wordCharacters();
 
     /**
      * Matches any character that is NOT an ASCII word character.
@@ -228,7 +228,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep nonWordCharacters();
+    T nonWordCharacters();
 
     /**
      * Matches any Unicode word character (Unicode letters, Unicode digits, and the underscore).
@@ -239,7 +239,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep unicodeWordCharacters();
+    T unicodeWordCharacters();
 
     /**
      * Matches any character that is NOT a Unicode word character.
@@ -248,7 +248,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep nonUnicodeWordCharacters();
+    T nonUnicodeWordCharacters();
 
     // ===================================================================================
     // WHITESPACE
@@ -261,7 +261,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep whitespace();
+    T whitespace();
 
     /**
      * Matches any character that is NOT an ASCII whitespace.
@@ -270,7 +270,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep nonWhitespace();
+    T nonWhitespace();
 
     /**
      * Matches any Unicode whitespace character (including non-breaking spaces, em-spaces, etc.).
@@ -279,7 +279,7 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep unicodeWhitespace();
+    T unicodeWhitespace();
 
     /**
      * Matches any character that is NOT a Unicode whitespace.
@@ -288,5 +288,5 @@ public interface TypeStep {
      *
      * @return The connector step to continue building.
      */
-    ConnectorStep nonUnicodeWhitespace();
+    T nonUnicodeWhitespace();
 }
