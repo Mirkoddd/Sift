@@ -23,4 +23,42 @@ subprojects {
             html.required = true
         }
     }
+
+    def genVersionTask = tasks.register("generateVersionClass") {
+
+        def basePackage = "com.mirkoddd.sift"
+        def moduleName = project.name.replace("sift-", "")
+        def fullPackage = "${basePackage}.${moduleName}"
+
+        def packagePath = fullPackage.replace(".", "/")
+        def outputDir = layout.buildDirectory.dir("generated/sources/version/java")
+        def finalFile = outputDir.get().file("${packagePath}/BuildInfo.java").asFile
+
+        inputs.property("version", version)
+        outputs.dir(outputDir)
+
+        doLast {
+            finalFile.parentFile.mkdirs()
+            finalFile.text = """
+package ${fullPackage};
+
+/**
+ * Auto-generated file. Do not modify.
+ */
+public final class BuildInfo {
+    public static final String VERSION = "${version}";
+}
+""".trim()
+        }
+    }
+
+    plugins.withType(JavaPlugin).tap {
+        configureEach {
+            tasks.withType(JavaCompile).configureEach {
+                dependsOn genVersionTask
+            }
+
+            sourceSets.main.java.srcDir(genVersionTask)
+        }
+    }
 }

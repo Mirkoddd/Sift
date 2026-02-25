@@ -44,8 +44,8 @@ import java.util.Objects;
  * </pre>
  *
  * @author Mirko Dimartino
- * @version 1.5.0
- */
+ * @version {@value BuildInfo#VERSION}
+ * */
 public final class Sift {
     private Sift() {
     }

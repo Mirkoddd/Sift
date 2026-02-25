@@ -35,6 +35,7 @@ package com.mirkoddd.sift.annotations;
  * }
  * </pre>
  * @author Mirko Dimartino
+ * @version {@value BuildInfo#VERSION}
  * @since 1.1.0
  */
 public interface SiftRegexProvider {
