@@ -17,6 +17,8 @@ package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.*;
 
+import java.util.Objects;
+
 /**
  * Internal implementation of the State Machine.
  * Orchestrates the DSL flow and delegates regex construction to the PatternAssembler.
@@ -50,13 +52,12 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
     // QUANTIFIERS (Fixed length returns ConnectorStep, Variable returns VariableConnectorStep)
     // ===================================================================================
 
-    @SuppressWarnings("unchecked")
     @Override
     public TypeStep<ConnectorStep> exactly(int n) {
         if (n < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + n);
         assembler.setQuantifier((n == 1) ? RegexSyntax.EMPTY :
                 RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.QUANTIFIER_CLOSE);
-        return (TypeStep<ConnectorStep>) (Object) this;
+        return this;
     }
 
     @SuppressWarnings("unchecked")
@@ -111,14 +112,14 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
 
     @Override
     public ConnectorStep namedCapture(NamedCapture group) {
-        if (group == null) throw new IllegalArgumentException("NamedCapture cannot be null.");
+        Objects.requireNonNull(group, "NamedCapture cannot be null.");
         assembler.addNamedCapture(group);
         return this;
     }
 
     @Override
     public ConnectorStep backreference(NamedCapture group) {
-        if (group == null) throw new IllegalArgumentException("Backreference group cannot be null.");
+        Objects.requireNonNull(group, "Backreference group cannot be null.");
         assembler.addBackreference(group);
         return this;
     }
@@ -141,6 +142,7 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
 
     @Override
     public ConnectorStep pattern(SiftPattern pattern) {
+        Objects.requireNonNull(pattern, "SiftPattern cannot be null");
         assembler.addPattern(pattern);
         return this;
     }
@@ -300,6 +302,9 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
 
     @Override
     public ConnectorStep followedBy(SiftPattern pattern, SiftPattern... additionalPatterns) {
+        Objects.requireNonNull(pattern, "First SiftPattern cannot be null");
+        Objects.requireNonNull(additionalPatterns, "Additional SiftPatterns array cannot be null");
+
         ConnectorStep current = this.then().exactly(1).pattern(pattern);
 
         for (SiftPattern p : additionalPatterns) {

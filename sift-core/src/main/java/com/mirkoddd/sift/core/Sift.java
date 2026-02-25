@@ -18,6 +18,8 @@ package com.mirkoddd.sift.core;
 import com.mirkoddd.sift.core.dsl.ConnectorStep;
 import com.mirkoddd.sift.core.dsl.QuantifierStep;
 
+import java.util.Objects;
+
 /**
  * <h2>Sift - Fluent Regex Builder</h2>
  * The main entry point for programmatically building Type-Safe Regular Expressions.
@@ -56,6 +58,8 @@ public final class Sift {
      * @return An intermediate step to define the starting position or search strategy for the pattern.
      */
     public static SiftStarter filteringWith(SiftGlobalFlag flag, SiftGlobalFlag... flags) {
+        Objects.requireNonNull(flag, "Primary flag cannot be null");
+        Objects.requireNonNull(flags, "Additional flags array cannot be null");
         SiftGlobalFlag[] allFlags = new SiftGlobalFlag[flags.length + 1];
         allFlags[0] = flag;
         System.arraycopy(flags, 0, allFlags, 1, flags.length);

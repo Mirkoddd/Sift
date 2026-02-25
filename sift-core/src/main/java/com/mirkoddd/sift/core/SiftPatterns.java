@@ -17,14 +17,16 @@ package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
+import java.util.Objects;
+
 /**
  * <h2>SiftPatterns - Component Factory</h2>
  * Static utilities to create complex patterns (groups, logic, literals).
  * <p>
  * <b>Usage Recommendation:</b> Statically import methods from this class to keep your code readable.
  * <pre>
- *  {@code import static com.mirkoddd.sift.core.SiftPatterns.*;}
- *  {@code .followedBy(anyOf(literal("A"), literal("B")))}
+ * {@code import static com.mirkoddd.sift.core.SiftPatterns.*;}
+ * {@code .followedBy(anyOf(literal("A"), literal("B")))}
  * </pre>
  */
 public final class SiftPatterns {
@@ -43,6 +45,10 @@ public final class SiftPatterns {
      * @return A composable {@link SiftPattern} representing the logical OR.
      */
     public static SiftPattern anyOf(SiftPattern option1, SiftPattern option2, SiftPattern... additionalOptions) {
+        Objects.requireNonNull(option1, "First option cannot be null");
+        Objects.requireNonNull(option2, "Second option cannot be null");
+        Objects.requireNonNull(additionalOptions, "Additional options array cannot be null");
+
         return () -> {
             StringBuilder sb = new StringBuilder();
             sb.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN);
@@ -71,6 +77,7 @@ public final class SiftPatterns {
      * @return A SiftPattern wrapped in parentheses.
      */
     public static SiftPattern capture(SiftPattern pattern) {
+        Objects.requireNonNull(pattern, "Pattern to capture cannot be null");
         return () -> RegexSyntax.GROUP_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
     }
 
@@ -83,6 +90,7 @@ public final class SiftPatterns {
      * @return A SiftPattern representing the positive lookahead.
      */
     public static SiftPattern positiveLookahead(SiftPattern pattern) {
+        Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
         return () -> RegexSyntax.POSITIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
     }
 
@@ -95,6 +103,7 @@ public final class SiftPatterns {
      * @return A SiftPattern representing the negative lookahead.
      */
     public static SiftPattern negativeLookahead(SiftPattern pattern) {
+        Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
         return () -> RegexSyntax.NEGATIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
     }
 
@@ -107,6 +116,7 @@ public final class SiftPatterns {
      * @return A SiftPattern representing the positive lookbehind.
      */
     public static SiftPattern positiveLookbehind(SiftPattern pattern) {
+        Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
         return () -> RegexSyntax.POSITIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
     }
 
@@ -119,6 +129,7 @@ public final class SiftPatterns {
      * @return A SiftPattern representing the negative lookbehind.
      */
     public static SiftPattern negativeLookbehind(SiftPattern pattern) {
+        Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
         return () -> RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
     }
 
@@ -134,6 +145,7 @@ public final class SiftPatterns {
      * @throws IllegalArgumentException if {@code groupName} is null, empty, starts with a digit, or contains non-alphanumeric characters (e.g., spaces, underscores, or symbols).
      * */
     public static NamedCapture capture(String groupName, SiftPattern pattern) {
+        Objects.requireNonNull(pattern, "Pattern to capture cannot be null");
         GroupName validatedName = GroupName.of(groupName);
         return NamedCapture.create(validatedName, pattern);
     }
@@ -149,6 +161,9 @@ public final class SiftPatterns {
      * @return A SiftPattern representing the concatenated non-capturing group.
      */
     public static SiftPattern group(SiftPattern first, SiftPattern... then) {
+        Objects.requireNonNull(first, "First pattern in group cannot be null");
+        Objects.requireNonNull(then, "Additional patterns array cannot be null");
+
         return () -> {
             StringBuilder sb = new StringBuilder();
             sb.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN);
@@ -174,6 +189,7 @@ public final class SiftPatterns {
      * @return A safe literal pattern (e.g., "12\.50").
      */
     public static SiftPattern literal(String text) {
+        Objects.requireNonNull(text, "Literal text cannot be null");
         return () -> {
             StringBuilder sb = new StringBuilder();
             RegexEscaper.escapeString(text, sb);
@@ -192,6 +208,7 @@ public final class SiftPatterns {
      * @return A SiftPattern representing the negated character set.
      */
     public static SiftPattern anythingBut(String chars) {
+        Objects.requireNonNull(chars, "Excluded characters string cannot be null");
         return () -> {
             StringBuilder sb = new StringBuilder();
             sb.append(RegexSyntax.CLASS_OPEN);

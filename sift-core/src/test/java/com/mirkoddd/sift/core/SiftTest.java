@@ -401,9 +401,14 @@ class SiftTest {
         }
 
         @Test
-        @DisplayName("namedCapture should throw exception when group is null")
+        @DisplayName("namedCapture should throw NullPointerException when group is null")
         void namedCaptureNullFailure() {
-            assertThrows(IllegalArgumentException.class, () -> fromStart().namedCapture(null), "Passing a null NamedCapture should trigger an IllegalArgumentException");
+            NullPointerException exception = assertThrows(NullPointerException.class,
+                    () -> fromStart().namedCapture(null),
+                    "Passing a null NamedCapture should trigger a NullPointerException"
+            );
+
+            assertEquals("NamedCapture cannot be null.", exception.getMessage());
         }
 
         @Test
@@ -533,11 +538,13 @@ class SiftTest {
         }
 
         @Test
-        @DisplayName("backreference should throw exception when group is null")
+        @DisplayName("backreference should throw NullPointerException when group is null")
         void backreferenceNullFailure() {
-            assertThrows(IllegalArgumentException.class, () ->
+            NullPointerException exception = assertThrows(NullPointerException.class, () ->
                             fromStart().backreference(null),
-                    "Passing a null NamedCapture to backreference should trigger an IllegalArgumentException");
+                    "Passing a null NamedCapture to backreference should trigger a NullPointerException");
+
+            assertEquals("Backreference group cannot be null.", exception.getMessage());
         }
 
         @Test

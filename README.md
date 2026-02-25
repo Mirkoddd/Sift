@@ -52,12 +52,12 @@ However, the internal codebase and test suite utilize modern **Java 17** feature
 
 # Key Features
 
-* **Type-Safe by Design:** Sift is built on a rigid State Machine architecture (`QuantifierStep` -> `TypeStep` -> `ConnectorStep`). It is physically impossible to build structurally invalid regex sequences using the builder.
+* **Type-Safe by Design:** Sift is built on a rigid State Machine architecture (`QuantifierStep` -> `TypeStep` -> `ConnectorStep` / `VariableConnectorStep`). It is physically impossible to build structurally invalid regex sequences (like applying possessive modifiers to fixed-length strings) using the builder.
 * **Advanced Regex Capabilities:** Don't hit a wall when requirements get complex. Sift fully supports advanced engine features like Named Capturing Groups, Backreferences, and Lookarounds (Lookahead/Lookbehind), perfectly integrated into the fluent DSL.
 * **Self-Contained Global Flags:** Apply Case-Insensitive, Multiline, or DotAll modes effortlessly via `Sift.filteringWith(...)`. Sift uses inline flags (e.g., `(?i)`), making the resulting `String` 100% portable across databases, JSON payloads, or other languages without relying on external configurations.
 * **ASCII by Default:** Predictability is key. Standard methods like `letters()` or `digits()` default strictly to ASCII (`[a-zA-Z]`, `[0-9]`), preventing unexpected matches with foreign alphabets or alternative numbering systems.
 * **Global Ready:** Need internationalization? Switch explicitly to the `unicode...()` counterparts (e.g., `unicodeLetters()`) to instantly support characters from any language safely.
-* **ReDoS Mitigation Tools:** Java's default regex engine is vulnerable to catastrophic backtracking. Sift exposes possessive quantifiers and atomic groups through a readable `.withoutBacktracking()` modifier, helping you write safer patterns without memorizing obscure syntax.
+* **ReDoS Mitigation Tools:** Java's default regex engine is vulnerable to catastrophic backtracking. Sift helps you write safer patterns without memorizing obscure syntax by exposing possessive quantifiers via `.withoutBacktracking()` and atomic groups via `.preventBacktracking()`.
 * **High Performance & Zero Allocation:** Internally optimized with pre-computed O(1) cache lookups and careful memory management. Sift avoids unnecessary object allocations, ensuring lightning-fast regex generation even in tight loops.
 * **Zero Dependencies:** The `sift-core` engine is pure Java. It doesn't pull in any bloated transitive dependencies, keeping your final artifact size incredibly small.
 * **Android & Enterprise Ready:** Compiled to Java 8 bytecode for maximum compatibility. It ships with built-in Proguard/R8 rules, guaranteeing flawless integration out-of-the-box for both Android applications and modern/legacy Spring Boot servers.
