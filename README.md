@@ -1,4 +1,6 @@
 # Sift
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e931dfa9-02e9-406d-bde7-56f9e0000464"  alt=""/>
+
 [![sift-core](https://img.shields.io/maven-central/v/com.mirkoddd/sift-core?label=sift-core)](https://central.sonatype.com/artifact/com.mirkoddd/sift-core)
 [![sift-annotations](https://img.shields.io/maven-central/v/com.mirkoddd/sift-annotations?label=sift-annotations)](https://central.sonatype.com/artifact/com.mirkoddd/sift-annotations)
 [![Java 8+](https://img.shields.io/badge/Java-8+-blue.svg)](https://adoptium.net/) [![Tests](https://github.com/mirkoddd/Sift/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/mirkoddd/Sift/actions)
@@ -27,22 +29,22 @@ Add Sift to your project dependencies:
     <version>latest-version</version>
 </dependency>
 <dependency>
-<groupId>com.mirkoddd</groupId>
-<artifactId>sift-annotations</artifactId>
-<version>latest-version</version>
+    <groupId>com.mirkoddd</groupId>
+    <artifactId>sift-annotations</artifactId>
+    <version>latest-version</version>
 </dependency>
 ```    
 
 **Gradle:**
 
 ```Groovy
-   // Replace <latest-version> with the version shown in the Maven Central badge above
-
-// Core Engine: Fluent API for Regex generation (Zero external dependencies)
-implementation 'com.mirkoddd:sift-core:<latest-version>'
-
-// Optional: Integration with Jakarta Validation / Hibernate Validator
-implementation 'com.mirkoddd:sift-annotations:<latest-version>'
+    // Replace <latest-version> with the version shown in the Maven Central badge above
+   
+    // Core Engine: Fluent API for Regex generation (Zero external dependencies)
+    implementation 'com.mirkoddd:sift-core:<latest-version>'
+    
+    // Optional: Integration with Jakarta Validation / Hibernate Validator
+    implementation 'com.mirkoddd:sift-annotations:<latest-version>'
  ```   
 ## Compatibility
 
@@ -61,6 +63,7 @@ However, the internal codebase and test suite utilize modern **Java 17** feature
 * **High Performance & Zero Allocation:** Internally optimized with pre-computed O(1) cache lookups and careful memory management. Sift avoids unnecessary object allocations, ensuring lightning-fast regex generation even in tight loops.
 * **Zero Dependencies:** The `sift-core` engine is pure Java. It doesn't pull in any bloated transitive dependencies, keeping your final artifact size incredibly small.
 * **Android & Enterprise Ready:** Compiled to Java 8 bytecode for maximum compatibility. It ships with built-in Proguard/R8 rules, guaranteeing flawless integration out-of-the-box for both Android applications and modern/legacy Spring Boot servers.
+* **Global Null-Safety & Fail-Fast:** Every method in the DSL is protected by strict null-checks. Sift fails immediately with clear feedback if invalid parameters are passed, preventing inconsistent regex states in production.
 * **100% Test Coverage:** Rock-solid reliability tested against edge cases, negations, and complex nested group scenarios.
 
 
@@ -72,20 +75,20 @@ Forget about counting backslashes or memorizing obscure symbols. Sift guides you
 
 ```Java
 
-import static com.mirkoddd.sift.core.Sift.fromStart;
-
-// Goal: Match an international username securely
-String regex = fromStart()
+    import static com.mirkoddd.sift.core.Sift.fromStart;
+    
+    // Goal: Match an international username securely
+    String regex = fromStart()
         .exactly(1).unicodeLettersUppercaseOnly() // Must start with an uppercase letter
         .then()
         .between(3, 15).unicodeWordCharacters().withoutBacktracking() // Secure against ReDoS
         .then()
         .optional().digits() // May end with an ASCII number
         .andNothingElse()
-        .shake();
-
-// Result: ^\p{Lu}[\p{L}\p{Nd}_]{3,15}+[0-9]?$
-
+        .shake(); 
+    
+    // Result: ^\p{Lu}[\p{L}\p{Nd}_]{3,15}+[0-9]?$
+    
 ```
 
 # 2. Seamless Jakarta Validation
@@ -94,29 +97,29 @@ Stop duplicating regex logic in your DTOs. Centralize your rules and reuse them 
 
 ```Java
 
-// 1. Define your reusable rule (e.g., matching "PROMO123")
-public class PromoCodeRule implements SiftRegexProvider {
-
-    public String getRegex() {
-        return Sift.fromStart()
+    // 1. Define your reusable rule (e.g., matching "PROMO123")
+    public class PromoCodeRule implements SiftRegexProvider {
+        
+        public String getRegex() {
+            return Sift.fromStart()
                 .atLeast(4).letters()
                 .then()
                 .exactly(3).digits()
                 .andNothingElse()
                 .shake();
+        }
     }
-}
-
-// 2. Apply it to your models with Type-Safe Flags
-public record ApplyPromoRequest(
+    
+    // 2. Apply it to your models with Type-Safe Flags
+    public record ApplyPromoRequest(
         @SiftMatch(
-                value = PromoCodeRule.class,
-                flags = {SiftMatchFlag.CASE_INSENSITIVE}, // Allows "promo123" to pass
-                message = "Invalid promo code format"
+            value = PromoCodeRule.class, 
+            flags = {SiftMatchFlag.CASE_INSENSITIVE}, // Allows "promo123" to pass
+            message = "Invalid promo code format"
         )
         String promoCode
-) {}
-
+    ) {}
+    
 ```
 
 *Sift compiles the Pattern only once during initialization, ensuring zero performance overhead during validation.*
