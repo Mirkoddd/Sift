@@ -18,6 +18,7 @@ package com.mirkoddd.sift.core;
 import com.mirkoddd.sift.core.dsl.*;
 
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Internal implementation of the State Machine.
@@ -52,13 +53,12 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
     // QUANTIFIERS
     // ===================================================================================
 
-    @SuppressWarnings("unchecked")
     @Override
     public TypeStep<ConnectorStep, CharacterClassConnectorStep> exactly(int n) {
         if (n < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + n);
         assembler.setQuantifier((n == 1) ? RegexSyntax.EMPTY :
                 RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.QUANTIFIER_CLOSE);
-        return (TypeStep<ConnectorStep, CharacterClassConnectorStep>) (Object) this;
+        return this;
     }
 
     @SuppressWarnings("unchecked")
@@ -306,6 +306,10 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
         Objects.requireNonNull(pattern, "First SiftPattern cannot be null");
         Objects.requireNonNull(additionalPatterns, "Additional SiftPatterns array cannot be null");
 
+        for (int i = 0; i < additionalPatterns.length; i++) {
+            Objects.requireNonNull(additionalPatterns[i], "SiftPattern at index " + i + " cannot be null");
+        }
+
         ConnectorStep current = this.then().exactly(1).pattern(pattern);
 
         for (SiftPattern p : additionalPatterns) {
@@ -354,5 +358,9 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
     @Override
     public String shake() {
         return assembler.build();
+    }
+
+    Set<String> getRegisteredGroupNames() {
+        return assembler.getRegisteredGroups();
     }
 }

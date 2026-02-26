@@ -44,6 +44,10 @@ class PatternAssembler {
         mainPattern.append(RegexSyntax.GROUP_CLOSE);
     }
 
+    Set<String> getRegisteredGroups() {
+        return registeredGroups;
+    }
+
     void setQuantifier(String quantifier) {
         this.currentQuantifier = quantifier;
     }
@@ -59,26 +63,37 @@ class PatternAssembler {
     }
 
     void addClassInclusion(char c, char... additionalExtras) {
-            RegexEscaper.escapeInsideBrackets(c, pendingClass);
-            for (char extra : additionalExtras) {
-                RegexEscaper.escapeInsideBrackets(extra, pendingClass);
-            }
+        RegexEscaper.escapeInsideBrackets(c, pendingClass);
+        for (char extra : additionalExtras) {
+            RegexEscaper.escapeInsideBrackets(extra, pendingClass);
+        }
     }
 
     void addClassExclusion(char excluded, char... additionalExcluded) {
-            pendingClass.append(RegexSyntax.CLASS_INTERSECTION_NEGATION);
-            RegexEscaper.escapeInsideBrackets(excluded, pendingClass);
-            for (char c : additionalExcluded) {
-                RegexEscaper.escapeInsideBrackets(c, pendingClass);
-            }
-            pendingClass.append(RegexSyntax.CLASS_CLOSE);
+        pendingClass.append(RegexSyntax.CLASS_INTERSECTION_NEGATION);
+        RegexEscaper.escapeInsideBrackets(excluded, pendingClass);
+        for (char c : additionalExcluded) {
+            RegexEscaper.escapeInsideBrackets(c, pendingClass);
+        }
+        pendingClass.append(RegexSyntax.CLASS_CLOSE);
     }
 
     void addNamedCapture(NamedCapture group) {
         boolean isAdded = registeredGroups.add(group.getName());
-        if (!isAdded){
+        if (!isAdded) {
             throw new IllegalStateException("A capturing group with the name '" + group.getName() +
                     "' has already been defined. Each group name must be unique.");
+        }
+
+        if (group.getPattern() instanceof SiftBuilder) {
+            SiftBuilder subBuilder = (SiftBuilder) group.getPattern();
+            for (String incomingGroup : subBuilder.getRegisteredGroupNames()) {
+                if (!registeredGroups.add(incomingGroup)) {
+                    throw new IllegalStateException("Collision detected: The pattern inside capturing group '" +
+                            group.getName() + "' contains a nested group named '" + incomingGroup +
+                            "' which has already been defined in the current builder.");
+                }
+            }
         }
 
         mainPattern.append(RegexSyntax.NAMED_GROUP_OPEN)
@@ -116,6 +131,18 @@ class PatternAssembler {
 
     void addPattern(SiftPattern pattern) {
         flush();
+
+        if (pattern instanceof SiftBuilder) {
+            SiftBuilder subBuilder = (SiftBuilder) pattern;
+            for (String incomingGroup : subBuilder.getRegisteredGroupNames()) {
+                boolean isAdded = registeredGroups.add(incomingGroup);
+                if (!isAdded) {
+                    throw new IllegalStateException("Collision detected: The sub-pattern contains a capturing group named '" +
+                            incomingGroup + "' which has already been defined in the current pattern.");
+                }
+            }
+        }
+
         if (!currentQuantifier.isEmpty()) {
             mainPattern.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN)
                     .append(pattern.shake())

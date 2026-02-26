@@ -15,6 +15,9 @@
  */
 package com.mirkoddd.sift.core.dsl;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * Represents a component that can be converted into a valid Regex string.
  * <p>

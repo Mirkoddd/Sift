@@ -384,6 +384,17 @@ class SiftTest {
             assertTrue(exception.getMessage().contains(duplicateName));
         }
 
+        @Test
+        @DisplayName("Should throw NullPointerException when a null pattern is passed in followedBy varargs")
+        void followedByNullVarargs() {
+            SiftPattern validPattern = SiftPatterns.literal("valid");
+
+            NullPointerException exception = assertThrows(NullPointerException.class, () ->
+                    Sift.fromAnywhere().letters().followedBy(validPattern, validPattern, null, validPattern)
+            );
+
+            assertTrue(exception.getMessage().contains("cannot be null"));
+        }
     }
 
     @Nested
@@ -1037,20 +1048,81 @@ class SiftTest {
             assertRegexMatches(regex, "tomcat");
             assertRegexMatches(regex, "cat");
             assertRegexDoesNotMatch(regex, "supercat");
-
-            String rege = fromStart()
-                    .exactly(1).unicodeLettersUppercaseOnly() // Must start with an uppercase letter
-                    .then()
-                    .between(3, 15).unicodeWordCharacters().withoutBacktracking() // Secure against ReDoS
-                    .then()
-                    .optional().digits() // May end with an ASCII number
-                    .andNothingElse()
-                    .shake();
-
-            // Result from README:    ^\p{Lu}[\p{L}\p{Nd}_]{3,15}+[0-9]?$
-            // Real result from test: ^[\p{Lu}][\p{L}\p{Nd}_]{3,15}+[0-9]?$
-            // Result:                ^[\p{Lu}][\p{L}\p{Nd}_]{3,15}+[0-9]?$
-            System.out.println(rege);
         }
+    }
+
+    @Test
+    @DisplayName("Should detect group name collisions when injecting nested patterns")
+    void nestedPatternGroupCollision() {
+        SiftPattern nestedModule = Sift.fromAnywhere()
+                .namedCapture(SiftPatterns.capture("id", literal("foo")))
+                .andNothingElse();
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                Sift.fromAnywhere()
+                        .namedCapture(SiftPatterns.capture("id", literal("bar")))
+                        .then()
+                        .pattern(nestedModule) // FAIL!
+                        .shake()
+        );
+
+        assertTrue(exception.getMessage().contains("Collision detected"));
+        assertTrue(exception.getMessage().contains("id"));
+    }
+
+    @Test
+    @DisplayName("Should successfully merge nested patterns with non-colliding groups")
+    void nestedPatternGroupMergeSuccess() {
+        SiftPattern nestedModule = Sift.fromAnywhere()
+                .namedCapture(SiftPatterns.capture("nestedId", fromAnywhere().oneOrMore().digits()))
+                .andNothingElse();
+
+        String regex = Sift.fromAnywhere()
+                .namedCapture(SiftPatterns.capture("mainId", fromAnywhere().oneOrMore().letters()))
+                .then()
+                .pattern(nestedModule)
+                .shake();
+
+        assertEquals("(?<mainId>[a-zA-Z]+)(?<nestedId>[0-9]+)$", regex);
+    }
+
+    @Test
+    @DisplayName("Should detect collisions when a NamedCapture contains nested groups")
+    void namedCaptureNestedGroupCollision() {
+        SiftPattern innerPattern = Sift.fromAnywhere()
+                .namedCapture(SiftPatterns.capture("sharedId", Sift.fromAnywhere().oneOrMore().digits()))
+                .andNothingElse();
+
+        NamedCapture wrapperGroup = SiftPatterns.capture("wrapper", innerPattern);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                Sift.fromAnywhere()
+                        .namedCapture(SiftPatterns.capture("sharedId", Sift.fromAnywhere().oneOrMore().letters()))
+                        .then()
+                        .namedCapture(wrapperGroup) // FAIL!
+                        .shake()
+        );
+
+        assertTrue(exception.getMessage().contains("Collision detected"));
+        assertTrue(exception.getMessage().contains("wrapper"));
+        assertTrue(exception.getMessage().contains("sharedId"));
+    }
+
+    @Test
+    @DisplayName("Should successfully merge NamedCapture containing non-colliding nested groups")
+    void namedCaptureNestedGroupMergeSuccess() {
+        SiftPattern innerPattern = Sift.fromAnywhere()
+                .namedCapture(SiftPatterns.capture("innerId", Sift.fromAnywhere().oneOrMore().digits()))
+                .andNothingElse();
+
+        NamedCapture wrapperGroup = SiftPatterns.capture("wrapper", innerPattern);
+
+        String regex = Sift.fromAnywhere()
+                .namedCapture(SiftPatterns.capture("mainId", Sift.fromAnywhere().oneOrMore().letters()))
+                .then()
+                .namedCapture(wrapperGroup)
+                .shake();
+
+        assertEquals("(?<mainId>[a-zA-Z]+)(?<wrapper>(?<innerId>[0-9]+)$)", regex);
     }
 }
