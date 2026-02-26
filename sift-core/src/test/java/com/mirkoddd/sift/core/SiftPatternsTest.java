@@ -138,6 +138,33 @@ class SiftPatternsTest {
     }
 
     @Test
+    @DisplayName("Anti-Pattern: Manual concatenation with null creates a silent logic bug")
+    void manualConcatenation_withNull_createsSilentBug() {
+        // Arrange
+        String userInput = null;
+
+        // Act: The developer manually concatenates (Code Smell / Anti-Pattern).
+        // In Java, "user_" + null evaluates to the valid string "user_null".
+        String regex = literal("user_" + userInput).shake();
+
+        // Assert: The Sift engine accepts it without errors, creating an invisible bug.
+        assertEquals("user_null", regex, "It should silently generate a search for 'user_null'");
+    }
+
+    @Test
+    @DisplayName("Best Practice: Using the DSL protects against null logic bugs (Fail-Fast)")
+    void usingDsl_withNull_failsFast() {
+        // Arrange
+        String userInput = null;
+
+        // Act & Assert: The developer uses the native DSL features (e.g., group or followedBy).
+        // The Fail-Fast architecture immediately catches the null parameter.
+        assertThrows(NullPointerException.class, () ->
+                group(literal("user_"), literal(userInput))
+        );
+    }
+
+    @Test
     void anythingBut_withEmptyString_throwsIllegalArgumentException() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,

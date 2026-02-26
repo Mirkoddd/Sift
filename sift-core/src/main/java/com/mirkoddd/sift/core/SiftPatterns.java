@@ -233,6 +233,16 @@ public final class SiftPatterns {
      * <p>
      * This ensures that characters like {@code .}, {@code *}, {@code +}, or {@code ?} are treated
      * as text, not as regex operators.
+     * <p>
+     * <b>Bug Prevention Note:</b>
+     * Avoid manual string concatenation before calling this method. Concatenating variables
+     * can lead to silent logic bugs because Java converts nulls to the string "null".
+     * <ul>
+     * <li><b>Anti-Pattern (Silent Bug):</b> {@code literal("user_" + userInput)}<br>
+     * If userInput is null, this silently generates a valid regex searching for "user_null".</li>
+     * <li><b>Best Practice (Fail-Fast):</b> {@code group(literal("user_"), literal(userInput))}<br>
+     * Throws an immediate NullPointerException if userInput is null, protecting your logic.</li>
+     * </ul>
      *
      * @param text The literal text to match (e.g., "12.50").
      * @return A safe literal pattern (e.g., "12\.50").
