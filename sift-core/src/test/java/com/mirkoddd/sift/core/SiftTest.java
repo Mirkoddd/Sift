@@ -362,6 +362,28 @@ class SiftTest {
             );
         }
 
+        @Test
+        @DisplayName("Should throw IllegalStateException when defining duplicate group names")
+        void throwOnDuplicateGroupNames() {
+            String duplicateName = "user";
+
+            SiftPattern digits = fromAnywhere().digits();
+            SiftPattern letters = fromAnywhere().letters();
+
+            NamedCapture group1 = capture(duplicateName, digits);
+            NamedCapture group2 = capture(duplicateName, letters);
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                    Sift.fromAnywhere()
+                            .namedCapture(group1)
+                            .then()
+                            .namedCapture(group2)
+                            .shake()
+            );
+
+            assertTrue(exception.getMessage().contains(duplicateName));
+        }
+
     }
 
     @Nested

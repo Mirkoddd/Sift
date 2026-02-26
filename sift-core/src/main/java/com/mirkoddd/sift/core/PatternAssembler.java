@@ -75,7 +75,12 @@ class PatternAssembler {
     }
 
     void addNamedCapture(NamedCapture group) {
-        registeredGroups.add(group.getName());
+        boolean isAdded = registeredGroups.add(group.getName());
+        if (!isAdded){
+            throw new IllegalStateException("A capturing group with the name '" + group.getName() +
+                    "' has already been defined. Each group name must be unique.");
+        }
+
         mainPattern.append(RegexSyntax.NAMED_GROUP_OPEN)
                 .append(group.getName())
                 .append(RegexSyntax.NAMED_GROUP_NAME_CLOSE)
