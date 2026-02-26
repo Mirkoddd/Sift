@@ -26,8 +26,10 @@ import java.lang.reflect.Modifier;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+import static com.mirkoddd.sift.core.Sift.filteringWith;
 import static com.mirkoddd.sift.core.Sift.fromAnywhere;
 import static com.mirkoddd.sift.core.Sift.fromStart;
+import static com.mirkoddd.sift.core.SiftGlobalFlag.CASE_INSENSITIVE;
 import static com.mirkoddd.sift.core.SiftPatterns.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -358,6 +360,15 @@ class SiftTest {
 
             assertEquals("[0-9]*+", step2.shake());
         }
+
+        @Test
+        @DisplayName("Should throw NullPointerException when a null flag is passed in varargs")
+        void filteringWith_withNullElementInVarargs_throwsNullPointerException() {
+            assertThrows(NullPointerException.class, () ->
+                    filteringWith(CASE_INSENSITIVE, (SiftGlobalFlag) null)
+            );
+        }
+
     }
 
     @Nested
@@ -852,7 +863,7 @@ class SiftTest {
         @Test
         @DisplayName("Should correctly prepend a single flag (Case Insensitive)")
         void singleFlag() {
-            String regex = Sift.filteringWith(SiftGlobalFlag.CASE_INSENSITIVE)
+            String regex = filteringWith(CASE_INSENSITIVE)
                     .fromStart()
                     .exactly(5).lettersUppercaseOnly()
                     .andNothingElse()
@@ -873,7 +884,7 @@ class SiftTest {
         @Test
         @DisplayName("Should correctly combine multiple flags")
         void multipleFlags() {
-            String regex = Sift.filteringWith(SiftGlobalFlag.CASE_INSENSITIVE, SiftGlobalFlag.MULTILINE)
+            String regex = filteringWith(CASE_INSENSITIVE, SiftGlobalFlag.MULTILINE)
                     .fromStart()
                     .oneOrMore().letters()
                     .andNothingElse()
@@ -897,7 +908,7 @@ class SiftTest {
         @Test
         @DisplayName("Should handle DOTALL mode correctly")
         void dotallFlag() {
-            String regex = Sift.filteringWith(SiftGlobalFlag.DOTALL)
+            String regex = filteringWith(SiftGlobalFlag.DOTALL)
                     .fromStart()
                     .exactly(3).any()
                     .andNothingElse()
@@ -912,7 +923,7 @@ class SiftTest {
         @Test
         @DisplayName("Should apply flags when starting from anywhere")
         void flagsFromAnywhere() {
-            String regex = Sift.filteringWith(SiftGlobalFlag.CASE_INSENSITIVE)
+            String regex = filteringWith(CASE_INSENSITIVE)
                     .fromAnywhere()
                     .exactly(4).lettersUppercaseOnly()
                     .shake();
@@ -926,7 +937,7 @@ class SiftTest {
         @Test
         @DisplayName("Should apply flags when starting from a word boundary")
         void flagsFromWordBoundary() {
-            String regex = Sift.filteringWith(SiftGlobalFlag.CASE_INSENSITIVE)
+            String regex = filteringWith(CASE_INSENSITIVE)
                     .fromWordBoundary()
                     .then()
                     .exactly(5).letters()
@@ -1011,6 +1022,20 @@ class SiftTest {
             assertRegexMatches(regex, "tomcat");
             assertRegexMatches(regex, "cat");
             assertRegexDoesNotMatch(regex, "supercat");
+
+            String rege = fromStart()
+                    .exactly(1).unicodeLettersUppercaseOnly() // Must start with an uppercase letter
+                    .then()
+                    .between(3, 15).unicodeWordCharacters().withoutBacktracking() // Secure against ReDoS
+                    .then()
+                    .optional().digits() // May end with an ASCII number
+                    .andNothingElse()
+                    .shake();
+
+            // Result from README:    ^\p{Lu}[\p{L}\p{Nd}_]{3,15}+[0-9]?$
+            // Real result from test: ^[\p{Lu}][\p{L}\p{Nd}_]{3,15}+[0-9]?$
+            // Result:                ^[\p{Lu}][\p{L}\p{Nd}_]{3,15}+[0-9]?$
+            System.out.println(rege);
         }
     }
 }

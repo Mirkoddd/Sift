@@ -18,16 +18,17 @@ package com.mirkoddd.sift.core.dsl;
 import com.mirkoddd.sift.core.NamedCapture;
 
 /**
- * Defines <b>HOW MANY TIMES</b> the next element should appear.
+ * Defines <b>HOW MANY TIMES</b> the next element should appear, or injects structural elements.
  * <p>
  * This interface extends {@link TypeStep}, which allows for a concise syntax:
  * if no quantifier is explicitly chosen, it defaults to matching <b>exactly once</b>.
  * <p>
  * <b>Flow Examples:</b>
  * <ul>
- * <li>Explicit: {@code .exactly(3).digits()}</li>
- * <li>Implicit: {@code .digits()} (implies exactly 1)</li>
- * <li>Sugar: {@code .withOptional(pattern)} (applies quantifier directly to argument)</li>
+ * <li>Explicit Quantity: {@code .exactly(3).digits()}</li>
+ * <li>Implicit Quantity: {@code .digits()} (implies exactly 1)</li>
+ * <li>Named Capture: {@code .namedCapture(groupDefinition)} (injects a named group)</li>
+ * <li>Backreference: {@code .backreference(groupDefinition)} (references a previous group)</li>
  * </ul>
  */
 public interface QuantifierStep extends TypeStep<ConnectorStep> {

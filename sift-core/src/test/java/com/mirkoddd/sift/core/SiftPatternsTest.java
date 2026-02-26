@@ -15,6 +15,11 @@
  */
 package com.mirkoddd.sift.core;
 
+import static com.mirkoddd.sift.core.SiftPatterns.anyOf;
+import static com.mirkoddd.sift.core.SiftPatterns.anythingBut;
+import static com.mirkoddd.sift.core.SiftPatterns.group;
+import static com.mirkoddd.sift.core.SiftPatterns.literal;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import java.lang.reflect.Constructor;
@@ -56,7 +61,7 @@ class SiftPatternsTest {
     @DisplayName("Should throw exception when group name is null")
     void groupNameNullFailure() {
         assertThrows(IllegalArgumentException.class, () -> {
-            SiftPatterns.capture(null, SiftPatterns.literal("abc"));
+            SiftPatterns.capture(null, literal("abc"));
         }, "Should not allow null group names");
     }
 
@@ -64,15 +69,15 @@ class SiftPatternsTest {
     @DisplayName("Should throw exception when group name is invalid (starts with digit or has symbols)")
     void groupNameInvalidFailure() {
         assertThrows(IllegalArgumentException.class, () -> {
-            SiftPatterns.capture("123group", SiftPatterns.literal("abc"));
+            SiftPatterns.capture("123group", literal("abc"));
         });
 
         assertThrows(IllegalArgumentException.class, () -> {
-            SiftPatterns.capture("group-name", SiftPatterns.literal("abc"));
+            SiftPatterns.capture("group-name", literal("abc"));
         });
 
         assertThrows(IllegalArgumentException.class, () -> {
-            SiftPatterns.capture("", SiftPatterns.literal("abc"));
+            SiftPatterns.capture("", literal("abc"));
         });
     }
 
@@ -114,8 +119,8 @@ class SiftPatternsTest {
     @Test
     @DisplayName("group() should combine multiple patterns into a non-capturing block")
     void groupTest() {
-        SiftPattern grouped = SiftPatterns.group(
-                SiftPatterns.literal("Mr."),
+        SiftPattern grouped = group(
+                literal("Mr."),
                 Sift.fromAnywhere().whitespace()
         );
 
@@ -130,5 +135,41 @@ class SiftPatternsTest {
         assertRegexMatches(regex, "Mr. John");
         assertRegexMatches(regex, "John");
         assertRegexDoesNotMatch(regex, "Mr.123");
+    }
+
+    @Test
+    void anythingBut_withEmptyString_throwsIllegalArgumentException() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> anythingBut("")
+        );
+
+        assertEquals("Excluded characters string cannot be empty", exception.getMessage());
+    }
+
+    @Test
+    void literal_withEmptyString_throwsIllegalArgumentException() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> literal("")
+        );
+
+        assertEquals("Literal text cannot be empty. Use zero-width assertions if intentional.", exception.getMessage());
+    }
+
+    @Test
+    void anyOf_withNullElementInVarargs_throwsNullPointerException() {
+        SiftPattern validPattern = literal("test");
+        assertThrows(NullPointerException.class, () ->
+                anyOf(validPattern, validPattern, (SiftPattern) null)
+        );
+    }
+
+    @Test
+    void group_withNullElementInVarargs_throwsNullPointerException() {
+        SiftPattern validPattern = literal("test");
+        assertThrows(NullPointerException.class, () ->
+                group(validPattern, (SiftPattern) null)
+        );
     }
 }

@@ -31,7 +31,8 @@ import java.util.Objects;
  */
 public final class SiftPatterns {
 
-    private SiftPatterns() {}
+    private SiftPatterns() {
+    }
 
     /**
      * Creates a pattern that matches ANY ONE of the provided options (Logical OR).
@@ -48,6 +49,10 @@ public final class SiftPatterns {
         Objects.requireNonNull(option1, "First option cannot be null");
         Objects.requireNonNull(option2, "Second option cannot be null");
         Objects.requireNonNull(additionalOptions, "Additional options array cannot be null");
+
+        for (SiftPattern opt : additionalOptions) {
+            Objects.requireNonNull(opt, "Additional option cannot be null");
+        }
 
         return () -> {
             StringBuilder sb = new StringBuilder();
@@ -85,6 +90,16 @@ public final class SiftPatterns {
      * Creates a <b>Positive Lookahead</b> {@code (?=...)}.
      * <p>
      * Asserts that the given pattern CAN be matched next, but does not consume any characters.
+     * <br><b>Example:</b>
+     * <pre>{@code
+     * // Match "test" only if followed by "123", without consuming "123"
+     * String regex = Sift.fromAnywhere()
+     *         .pattern(literal("test"))
+     *         .followedBy(positiveLookahead(literal("123")))
+     *         .shake();
+     * // Result: test(?=123)
+     * // "test123" matches "test" at position 0-4 (doesn't consume "123")
+     * }</pre>
      *
      * @param pattern The pattern that must follow.
      * @return A SiftPattern representing the positive lookahead.
@@ -98,6 +113,16 @@ public final class SiftPatterns {
      * Creates a <b>Negative Lookahead</b> {@code (?!...)}.
      * <p>
      * Asserts that the given pattern CANNOT be matched next, and does not consume any characters.
+     * <br><b>Example:</b>
+     * <pre>{@code
+     * // Match "test" only if NOT followed by "123"
+     * String regex = Sift.fromAnywhere()
+     *         .pattern(literal("test"))
+     *         .followedBy(negativeLookahead(literal("123")))
+     *         .shake();
+     * // Result: test(?!123)
+     * // "test999" matches "test", but "test123" fails entirely
+     * }</pre>
      *
      * @param pattern The pattern that must not follow.
      * @return A SiftPattern representing the negative lookahead.
@@ -111,6 +136,16 @@ public final class SiftPatterns {
      * Creates a <b>Positive Lookbehind</b> {@code (?<=...)}.
      * <p>
      * Asserts that the given pattern CAN be matched immediately before the current position.
+     * <br><b>Example:</b>
+     * <pre>{@code
+     * // Match "123" only if immediately preceded by "EUR"
+     * String regex = Sift.fromAnywhere()
+     *         .pattern(positiveLookbehind(literal("EUR")))
+     *         .followedBy(literal("123"))
+     *         .shake();
+     * // Result: (?<=EUR)123
+     * // Matches "123" in "EUR123", but fails in "USD123"
+     * }</pre>
      *
      * @param pattern The pattern that must precede.
      * @return A SiftPattern representing the positive lookbehind.
@@ -124,6 +159,16 @@ public final class SiftPatterns {
      * Creates a <b>Negative Lookbehind</b> {@code (?<!...)}.
      * <p>
      * Asserts that the given pattern CANNOT be matched immediately before the current position.
+     * <br><b>Example:</b>
+     * <pre>{@code
+     * // Match "123" only if NOT preceded by "EUR"
+     * String regex = Sift.fromAnywhere()
+     *         .pattern(negativeLookbehind(literal("EUR")))
+     *         .followedBy(literal("123"))
+     *         .shake();
+     * // Result: (?<!EUR)123
+     * // Matches "123" in "USD123", but fails in "EUR123"
+     * }</pre>
      *
      * @param pattern The pattern that must not precede.
      * @return A SiftPattern representing the negative lookbehind.
@@ -143,11 +188,11 @@ public final class SiftPatterns {
      * @param pattern   The pattern to capture within this group.
      * @return A NamedCapture definition.
      * @throws IllegalArgumentException if {@code groupName} is null, empty, starts with a digit, or contains non-alphanumeric characters (e.g., spaces, underscores, or symbols).
-     * */
+     */
     public static NamedCapture capture(String groupName, SiftPattern pattern) {
         Objects.requireNonNull(pattern, "Pattern to capture cannot be null");
         GroupName validatedName = GroupName.of(groupName);
-        return NamedCapture.create(validatedName, pattern);
+        return new NamedCapture(validatedName, pattern);
     }
 
     /**
@@ -163,6 +208,10 @@ public final class SiftPatterns {
     public static SiftPattern group(SiftPattern first, SiftPattern... then) {
         Objects.requireNonNull(first, "First pattern in group cannot be null");
         Objects.requireNonNull(then, "Additional patterns array cannot be null");
+
+        for (SiftPattern opt : then) {
+            Objects.requireNonNull(opt, "Additional option cannot be null");
+        }
 
         return () -> {
             StringBuilder sb = new StringBuilder();
@@ -190,6 +239,11 @@ public final class SiftPatterns {
      */
     public static SiftPattern literal(String text) {
         Objects.requireNonNull(text, "Literal text cannot be null");
+
+        if (text.isEmpty()) {
+            throw new IllegalArgumentException("Literal text cannot be empty. Use zero-width assertions if intentional.");
+        }
+
         return () -> {
             StringBuilder sb = new StringBuilder();
             RegexEscaper.escapeString(text, sb);
@@ -209,6 +263,11 @@ public final class SiftPatterns {
      */
     public static SiftPattern anythingBut(String chars) {
         Objects.requireNonNull(chars, "Excluded characters string cannot be null");
+
+        if (chars.isEmpty()) {
+            throw new IllegalArgumentException("Excluded characters string cannot be empty");
+        }
+
         return () -> {
             StringBuilder sb = new StringBuilder();
             sb.append(RegexSyntax.CLASS_OPEN);

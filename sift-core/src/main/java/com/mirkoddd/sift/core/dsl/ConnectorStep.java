@@ -23,8 +23,9 @@ package com.mirkoddd.sift.core.dsl;
  * <ul>
  * <li>Refine the current token (using {@code including} or {@code excluding}).</li>
  * <li>Append a new literal or pattern (using {@code followedBy(...)}).</li>
- * <li>Transition back to a quantifier for a new token (using {@code followedBy()}).</li>
- * <li>Finalize the regex structure (using {@code untilEnd()}).</li>
+ * <li>Transition back to a quantifier for a new token (using {@code then()}).</li>
+ * <li>Assert a word boundary (using {@code wordBoundary()}).</li>
+ * <li>Finalize the regex structure (using {@code andNothingElse()}).</li>
  * </ul>
  */
 public interface ConnectorStep extends SiftPattern {

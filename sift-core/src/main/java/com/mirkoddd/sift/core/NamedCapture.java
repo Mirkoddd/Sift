@@ -51,8 +51,4 @@ public final class NamedCapture {
     public SiftPattern getPattern() {
         return pattern;
     }
-
-    static NamedCapture create(GroupName name, SiftPattern pattern) {
-        return new NamedCapture(name, pattern);
-    }
 }

@@ -1,7 +1,5 @@
 # Sift
-<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e931dfa9-02e9-406d-bde7-56f9e0000464"  alt=""/>
-
-[![sift-core](https://img.shields.io/maven-central/v/com.mirkoddd/sift-core?label=sift-core)](https://central.sonatype.com/artifact/com.mirkoddd/sift-core)
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e931dfa9-02e9-406d-bde7-56f9e0000464"  alt=""/>[![sift-core](https://img.shields.io/maven-central/v/com.mirkoddd/sift-core?label=sift-core)](https://central.sonatype.com/artifact/com.mirkoddd/sift-core)
 [![sift-annotations](https://img.shields.io/maven-central/v/com.mirkoddd/sift-annotations?label=sift-annotations)](https://central.sonatype.com/artifact/com.mirkoddd/sift-annotations)
 [![Java 8+](https://img.shields.io/badge/Java-8+-blue.svg)](https://adoptium.net/) [![Tests](https://github.com/mirkoddd/Sift/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/mirkoddd/Sift/actions)
 [![Coverage](https://raw.githubusercontent.com/mirkoddd/Sift/main/.github/badges/jacoco.svg)](https://github.com/mirkoddd/Sift/actions)
@@ -22,7 +20,7 @@ Add Sift to your project dependencies:
 **Maven:**
 
 ```XML
-   <!-- Replace <latest-version> with the version shown in the Maven Central badge above -->
+<!-- Replace <latest-version> with the version shown in the Maven Central badge above -->
 <dependency>
     <groupId>com.mirkoddd</groupId>
     <artifactId>sift-core</artifactId>
@@ -39,12 +37,12 @@ Add Sift to your project dependencies:
 
 ```Groovy
     // Replace <latest-version> with the version shown in the Maven Central badge above
-   
-    // Core Engine: Fluent API for Regex generation (Zero external dependencies)
-    implementation 'com.mirkoddd:sift-core:<latest-version>'
-    
-    // Optional: Integration with Jakarta Validation / Hibernate Validator
-    implementation 'com.mirkoddd:sift-annotations:<latest-version>'
+
+// Core Engine: Fluent API for Regex generation (Zero external dependencies)
+implementation 'com.mirkoddd:sift-core:<latest-version>'
+
+// Optional: Integration with Jakarta Validation / Hibernate Validator
+implementation 'com.mirkoddd:sift-annotations:<latest-version>'
  ```   
 ## Compatibility
 
@@ -73,12 +71,9 @@ However, the internal codebase and test suite utilize modern **Java 17** feature
 
 Forget about counting backslashes or memorizing obscure symbols. Sift guides your hand using your IDE's auto-completion.
 
-```Java
-
-    import static com.mirkoddd.sift.core.Sift.fromStart;
-    
+```Java    
     // Goal: Match an international username securely
-    String regex = fromStart()
+    String regex = Sift.fromStart()
         .exactly(1).unicodeLettersUppercaseOnly() // Must start with an uppercase letter
         .then()
         .between(3, 15).unicodeWordCharacters().withoutBacktracking() // Secure against ReDoS
@@ -87,8 +82,8 @@ Forget about counting backslashes or memorizing obscure symbols. Sift guides you
         .andNothingElse()
         .shake(); 
     
-    // Result: ^\p{Lu}[\p{L}\p{Nd}_]{3,15}+[0-9]?$
-    
+    // Result: ^[\p{Lu}][\p{L}\p{Nd}_]{3,15}+[0-9]?$
+
 ```
 
 # 2. Seamless Jakarta Validation
@@ -97,29 +92,29 @@ Stop duplicating regex logic in your DTOs. Centralize your rules and reuse them 
 
 ```Java
 
-    // 1. Define your reusable rule (e.g., matching "PROMO123")
-    public class PromoCodeRule implements SiftRegexProvider {
-        
-        public String getRegex() {
-            return Sift.fromStart()
+// 1. Define your reusable rule (e.g., matching "PROMO123")
+public class PromoCodeRule implements SiftRegexProvider {
+
+    public String getRegex() {
+        return Sift.fromStart()
                 .atLeast(4).letters()
                 .then()
                 .exactly(3).digits()
                 .andNothingElse()
                 .shake();
-        }
     }
-    
-    // 2. Apply it to your models with Type-Safe Flags
-    public record ApplyPromoRequest(
+}
+
+// 2. Apply it to your models with Type-Safe Flags
+public record ApplyPromoRequest(
         @SiftMatch(
-            value = PromoCodeRule.class, 
-            flags = {SiftMatchFlag.CASE_INSENSITIVE}, // Allows "promo123" to pass
-            message = "Invalid promo code format"
+                value = PromoCodeRule.class,
+                flags = {SiftMatchFlag.CASE_INSENSITIVE}, // Allows "promo123" to pass
+                message = "Invalid promo code format"
         )
         String promoCode
-    ) {}
-    
+) {}
+
 ```
 
 *Sift compiles the Pattern only once during initialization, ensuring zero performance overhead during validation.*

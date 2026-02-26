@@ -60,6 +60,11 @@ public final class Sift {
     public static SiftStarter filteringWith(SiftGlobalFlag flag, SiftGlobalFlag... flags) {
         Objects.requireNonNull(flag, "Primary flag cannot be null");
         Objects.requireNonNull(flags, "Additional flags array cannot be null");
+
+        for (SiftGlobalFlag f : flags) {
+            Objects.requireNonNull(f, "Additional flag cannot be null");
+        }
+
         SiftGlobalFlag[] allFlags = new SiftGlobalFlag[flags.length + 1];
         allFlags[0] = flag;
         System.arraycopy(flags, 0, allFlags, 1, flags.length);

@@ -18,12 +18,16 @@ package com.mirkoddd.sift.core.dsl;
 /**
  * Defines the <b>TYPE</b> of character or pattern to match.
  * <p>
- * This interface represents the state immediately after a quantifier has been set
- * (e.g., {@code exactly(3)} or {@code oneOrMore()}). The method selected here defines
- * <i>what</i> exactly applies to that quantifier.
+ * This interface represents the state where the exact token to be matched is selected.
+ * It can be reached in two ways:
+ * <ul>
+ * <li><b>Explicitly:</b> Immediately after a quantifier has been set (e.g., {@code .exactly(3).digits()}).</li>
+ * <li><b>Implicitly:</b> Directly from a state that expects a token (e.g., {@code .digits()}), which defaults to matching exactly once.</li>
+ * </ul>
  * <p>
  * Selecting a type consumes the pending quantifier and transitions the builder to the
- * {@link ConnectorStep}.
+ * next structural link (either a {@link ConnectorStep} or a {@link VariableConnectorStep},
+ * depending on the generic type {@code T}).
  */
 public interface TypeStep<T extends ConnectorStep> {
 
