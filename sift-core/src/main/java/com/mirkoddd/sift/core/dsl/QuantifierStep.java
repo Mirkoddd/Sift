@@ -31,16 +31,16 @@ import com.mirkoddd.sift.core.NamedCapture;
  * <li>Backreference: {@code .backreference(groupDefinition)} (references a previous group)</li>
  * </ul>
  */
-public interface QuantifierStep extends TypeStep<ConnectorStep> {
+public interface QuantifierStep extends TypeStep<ConnectorStep, CharacterClassConnectorStep> {
 
     /**
      * Matches exactly {@code n} times. Generates {@code {n}}.
      *
      * @param n The exact number of repetitions (must be >= 0).
-     * @return The next step to define WHAT to repeat.
+     * @return The next step to define WHAT to repeat (fixed length).
      * @throws IllegalArgumentException if n is negative.
      */
-    TypeStep<ConnectorStep> exactly(int n);
+    TypeStep<ConnectorStep, CharacterClassConnectorStep> exactly(int n);
 
     /**
      * Matches at least {@code n} times. Generates {@code {n,}}.
@@ -49,28 +49,28 @@ public interface QuantifierStep extends TypeStep<ConnectorStep> {
      * Use this for explicit numeric bounds (e.g., at least 3).
      *
      * @param n The minimum number of repetitions (must be >= 0).
-     * @return The next step to define WHAT to repeat.
+     * @return The next step to define WHAT to repeat (variable length).
      * @throws IllegalArgumentException if n is negative.
      */
-    TypeStep<VariableConnectorStep> atLeast(int n);
+    TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> atLeast(int n);
 
     /**
      * Matches one or more times. Generates {@code +}.
      * <p>
      * Equivalent to {@code atLeast(1)}.
      *
-     * @return The next step to define WHAT to repeat.
+     * @return The next step to define WHAT to repeat (variable length).
      */
-    TypeStep<VariableConnectorStep> oneOrMore();
+    TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> oneOrMore();
 
     /**
      * Matches zero or more times (Greedy). Generates {@code *}.
      * <p>
      * This matches as many occurrences as possible.
      *
-     * @return The next step to define WHAT to repeat.
+     * @return The next step to define WHAT to repeat (variable length).
      */
-    TypeStep<VariableConnectorStep> zeroOrMore();
+    TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> zeroOrMore();
 
     /**
      * Matches zero or one time. Generates {@code ?}.
@@ -78,28 +78,28 @@ public interface QuantifierStep extends TypeStep<ConnectorStep> {
      * Marks the <b>next</b> type definition as optional.
      * <br>Example: {@code .optional().digits()} matches a digit or nothing.
      *
-     * @return The next step to define WHAT is optional.
+     * @return The next step to define WHAT is optional (variable length).
      */
-    TypeStep<VariableConnectorStep> optional();
+    TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> optional();
 
     /**
      * Matches at most {@code max} times. Generates {@code {0,max}}.
      *
      * @param max The maximum number of repetitions (must be >= 0).
-     * @return The next step to define WHAT to repeat.
+     * @return The next step to define WHAT to repeat (variable length).
      * @throws IllegalArgumentException if max is negative.
      */
-    TypeStep<VariableConnectorStep> atMost(int max);
+    TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> atMost(int max);
 
     /**
      * Matches between {@code min} and {@code max} times inclusive. Generates {@code {min,max}}.
      *
      * @param min The minimum number of repetitions (must be >= 0).
      * @param max The maximum number of repetitions (must be >= min).
-     * @return The next step to define WHAT to repeat.
+     * @return The next step to define WHAT to repeat (variable length).
      * @throws IllegalArgumentException if boundaries are invalid.
      */
-    TypeStep<VariableConnectorStep> between(int min, int max);
+    TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> between(int min, int max);
 
     /**
      * Starts a named capturing group using the provided definition.

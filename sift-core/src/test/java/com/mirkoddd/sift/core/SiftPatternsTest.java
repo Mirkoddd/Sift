@@ -199,4 +199,26 @@ class SiftPatternsTest {
                 group(validPattern, (SiftPattern) null)
         );
     }
+
+    @Test
+    @DisplayName("Should fully cover the possessive assignment branches in PatternAssembler")
+    void fullPossessiveBranchCoverage() {
+        // --- 1. Method addAnyChar() ---
+        // FALSE branch (empty quantifier)
+        Sift.fromAnywhere().any().shake();
+        // TRUE branch (quantifier present)
+        Sift.fromAnywhere().oneOrMore().any().withoutBacktracking().shake();
+
+        // --- 2. Method addCharacter() ---
+        // FALSE branch
+        Sift.fromAnywhere().character('a').shake();
+        // TRUE branch
+        Sift.fromAnywhere().zeroOrMore().character('a').withoutBacktracking().shake();
+
+        // --- 3. Method flush() (used for character classes and patterns) ---
+        // FALSE branch
+        Sift.fromAnywhere().digits().shake();
+        // TRUE branch
+        Sift.fromAnywhere().optional().digits().withoutBacktracking().shake();
+    }
 }

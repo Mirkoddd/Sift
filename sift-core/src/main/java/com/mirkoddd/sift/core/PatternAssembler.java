@@ -59,23 +59,19 @@ class PatternAssembler {
     }
 
     void addClassInclusion(char c, char... additionalExtras) {
-        if (isBuildingClass) {
             RegexEscaper.escapeInsideBrackets(c, pendingClass);
             for (char extra : additionalExtras) {
                 RegexEscaper.escapeInsideBrackets(extra, pendingClass);
             }
-        }
     }
 
     void addClassExclusion(char excluded, char... additionalExcluded) {
-        if (isBuildingClass) {
             pendingClass.append(RegexSyntax.CLASS_INTERSECTION_NEGATION);
             RegexEscaper.escapeInsideBrackets(excluded, pendingClass);
             for (char c : additionalExcluded) {
                 RegexEscaper.escapeInsideBrackets(c, pendingClass);
             }
             pendingClass.append(RegexSyntax.CLASS_CLOSE);
-        }
     }
 
     void addNamedCapture(NamedCapture group) {

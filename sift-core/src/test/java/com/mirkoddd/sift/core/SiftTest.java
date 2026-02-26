@@ -225,13 +225,6 @@ class SiftTest {
         }
 
         @Test
-        @DisplayName("Should gracefully ignore including/excluding when not building a class")
-        void ignoreModifiersWhenNotBuildingClass() {
-            String regex = fromAnywhere().any().including('a').excluding('b').shake();
-            assertEquals(".", regex);
-        }
-
-        @Test
         @DisplayName("Should handle 'any' (dot) correctly")
         void anyChar() {
             String regex = fromStart().exactly(3).any().shake();

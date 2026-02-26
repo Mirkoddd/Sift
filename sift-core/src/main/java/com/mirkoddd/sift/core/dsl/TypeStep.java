@@ -26,10 +26,12 @@ package com.mirkoddd.sift.core.dsl;
  * </ul>
  * <p>
  * Selecting a type consumes the pending quantifier and transitions the builder to the
- * next structural link (either a {@link ConnectorStep} or a {@link VariableConnectorStep},
- * depending on the generic type {@code T}).
+ * next structural link, depending on the generic types {@code T} and {@code C}.
+ *
+ * @param <T> The standard connector step returned for non-character-class types.
+ * @param <C> The specialized connector step returned for character classes, which exposes class modifiers like {@code including()}.
  */
-public interface TypeStep<T extends ConnectorStep> {
+public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConnectorStep> {
 
     /**
      * Matches <b>ANY</b> single character (the Dot {@code .}).
@@ -37,7 +39,7 @@ public interface TypeStep<T extends ConnectorStep> {
      * <b>Note:</b> This usually includes whitespace and symbols, but excludes line terminators
      * (like {@code \n}) unless specific matcher flags are enabled.
      *
-     * @return The connector step to continue building.
+     * @return The standard connector step to continue building.
      */
     T any();
 
@@ -48,7 +50,7 @@ public interface TypeStep<T extends ConnectorStep> {
      * Special regex characters are automatically escaped.
      *
      * @param literal The character to match.
-     * @return The connector step to continue building.
+     * @return The standard connector step to continue building.
      */
     T character(char literal);
 
@@ -59,7 +61,7 @@ public interface TypeStep<T extends ConnectorStep> {
      * Internally, this wraps the pattern in a non-capturing group {@code (?:...)} if necessary.
      *
      * @param pattern The sub-pattern to apply the quantifier to.
-     * @return The connector step to continue building.
+     * @return The standard connector step to continue building.
      */
     T pattern(SiftPattern pattern);
 
@@ -68,18 +70,18 @@ public interface TypeStep<T extends ConnectorStep> {
      * <p>
      * Equivalent to the regex range {@code [0-9]}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T digits();
+    C digits();
 
     /**
      * Matches any character that is NOT an ASCII digit.
      * <p>
      * Equivalent to the regex {@code \D}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T nonDigits();
+    C nonDigits();
 
     /**
      * Matches any Unicode decimal digit.
@@ -88,54 +90,54 @@ public interface TypeStep<T extends ConnectorStep> {
      * Unlike {@link #digits()} which is strictly ASCII {@code [0-9]},
      * this matches digits from other scripts (e.g., Arabic-Indic digits).
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T unicodeDigits();
+    C unicodeDigits();
 
     /**
      * Matches any character that is NOT a Unicode decimal digit.
      * <p>
      * Equivalent to the regex {@code \P{Nd}}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T nonUnicodeDigits();
+    C nonUnicodeDigits();
 
     /**
      * Matches any ASCII letter from the English alphabet (both uppercase and lowercase).
      * <p>
      * Equivalent to the regex range {@code [a-zA-Z]}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T letters();
+    C letters();
 
     /**
      * Matches any character that is NOT an ASCII letter.
      * <p>
      * Equivalent to the regex {@code [^a-zA-Z]}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T nonLetters();
+    C nonLetters();
 
     /**
      * Matches only uppercase ASCII letters.
      * <p>
      * Equivalent to the regex range {@code [A-Z]}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T lettersUppercaseOnly();
+    C lettersUppercaseOnly();
 
     /**
      * Matches only lowercase ASCII letters.
      * <p>
      * Equivalent to the regex range {@code [a-z]}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T lettersLowercaseOnly();
+    C lettersLowercaseOnly();
 
     /**
      * Matches any Unicode letter from any language or script.
@@ -144,18 +146,18 @@ public interface TypeStep<T extends ConnectorStep> {
      * Unlike {@link #letters()} which is strictly ASCII {@code [a-zA-Z]},
      * this correctly matches international characters like 'è', 'ñ', or 'ç'.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T unicodeLetters();
+    C unicodeLetters();
 
     /**
      * Matches any character that is NOT a Unicode letter.
      * <p>
      * Equivalent to the regex {@code \P{L}}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T nonUnicodeLetters();
+    C nonUnicodeLetters();
 
     /**
      * Matches any uppercase Unicode letter from any language.
@@ -164,9 +166,9 @@ public interface TypeStep<T extends ConnectorStep> {
      * Unlike {@link #lettersUppercaseOnly()} which is strictly ASCII {@code [A-Z]},
      * this correctly matches uppercase international characters like 'È' or 'Ñ'.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T unicodeLettersUppercaseOnly();
+    C unicodeLettersUppercaseOnly();
 
     /**
      * Matches any lowercase Unicode letter from any language.
@@ -175,27 +177,27 @@ public interface TypeStep<T extends ConnectorStep> {
      * Unlike {@link #lettersLowercaseOnly()} which is strictly ASCII {@code [a-z]},
      * this correctly matches lowercase international characters like 'è' or 'ñ'.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T unicodeLettersLowercaseOnly();
+    C unicodeLettersLowercaseOnly();
 
     /**
      * Matches any ASCII alphanumeric character (letters and digits).
      * <p>
      * Equivalent to the regex range {@code [a-zA-Z0-9]}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T alphanumeric();
+    C alphanumeric();
 
     /**
      * Matches any character that is NOT an ASCII alphanumeric character.
      * <p>
      * Equivalent to the regex {@code [^a-zA-Z0-9]}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T nonAlphanumeric();
+    C nonAlphanumeric();
 
     /**
      * Matches any Unicode alphanumeric character (Unicode letters and Unicode digits).
@@ -203,36 +205,36 @@ public interface TypeStep<T extends ConnectorStep> {
      * Equivalent to the regex {@code [\p{L}\p{Nd}]}.
      * Unlike {@link #unicodeWordCharacters()}, this does NOT include the underscore.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T unicodeAlphanumeric();
+    C unicodeAlphanumeric();
 
     /**
      * Matches any character that is NOT a Unicode alphanumeric character.
      * <p>
      * Equivalent to the regex {@code [^\p{L}\p{Nd}]}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T nonUnicodeAlphanumeric();
+    C nonUnicodeAlphanumeric();
 
     /**
      * Matches any ASCII word character (ASCII letters, digits, and underscores).
      * <p>
      * Equivalent to the regex {@code \w}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T wordCharacters();
+    C wordCharacters();
 
     /**
      * Matches any character that is NOT an ASCII word character.
      * <p>
      * Equivalent to the regex {@code \W}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T nonWordCharacters();
+    C nonWordCharacters();
 
     /**
      * Matches any Unicode word character (Unicode letters, Unicode digits, and the underscore).
@@ -241,18 +243,18 @@ public interface TypeStep<T extends ConnectorStep> {
      * Unlike {@link #wordCharacters()} which is strictly ASCII {@code \w},
      * this correctly identifies words in international texts.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T unicodeWordCharacters();
+    C unicodeWordCharacters();
 
     /**
      * Matches any character that is NOT a Unicode word character.
      * <p>
      * Equivalent to the regex {@code [^\p{L}\p{Nd}_]}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T nonUnicodeWordCharacters();
+    C nonUnicodeWordCharacters();
 
     // ===================================================================================
     // WHITESPACE
@@ -263,34 +265,34 @@ public interface TypeStep<T extends ConnectorStep> {
      * <p>
      * Equivalent to the regex {@code \s}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T whitespace();
+    C whitespace();
 
     /**
      * Matches any character that is NOT an ASCII whitespace.
      * <p>
      * Equivalent to the regex {@code \S}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T nonWhitespace();
+    C nonWhitespace();
 
     /**
      * Matches any Unicode whitespace character (including non-breaking spaces, em-spaces, etc.).
      * <p>
      * Equivalent to the regex {@code \p{IsWhite_Space}}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T unicodeWhitespace();
+    C unicodeWhitespace();
 
     /**
      * Matches any character that is NOT a Unicode whitespace.
      * <p>
      * Equivalent to the regex {@code \P{IsWhite_Space}}.
      *
-     * @return The connector step to continue building.
+     * @return The specialized character class step to allow further class modifications.
      */
-    T nonUnicodeWhitespace();
+    C nonUnicodeWhitespace();
 }

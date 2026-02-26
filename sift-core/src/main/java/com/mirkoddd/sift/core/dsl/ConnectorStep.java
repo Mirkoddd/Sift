@@ -18,10 +18,9 @@ package com.mirkoddd.sift.core.dsl;
 /**
  * The link between steps in the chain.
  * <p>
- * This interface represents a state where a token has just been defined (e.g., "digits").
+ * This interface represents a state where a token has just been defined (e.g., a literal, group, or class).
  * From here, you can:
  * <ul>
- * <li>Refine the current token (using {@code including} or {@code excluding}).</li>
  * <li>Append a new literal or pattern (using {@code followedBy(...)}).</li>
  * <li>Transition back to a quantifier for a new token (using {@code then()}).</li>
  * <li>Assert a word boundary (using {@code wordBoundary()}).</li>
@@ -29,30 +28,6 @@ package com.mirkoddd.sift.core.dsl;
  * </ul>
  */
 public interface ConnectorStep extends SiftPattern {
-
-    /**
-     * Extends the preceding character class to include specific characters.
-     * <p>
-     * This transforms a standard class into a custom set.
-     * <br>Example: {@code .digits().including('.')} creates {@code [0-9.]}.
-     *
-     * @param extra            The first mandatory character to add to the class.
-     * @param additionalExtras Additional optional characters to add.
-     * @return The current step, allowing further modifications.
-     */
-    ConnectorStep including(char extra, char... additionalExtras);
-
-    /**
-     * Excludes specific characters from the preceding character class.
-     * <p>
-     * <br>Example: {@code .letters().excluding('x', 'y')} creates a class that matches
-     * all letters <b>except</b> 'x' and 'y'.
-     *
-     * @param excluded           The first mandatory character to forbid.
-     * @param additionalExcluded Additional optional characters to forbid.
-     * @return The current step, allowing further modifications.
-     */
-    ConnectorStep excluding(char excluded, char... additionalExcluded);
 
     /**
      * Transitions back to the {@link QuantifierStep} to begin defining a <b>NEW</b> token.
