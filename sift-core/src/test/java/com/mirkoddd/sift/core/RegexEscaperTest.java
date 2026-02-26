@@ -55,19 +55,19 @@ class RegexEscaperTest {
 
         RegexEscaper.escapeString(normalText, sb);
 
-        assertEquals("abc123 ", sb.toString());
+        assertEquals("abc123\\ ", sb.toString());
     }
 
     @Test
     void testEscapeInsideBrackets_HitsAllSpecialCharacters() {
-        char[] bracketSpecials = {'\\', '-', '^', ']', '&'};
+        char[] bracketSpecials = {'\\', '-', '^', ']', '[', '&'};
         StringBuilder sb = new StringBuilder();
 
         for (char c : bracketSpecials) {
             RegexEscaper.escapeInsideBrackets(c, sb);
         }
 
-        assertEquals("\\\\\\-\\^\\]\\&", sb.toString());
+        assertEquals("\\\\\\-\\^\\]\\[\\&", sb.toString());
     }
 
     @Test
@@ -86,6 +86,6 @@ class RegexEscaperTest {
     void literalWithNonAsciiCharacters() {
         SiftPattern pattern = SiftPatterns.literal("Caffè €");
 
-        assertEquals("Caffè €", pattern.shake());
+        assertEquals("Caffè\\ €", pattern.shake());
     }
 }

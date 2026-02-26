@@ -24,7 +24,7 @@ final class RegexEscaper {
     private static final boolean[] SPECIAL_CHAR_TABLE = new boolean[128];
 
     static {
-        String specialChars = ".?*+^$[](){}|\\<>=!";
+        String specialChars = ".?*+^$[](){}|\\<>=! #";
         for (char c : specialChars.toCharArray()) {
             SPECIAL_CHAR_TABLE[c] = true;
         }
@@ -67,6 +67,7 @@ final class RegexEscaper {
             case '-':
             case '^':
             case ']':
+            case '[':
             case '&': // Safety against "&&" (intersection)
                 sb.append('\\');
                 break;

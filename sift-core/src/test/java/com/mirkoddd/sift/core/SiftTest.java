@@ -419,7 +419,7 @@ class SiftTest {
                     .namedCapture(orderIdGroup)
                     .shake();
 
-            assertEquals("Order: #(?<orderId>[0-9]+)", regex);
+            assertEquals("Order:\\ \\#(?<orderId>[0-9]+)", regex);
 
             Matcher m = Pattern.compile(regex).matcher("Status for Order: #9988");
             assertTrue(m.find());
@@ -1019,7 +1019,7 @@ class SiftTest {
                     .pattern(literal("apple"))
                     .shake();
 
-            assertEquals("(?<=green )apple", regex);
+            assertEquals("(?<=green\\ )apple", regex);
             assertRegexMatches(regex, "I like my green apple.");
             assertRegexDoesNotMatch(regex, "I like my red apple.");
         }
