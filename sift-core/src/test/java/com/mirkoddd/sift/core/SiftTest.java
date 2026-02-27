@@ -397,6 +397,57 @@ class SiftTest {
 
             assertTrue(exception.getMessage().contains("cannot be null"));
         }
+
+        @Test
+        @DisplayName("shake() should be idempotent and cache the generated regex")
+        void testShakeIdempotency() {
+            com.mirkoddd.sift.core.SiftBuilder builder =
+                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().oneOrMore().digits();
+
+            String firstShake = builder.shake();
+            String secondShake = builder.shake();
+
+            assertEquals(firstShake, secondShake,
+                    "Multiple calls to shake() should return the exact same string");
+
+            assertEquals("^[0-9]+", firstShake,
+                    "The cached regex must perfectly match the expected output");
+        }
+
+        @Test
+        @DisplayName("equals() and hashCode() should evaluate structural identity based on the regex")
+        void testBuilderIdentity() {
+            com.mirkoddd.sift.core.SiftBuilder builderA =
+                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().optional().letters();
+
+            com.mirkoddd.sift.core.SiftBuilder builderB =
+                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().optional().letters();
+
+            com.mirkoddd.sift.core.SiftBuilder builderDifferent =
+                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().optional().digits();
+
+            assertEquals(builderA, builderB, "Identical builders should be equal");
+            assertEquals(builderA.hashCode(), builderB.hashCode(), "Identical builders should have the same hash code");
+
+            assertNotEquals(builderA, builderDifferent, "Different builders should not be equal");
+
+            assertEquals(builderA, builderA, "A builder should be equal to itself");
+
+            assertNotEquals(builderA, null, "A builder should never be equal to null");
+
+            assertNotEquals(builderA, "^[a-zA-Z]??", "A builder should not be equal to an object of a different class");
+        }
+        @Test
+        @DisplayName("toString() should return the generated pattern string")
+        void testBuilderToString() {
+            com.mirkoddd.sift.core.SiftBuilder builder =
+                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().exactly(3).digits();
+
+            assertEquals("^[0-9]{3}", builder.toString(),
+                    "toString() should expose the raw regex pattern");
+            assertEquals(builder.shake(), builder.toString(),
+                    "toString() must rely on the cached shake() output");
+        }
     }
 
     @Nested

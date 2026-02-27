@@ -29,7 +29,7 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
     private final PatternAssembler assembler;
     private final FixedType fixedType;
     private final VariableType variableType;
-
+    private String cachedRegex = null;
     /**
      * Default constructor for standard builder.
      */
@@ -319,10 +319,31 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
 
     @Override
     public String shake() {
-        return assembler.build();
+        if (cachedRegex == null) {
+            cachedRegex = assembler.build();
+        }
+        return cachedRegex;
     }
 
     Set<String> getRegisteredGroupNames() {
         return assembler.getRegisteredGroups();
+    }
+
+    @Override
+    public String toString() {
+        return shake();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SiftBuilder that = (SiftBuilder) o;
+        return this.shake().equals(that.shake());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(shake());
     }
 }
