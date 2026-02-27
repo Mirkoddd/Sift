@@ -220,4 +220,10 @@ abstract class AbstractTypeStep<T extends ConnectorStep, C extends CharacterClas
         assembler.addClassRange(RegexSyntax.NON_UNICODE_WHITESPACE);
         return getCharacterClassConnector();
     }
+
+    @Override
+    public C range(char start, char end) {
+        assembler.addCustomRange(start, end);
+        return getCharacterClassConnector();
+    }
 }

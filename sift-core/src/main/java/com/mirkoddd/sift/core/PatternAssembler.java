@@ -78,6 +78,17 @@ class PatternAssembler {
         pendingClass.append(RegexSyntax.CLASS_CLOSE);
     }
 
+    void addCustomRange(char start, char end) {
+        if (start > end) {
+            throw new IllegalArgumentException("Invalid range: start character '" + start +
+                    "' must be less than or equal to end character '" + end + "'.");
+        }
+        isBuildingClass = true;
+        RegexEscaper.escapeInsideBrackets(start, pendingClass);
+        pendingClass.append('-');
+        RegexEscaper.escapeInsideBrackets(end, pendingClass);
+    }
+
     void addNamedCapture(NamedCapture group) {
         boolean isAdded = registeredGroups.add(group.getName());
         if (!isAdded) {

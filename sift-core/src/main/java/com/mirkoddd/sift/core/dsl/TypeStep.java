@@ -295,4 +295,21 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      * @return The specialized character class step to allow further class modifications.
      */
     C nonUnicodeWhitespace();
+
+    /**
+     * Matches any single character within the specified custom range (inclusive).
+     * <p>
+     * Equivalent to the regex {@code [start-end]}.
+     * <br>Example: {@code range('a', 'f')} compiles to the regex {@code [a-f]}.
+     * <p>
+     * <b>Unicode Note:</b> This method supports all characters in the Basic Multilingual Plane (BMP),
+     * which covers almost all standard alphabets, symbols, and common international characters.
+     * However, characters requiring Unicode surrogate pairs (such as Emojis or certain rare
+     * ideograms) cannot be passed as primitive {@code char} boundaries.
+     *
+     * @param start The starting character of the range.
+     * @param end   The ending character of the range.
+     * @return The specialized character class step to allow further class modifications.
+     */
+    C range(char start, char end);
 }

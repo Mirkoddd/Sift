@@ -253,6 +253,11 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
     }
 
     @Override
+    public CharacterClassConnectorStep range(char start, char end) {
+        return fixedType.range(start, end);
+    }
+
+    @Override
     public ConnectorStep followedBy(char c) {
         return this.then().exactly(1).character(c);
     }

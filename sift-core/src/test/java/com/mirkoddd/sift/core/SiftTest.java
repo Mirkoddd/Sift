@@ -1237,4 +1237,46 @@ class SiftTest {
 
         assertEquals("(?<mainId>[a-zA-Z]+)(?<wrapper>(?<innerId>[0-9]+)$)", regex);
     }
+
+    @Nested
+    @DisplayName("Custom Range Modifier Tests")
+    class CustomRangeTests {
+
+        @Test
+        @DisplayName("range() should generate a valid custom character class")
+        void testCustomRange() {
+            // Tests an alphabetic range with a variable quantifier
+            String regexHexLetters = Sift.fromStart()
+                    .oneOrMore().range('a', 'f')
+                    .shake();
+            assertEquals("^[a-f]+", regexHexLetters, "Should generate a custom range [a-f]+");
+
+            // Tests a numeric range with a fixed quantifier
+            String regexOctal = Sift.fromStart()
+                    .exactly(3).range('0', '7')
+                    .shake();
+            assertEquals("^[0-7]{3}", regexOctal, "Should generate a custom range [0-7]{3}");
+
+            // Tests special characters to ensure the internal escaper is triggered correctly
+            String regexSymbols = Sift.fromStart()
+                    .optional().range('!', '/')
+                    .shake();
+            assertEquals("^[!-/]?", regexSymbols, "Should correctly escape special characters inside the range");
+            // Tests special characters to ensure the internal escaper is triggered correctly
+            String regexBrackets = Sift.fromStart()
+                    .optional().range('[', ']')
+                    .shake();
+            // '[' and ']' are special inside classes and must be escaped by RegexEscaper
+            assertEquals("^[\\[-\\]]?", regexBrackets, "Should correctly escape brackets inside the range");
+        }
+
+        @Test
+        @DisplayName("range() should throw an exception if the boundaries are inverted")
+        void testInvalidCustomRange() {
+            // Verifies that defensive programming blocks invalid logical ranges
+            assertThrows(IllegalArgumentException.class, () -> {
+                Sift.fromStart().range('z', 'a');
+            }, "An inverted range (z to a) should throw an IllegalArgumentException");
+        }
+    }
 }
