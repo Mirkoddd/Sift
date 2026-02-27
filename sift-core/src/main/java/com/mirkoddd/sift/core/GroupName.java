@@ -25,12 +25,7 @@ import java.util.regex.Pattern;
  * ensuring that any instantiated GroupName perfectly complies with regex syntax rules.
  */
 final class GroupName {
-    private static final String VALID_NAME_PATTERN = Sift.fromStart()
-            .exactly(1).letters()
-            .then()
-            .zeroOrMore().alphanumeric()
-            .andNothingElse()
-            .shake();
+    private static final String VALID_NAME_PATTERN = "^[a-zA-Z][a-zA-Z0-9]*$";
 
     private static final Pattern VALIDATOR = Pattern.compile(VALID_NAME_PATTERN);
 
