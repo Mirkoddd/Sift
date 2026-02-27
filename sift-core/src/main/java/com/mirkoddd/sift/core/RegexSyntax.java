@@ -27,107 +27,107 @@ final class RegexSyntax {
     // ===================================================================================
     // BASE SYNTAX & GENERAL
     // ===================================================================================
-    public static final String EMPTY = "";
-    public static final String ANY_CHAR = ".";
-    public static final String COMMA = ",";
+    static final String EMPTY = "";
+    static final String ANY_CHAR = ".";
+    static final String COMMA = ",";
 
     // ===================================================================================
     // ANCHORS
     // ===================================================================================
-    public static final String START_OF_LINE = "^";
-    public static final String END_OF_LINE = "$";
-    public static final String WORD_BOUNDARY = "\\b";
+    static final String START_OF_LINE = "^";
+    static final String END_OF_LINE = "$";
+    static final String WORD_BOUNDARY = "\\b";
 
     // ===================================================================================
     // QUANTIFIERS
     // ===================================================================================
-    public static final String ZERO_OR_MORE = "*";
-    public static final String ONE_OR_MORE = "+";
-    public static final String OPTIONAL = "?";
-    public static final String POSSESSIVE = "+";
-    public static final String QUANTIFIER_OPEN = "{";
-    public static final String QUANTIFIER_CLOSE = "}";
+    static final String ZERO_OR_MORE = "*";
+    static final String ONE_OR_MORE = "+";
+    static final String OPTIONAL = "?";
+    static final String POSSESSIVE = "+";
+    static final String QUANTIFIER_OPEN = "{";
+    static final String QUANTIFIER_CLOSE = "}";
 
     // ===================================================================================
     // GROUPS & LOGIC
     // ===================================================================================
-    public static final String NON_CAPTURING_GROUP_OPEN = "(?:";
-    public static final String GROUP_OPEN = "(";
-    public static final String GROUP_CLOSE = ")";
-    public static final String NAMED_GROUP_OPEN = "(?<";
-    public static final String NAMED_GROUP_NAME_CLOSE = ">";
-    public static final String OR = "|";
-    public static final String INLINE_FLAG_OPEN = "(?";
-    public static final String NAMED_BACKREFERENCE_OPEN = "\\k<";
-    public static final String NAMED_BACKREFERENCE_CLOSE = ">";
+    static final String NON_CAPTURING_GROUP_OPEN = "(?:";
+    static final String GROUP_OPEN = "(";
+    static final String GROUP_CLOSE = ")";
+    static final String NAMED_GROUP_OPEN = "(?<";
+    static final String NAMED_GROUP_NAME_CLOSE = ">";
+    static final String OR = "|";
+    static final String INLINE_FLAG_OPEN = "(?";
+    static final String NAMED_BACKREFERENCE_OPEN = "\\k<";
+    static final String NAMED_BACKREFERENCE_CLOSE = ">";
 
     // ===================================================================================
     // LOOKAROUNDS
     // ===================================================================================
-    public static final String POSITIVE_LOOKAHEAD_OPEN = "(?=";
-    public static final String NEGATIVE_LOOKAHEAD_OPEN = "(?!";
-    public static final String POSITIVE_LOOKBEHIND_OPEN = "(?<=";
-    public static final String NEGATIVE_LOOKBEHIND_OPEN = "(?<!";
+    static final String POSITIVE_LOOKAHEAD_OPEN = "(?=";
+    static final String NEGATIVE_LOOKAHEAD_OPEN = "(?!";
+    static final String POSITIVE_LOOKBEHIND_OPEN = "(?<=";
+    static final String NEGATIVE_LOOKBEHIND_OPEN = "(?<!";
 
     // ===================================================================================
     // CHARACTER CLASSES (SYNTAX)
     // ===================================================================================
-    public static final String CLASS_OPEN = "[";
-    public static final String CLASS_CLOSE = "]";
-    public static final String CLASS_INTERSECTION_NEGATION = "&&[^";
-    public static final String NEGATION = "^";
+    static final String CLASS_OPEN = "[";
+    static final String CLASS_CLOSE = "]";
+    static final String CLASS_INTERSECTION_NEGATION = "&&[^";
+    static final String NEGATION = "^";
 
     // ===================================================================================
     // ASCII TYPES (Default)
     // ===================================================================================
 
     // Digits
-    public static final String RANGE_DIGITS = "0-9";
-    public static final String NON_DIGITS = "\\D";
+    static final String RANGE_DIGITS = "0-9";
+    static final String NON_DIGITS = "\\D";
 
     // Letters
-    public static final String RANGE_LETTERS = "a-zA-Z";
-    public static final String NON_LETTERS = "^a-zA-Z"; // Stripped outer brackets
-    public static final String RANGE_LETTERS_UPPERCASE_ONLY = "A-Z";
-    public static final String RANGE_LETTERS_LOWERCASE_ONLY = "a-z";
+    static final String RANGE_LETTERS = "a-zA-Z";
+    static final String NON_LETTERS = "^a-zA-Z"; // Stripped outer brackets
+    static final String RANGE_LETTERS_UPPERCASE_ONLY = "A-Z";
+    static final String RANGE_LETTERS_LOWERCASE_ONLY = "a-z";
 
     // Alphanumeric
-    public static final String RANGE_ALPHANUMERIC = "a-zA-Z0-9";
-    public static final String NON_ALPHANUMERIC = "^a-zA-Z0-9"; // Stripped outer brackets
+    static final String RANGE_ALPHANUMERIC = "a-zA-Z0-9";
+    static final String NON_ALPHANUMERIC = "^a-zA-Z0-9"; // Stripped outer brackets
 
     // Word Characters
-    public static final String WORD_CHARACTERS = "\\w";
-    public static final String NON_WORD_CHARACTERS = "\\W";
+    static final String WORD_CHARACTERS = "\\w";
+    static final String NON_WORD_CHARACTERS = "\\W";
 
     // Whitespace
-    public static final String WHITESPACE = "\\s";
-    public static final String NON_WHITESPACE = "\\S";
+    static final String WHITESPACE = "\\s";
+    static final String NON_WHITESPACE = "\\S";
 
     // ===================================================================================
     // UNICODE TYPES
     // ===================================================================================
 
     // Digits
-    public static final String UNICODE_DIGITS = "\\p{Nd}";
-    public static final String NON_UNICODE_DIGITS = "\\P{Nd}";
+    static final String UNICODE_DIGITS = "\\p{Nd}";
+    static final String NON_UNICODE_DIGITS = "\\P{Nd}";
 
     // Letters
-    public static final String UNICODE_LETTERS = "\\p{L}";
-    public static final String NON_UNICODE_LETTERS = "\\P{L}";
-    public static final String UNICODE_LETTERS_UPPERCASE_ONLY = "\\p{Lu}";
-    public static final String UNICODE_LETTERS_LOWERCASE_ONLY = "\\p{Ll}";
+    static final String UNICODE_LETTERS = "\\p{L}";
+    static final String NON_UNICODE_LETTERS = "\\P{L}";
+    static final String UNICODE_LETTERS_UPPERCASE_ONLY = "\\p{Lu}";
+    static final String UNICODE_LETTERS_LOWERCASE_ONLY = "\\p{Ll}";
 
     // Alphanumeric
-    public static final String UNICODE_ALPHANUMERIC = "\\p{L}\\p{Nd}"; // Stripped outer brackets
-    public static final String NON_UNICODE_ALPHANUMERIC = "^\\p{L}\\p{Nd}"; // Stripped outer brackets
+    static final String UNICODE_ALPHANUMERIC = "\\p{L}\\p{Nd}"; // Stripped outer brackets
+    static final String NON_UNICODE_ALPHANUMERIC = "^\\p{L}\\p{Nd}"; // Stripped outer brackets
 
     // Word Characters
-    public static final String UNICODE_WORD_CHARACTERS = "\\p{L}\\p{Nd}_"; // Stripped outer brackets
-    public static final String NON_UNICODE_WORD_CHARACTERS = "^\\p{L}\\p{Nd}_"; // Stripped outer brackets
+    static final String UNICODE_WORD_CHARACTERS = "\\p{L}\\p{Nd}_"; // Stripped outer brackets
+    static final String NON_UNICODE_WORD_CHARACTERS = "^\\p{L}\\p{Nd}_"; // Stripped outer brackets
 
     // Whitespace
-    public static final String UNICODE_WHITESPACE = "\\p{IsWhite_Space}";
-    public static final String NON_UNICODE_WHITESPACE = "\\P{IsWhite_Space}";
+    static final String UNICODE_WHITESPACE = "\\p{IsWhite_Space}";
+    static final String NON_UNICODE_WHITESPACE = "\\P{IsWhite_Space}";
 
     // ===================================================================================
 
