@@ -437,6 +437,7 @@ class SiftTest {
 
             assertNotEquals(builderA, "^[a-zA-Z]??", "A builder should not be equal to an object of a different class");
         }
+
         @Test
         @DisplayName("toString() should return the generated pattern string")
         void testBuilderToString() {
@@ -447,6 +448,23 @@ class SiftTest {
                     "toString() should expose the raw regex pattern");
             assertEquals(builder.shake(), builder.toString(),
                     "toString() must rely on the cached shake() output");
+        }
+
+        @Test
+        @DisplayName("shake() should perform fail-fast validation and throw IllegalStateException on invalid regex")
+        void testShakeFailFastValidation() {
+            SiftPattern malformedPattern = () -> "(?unclosedGroup";
+
+            com.mirkoddd.sift.core.SiftBuilder builder =
+                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().pattern(malformedPattern);
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, builder::shake,
+                    "shake() should throw an IllegalStateException if the generated regex is physically invalid");
+
+            assertTrue(exception.getMessage().contains("Sift generated an invalid regex pattern"),
+                    "The exception message should clearly indicate a Sift compilation error");
+            assertInstanceOf(java.util.regex.PatternSyntaxException.class, exception.getCause(),
+                    "The root cause must be the original PatternSyntaxException from java.util.regex");
         }
     }
 
