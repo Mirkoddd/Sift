@@ -33,8 +33,10 @@ import static com.mirkoddd.sift.core.SiftGlobalFlag.CASE_INSENSITIVE;
 import static com.mirkoddd.sift.core.SiftPatterns.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.mirkoddd.sift.core.dsl.CharacterClassConnectorStep;
 import com.mirkoddd.sift.core.dsl.ConnectorStep;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
+import com.mirkoddd.sift.core.dsl.VariableCharacterClassConnectorStep;
 import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
 
 /**
@@ -747,6 +749,65 @@ class SiftTest {
                     .andNothingElse().shake();
 
             assertFalse("abc".matches(atomicRegex), "Atomic group should NOT backtrack to 'ab'");
+        }
+
+        @Test
+        @DisplayName("asFewAsPossible() should append '?' to variable quantifiers making them lazy")
+        void testLazyModifier() {
+            // Simulates a classic match for multi-line comments: /* .*? */
+            String regex = Sift.fromStart()
+                    .exactly(1).pattern(SiftPatterns.literal("/*"))
+                    .then()
+                    .zeroOrMore().any().asFewAsPossible()
+                    .then()
+                    .exactly(1).pattern(SiftPatterns.literal("*/"))
+                    .shake();
+
+            // Expects the .*? quantifier (zero or more, but as few as possible)
+            assertEquals("^/\\*.*?\\*/", regex,
+                    "The lazy modifier should append '?' to the zeroOrMore quantifier");
+        }
+
+        @Test
+        @DisplayName("asFewAsPossible() should work correctly with range quantifiers")
+        void testLazyModifierWithRange() {
+            // Simulates a lazy range match
+            String regex = Sift.fromStart()
+                    .between(2, 5).digits().asFewAsPossible()
+                    .shake();
+
+            // Expects ^[0-9]{2,5}?
+            assertEquals("^[0-9]{2,5}?", regex,
+                    "The lazy modifier should append '?' to the {min,max} quantifier");
+        }
+
+        @Test
+        @DisplayName("asFewAsPossible() exhaustive branch coverage for internal state protections")
+        void testLazyModifierEdgeCasesAndProtections() {
+
+            // BRANCH 1: isBuildingClass = true, currentQuantifier.equals(RegexSyntax.OPTIONAL)
+            String regexOptionalClass = Sift.fromStart().optional().digits().asFewAsPossible().shake();
+            assertEquals("^[0-9]??", regexOptionalClass,
+                    "Should allow lazy modifier on optional character classes");
+
+            // BRANCH 2: isBuildingClass = true, endsWith(RegexSyntax.LAZY) == true
+            VariableCharacterClassConnectorStep step1 = Sift.fromStart().oneOrMore().digits();
+            step1.asFewAsPossible();
+            ((VariableCharacterClassConnectorStep) step1).asFewAsPossible();
+            assertEquals("^[0-9]+?", ((com.mirkoddd.sift.core.SiftBuilder) step1).shake(),
+                    "Should ignore a second lazy call on a character class");
+
+            // BRANCH 3: isBuildingClass = true, currentQuantifier.isEmpty() == true
+            CharacterClassConnectorStep step2 = Sift.fromStart().digits();
+            ((VariableCharacterClassConnectorStep) step2).asFewAsPossible();
+            assertEquals("^[0-9]", ((com.mirkoddd.sift.core.SiftBuilder) step2).shake(),
+                    "Should ignore lazy modifier if the class quantifier is empty");
+
+            // BRANCH 4: isBuildingClass = false, canMakePossessiveToMain = false
+            ConnectorStep step3 = Sift.fromStart().oneOrMore().any().asFewAsPossible();
+            ((VariableConnectorStep) step3).asFewAsPossible();
+            assertEquals("^.+?", ((com.mirkoddd.sift.core.SiftBuilder) step3).shake(),
+                    "Should ignore a second lazy call on the main pattern");
         }
     }
 

@@ -45,6 +45,7 @@ final class RegexSyntax {
     static final String ONE_OR_MORE = "+";
     static final String OPTIONAL = "?";
     static final String POSSESSIVE = "+";
+    static final String LAZY = "?";
     static final String QUANTIFIER_OPEN = "{";
     static final String QUANTIFIER_CLOSE = "}";
 

@@ -306,6 +306,12 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
     }
 
     @Override
+    public ConnectorStep asFewAsPossible() {
+        assembler.applyLazyModifier();
+        return this;
+    }
+
+    @Override
     public SiftPattern andNothingElse() {
         assembler.addAnchor(RegexSyntax.END_OF_LINE);
         return this;

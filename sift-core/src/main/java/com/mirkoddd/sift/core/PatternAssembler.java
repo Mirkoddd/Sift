@@ -176,6 +176,20 @@ class PatternAssembler {
         }
     }
 
+    void applyLazyModifier() {
+        if (isBuildingClass) {
+            if (!currentQuantifier.isEmpty()) {
+                if (currentQuantifier.equals(RegexSyntax.OPTIONAL) ||
+                        !currentQuantifier.endsWith(RegexSyntax.LAZY)) {
+                    currentQuantifier += RegexSyntax.LAZY;
+                }
+            }
+        } else if (canMakePossessiveToMain) {
+            mainPattern.append(RegexSyntax.LAZY);
+            canMakePossessiveToMain = false;
+        }
+    }
+
     void flush() {
         if (isBuildingClass) {
             mainPattern.append(RegexSyntax.CLASS_OPEN)

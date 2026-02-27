@@ -39,4 +39,16 @@ public interface VariableConnectorStep extends ConnectorStep {
      * @return A standard {@link ConnectorStep}, as possessive modifiers cannot be stacked.
      */
     ConnectorStep withoutBacktracking();
+
+    /**
+     * Makes the preceding quantifier "lazy" (or reluctant) (e.g., {@code *?} or {@code +?}).
+     * <p>
+     * A lazy quantifier will match as few characters as possible to make the pattern succeed.
+     * <p>
+     * <b>Performance Note:</b> Use this when you want to stop matching at the first occurrence
+     * of the subsequent pattern, rather than the last.
+     *
+     * @return A standard {@link ConnectorStep}, as lazy modifiers cannot be stacked.
+     */
+    ConnectorStep asFewAsPossible();
 }
