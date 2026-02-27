@@ -27,12 +27,16 @@ import java.util.Set;
 class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorStep, VariableCharacterClassConnectorStep {
 
     private final PatternAssembler assembler;
+    private final FixedType fixedType;
+    private final VariableType variableType;
 
     /**
      * Default constructor for standard builder.
      */
     SiftBuilder() {
         this.assembler = new PatternAssembler();
+        this.fixedType = new FixedType(assembler, this, this);
+        this.variableType = new VariableType(assembler, this, this);
     }
 
     /**
@@ -42,6 +46,8 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
      */
     SiftBuilder(SiftGlobalFlag... flags) {
         this.assembler = new PatternAssembler(flags);
+        this.fixedType = new FixedType(assembler, this, this);
+        this.variableType = new VariableType(assembler, this, this);
     }
 
     public SiftBuilder anchorStart() {
@@ -49,62 +55,52 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
         return this;
     }
 
-    // ===================================================================================
-    // QUANTIFIERS
-    // ===================================================================================
-
     @Override
     public TypeStep<ConnectorStep, CharacterClassConnectorStep> exactly(int n) {
-        if (n < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + n);
+        if (n <= 0) throw new IllegalArgumentException("Quantity must be strictly positive: " + n);
         assembler.setQuantifier((n == 1) ? RegexSyntax.EMPTY :
                 RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.QUANTIFIER_CLOSE);
-        return this;
+        return fixedType;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> atLeast(int n) {
         if (n < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + n);
         assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.COMMA + RegexSyntax.QUANTIFIER_CLOSE);
-        return (TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep>) (Object) this;
+        return variableType;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> oneOrMore() {
         assembler.setQuantifier(RegexSyntax.ONE_OR_MORE);
-        return (TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep>) (Object) this;
+        return variableType;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> zeroOrMore() {
         assembler.setQuantifier(RegexSyntax.ZERO_OR_MORE);
-        return (TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep>) (Object) this;
+        return variableType;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> optional() {
         assembler.setQuantifier(RegexSyntax.OPTIONAL);
-        return (TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep>) (Object) this;
+        return variableType;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> atMost(int max) {
         if (max < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + max);
         assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + "0" + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE);
-        return (TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep>) (Object) this;
+        return variableType;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> between(int min, int max) {
         if (min < 0 || max < 0) throw new IllegalArgumentException("Quantities cannot be negative");
         if (min > max) throw new IllegalArgumentException("Min cannot be greater than max");
         assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + min + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE);
-        return (TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep>) (Object) this;
+        return variableType;
     }
 
     @Override
@@ -121,180 +117,140 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
         return this;
     }
 
-    // ===================================================================================
-    // TYPE DEFINITIONS (Non-Class -> VariableConnectorStep)
-    // ===================================================================================
-
     @Override
-    public VariableConnectorStep any() {
-        assembler.addAnyChar();
-        return this;
+    public ConnectorStep any() {
+        return fixedType.any();
     }
 
     @Override
-    public VariableConnectorStep character(char literal) {
-        assembler.addCharacter(literal);
-        return this;
+    public ConnectorStep character(char literal) {
+        return fixedType.character(literal);
     }
 
     @Override
-    public VariableConnectorStep pattern(SiftPattern pattern) {
-        Objects.requireNonNull(pattern, "SiftPattern cannot be null");
-        assembler.addPattern(pattern);
-        return this;
-    }
-
-    // ===================================================================================
-    // TYPE DEFINITIONS (Class -> VariableCharacterClassConnectorStep)
-    // ===================================================================================
-
-    @Override
-    public VariableCharacterClassConnectorStep digits() {
-        assembler.addClassRange(RegexSyntax.RANGE_DIGITS);
-        return this;
+    public ConnectorStep pattern(SiftPattern pattern) {
+        return fixedType.pattern(pattern);
     }
 
     @Override
-    public VariableCharacterClassConnectorStep nonDigits() {
-        assembler.addClassRange(RegexSyntax.NON_DIGITS);
-        return this;
+    public CharacterClassConnectorStep digits() {
+        return fixedType.digits();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep unicodeDigits() {
-        assembler.addClassRange(RegexSyntax.UNICODE_DIGITS);
-        return this;
+    public CharacterClassConnectorStep nonDigits() {
+        return fixedType.nonDigits();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep nonUnicodeDigits() {
-        assembler.addClassRange(RegexSyntax.NON_UNICODE_DIGITS);
-        return this;
+    public CharacterClassConnectorStep unicodeDigits() {
+        return fixedType.unicodeDigits();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep letters() {
-        assembler.addClassRange(RegexSyntax.RANGE_LETTERS);
-        return this;
+    public CharacterClassConnectorStep nonUnicodeDigits() {
+        return fixedType.nonUnicodeDigits();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep nonLetters() {
-        assembler.addClassRange(RegexSyntax.NON_LETTERS);
-        return this;
+    public CharacterClassConnectorStep letters() {
+        return fixedType.letters();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep lettersUppercaseOnly() {
-        assembler.addClassRange(RegexSyntax.RANGE_LETTERS_UPPERCASE_ONLY);
-        return this;
+    public CharacterClassConnectorStep nonLetters() {
+        return fixedType.nonLetters();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep lettersLowercaseOnly() {
-        assembler.addClassRange(RegexSyntax.RANGE_LETTERS_LOWERCASE_ONLY);
-        return this;
+    public CharacterClassConnectorStep lettersUppercaseOnly() {
+        return fixedType.lettersUppercaseOnly();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep unicodeLetters() {
-        assembler.addClassRange(RegexSyntax.UNICODE_LETTERS);
-        return this;
+    public CharacterClassConnectorStep lettersLowercaseOnly() {
+        return fixedType.lettersLowercaseOnly();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep nonUnicodeLetters() {
-        assembler.addClassRange(RegexSyntax.NON_UNICODE_LETTERS);
-        return this;
+    public CharacterClassConnectorStep unicodeLetters() {
+        return fixedType.unicodeLetters();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep unicodeLettersUppercaseOnly() {
-        assembler.addClassRange(RegexSyntax.UNICODE_LETTERS_UPPERCASE_ONLY);
-        return this;
+    public CharacterClassConnectorStep nonUnicodeLetters() {
+        return fixedType.nonUnicodeLetters();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep unicodeLettersLowercaseOnly() {
-        assembler.addClassRange(RegexSyntax.UNICODE_LETTERS_LOWERCASE_ONLY);
-        return this;
+    public CharacterClassConnectorStep unicodeLettersUppercaseOnly() {
+        return fixedType.unicodeLettersUppercaseOnly();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep alphanumeric() {
-        assembler.addClassRange(RegexSyntax.RANGE_ALPHANUMERIC);
-        return this;
+    public CharacterClassConnectorStep unicodeLettersLowercaseOnly() {
+        return fixedType.unicodeLettersLowercaseOnly();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep nonAlphanumeric() {
-        assembler.addClassRange(RegexSyntax.NON_ALPHANUMERIC);
-        return this;
+    public CharacterClassConnectorStep alphanumeric() {
+        return fixedType.alphanumeric();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep unicodeAlphanumeric() {
-        assembler.addClassRange(RegexSyntax.UNICODE_ALPHANUMERIC);
-        return this;
+    public CharacterClassConnectorStep nonAlphanumeric() {
+        return fixedType.nonAlphanumeric();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep nonUnicodeAlphanumeric() {
-        assembler.addClassRange(RegexSyntax.NON_UNICODE_ALPHANUMERIC);
-        return this;
+    public CharacterClassConnectorStep unicodeAlphanumeric() {
+        return fixedType.unicodeAlphanumeric();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep wordCharacters() {
-        assembler.addClassRange(RegexSyntax.WORD_CHARACTERS);
-        return this;
+    public CharacterClassConnectorStep nonUnicodeAlphanumeric() {
+        return fixedType.nonUnicodeAlphanumeric();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep nonWordCharacters() {
-        assembler.addClassRange(RegexSyntax.NON_WORD_CHARACTERS);
-        return this;
+    public CharacterClassConnectorStep wordCharacters() {
+        return fixedType.wordCharacters();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep unicodeWordCharacters() {
-        assembler.addClassRange(RegexSyntax.UNICODE_WORD_CHARACTERS);
-        return this;
+    public CharacterClassConnectorStep nonWordCharacters() {
+        return fixedType.nonWordCharacters();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep nonUnicodeWordCharacters() {
-        assembler.addClassRange(RegexSyntax.NON_UNICODE_WORD_CHARACTERS);
-        return this;
+    public CharacterClassConnectorStep unicodeWordCharacters() {
+        return fixedType.unicodeWordCharacters();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep whitespace() {
-        assembler.addClassRange(RegexSyntax.WHITESPACE);
-        return this;
+    public CharacterClassConnectorStep nonUnicodeWordCharacters() {
+        return fixedType.nonUnicodeWordCharacters();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep nonWhitespace() {
-        assembler.addClassRange(RegexSyntax.NON_WHITESPACE);
-        return this;
+    public CharacterClassConnectorStep whitespace() {
+        return fixedType.whitespace();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep unicodeWhitespace() {
-        assembler.addClassRange(RegexSyntax.UNICODE_WHITESPACE);
-        return this;
+    public CharacterClassConnectorStep nonWhitespace() {
+        return fixedType.nonWhitespace();
     }
 
     @Override
-    public VariableCharacterClassConnectorStep nonUnicodeWhitespace() {
-        assembler.addClassRange(RegexSyntax.NON_UNICODE_WHITESPACE);
-        return this;
+    public CharacterClassConnectorStep unicodeWhitespace() {
+        return fixedType.unicodeWhitespace();
     }
 
-    // ===================================================================================
-    // CONNECTOR METHODS
-    // ===================================================================================
+    @Override
+    public CharacterClassConnectorStep nonUnicodeWhitespace() {
+        return fixedType.nonUnicodeWhitespace();
+    }
 
     @Override
     public ConnectorStep followedBy(char c) {
