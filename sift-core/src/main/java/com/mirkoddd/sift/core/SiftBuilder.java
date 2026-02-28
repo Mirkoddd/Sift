@@ -19,6 +19,7 @@ import com.mirkoddd.sift.core.dsl.*;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Internal implementation of the State Machine.
@@ -30,6 +31,7 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
     private final FixedType fixedType;
     private final VariableType variableType;
     private String cachedRegex = null;
+    private Pattern cachedPattern = null;
     /**
      * Default constructor for standard builder.
      */
@@ -328,13 +330,19 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
             cachedRegex = assembler.build();
 
             try {
-                java.util.regex.Pattern.compile(cachedRegex);
+                cachedPattern = Pattern.compile(cachedRegex);
             } catch (java.util.regex.PatternSyntaxException e) {
                 throw new IllegalStateException("Sift generated an invalid regex pattern: " + cachedRegex +
                         ". Please report this bug to the library maintainers.", e);
             }
         }
         return cachedRegex;
+    }
+
+    @Override
+    public Pattern sieve() {
+        shake();
+        return cachedPattern;
     }
 
     Set<String> getRegisteredGroupNames() {

@@ -17,6 +17,7 @@ package com.mirkoddd.sift.core.dsl;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Represents a component that can be converted into a valid Regex string.
@@ -56,5 +57,22 @@ public interface SiftPattern {
         String ATOMIC_OPEN = "(?>";
         String ATOMIC_CLOSE = ")";
         return () -> ATOMIC_OPEN + this.shake() + ATOMIC_CLOSE;
+    }
+
+    /**
+     * Compiles this pattern into a {@link java.util.regex.Pattern}.
+     * <p>
+     * This is the natural completion of the builder chain: <b>Sift</b> → <b>shake</b> → <b>sieve</b>.
+     * Use this when you need a compiled {@link java.util.regex.Pattern} directly,
+     * rather than the raw regex string.
+     * <p>
+     * The default implementation compiles the result of {@link #shake()} on every call.
+     * {@code SiftBuilder} overrides this method to reuse the {@link java.util.regex.Pattern}
+     * already compiled internally by {@link #shake()}, avoiding any redundant compilation.
+     *
+     * @return A compiled {@link java.util.regex.Pattern} ready for matching.
+     */
+    default Pattern sieve() {
+        return Pattern.compile(this.shake());
     }
 }
