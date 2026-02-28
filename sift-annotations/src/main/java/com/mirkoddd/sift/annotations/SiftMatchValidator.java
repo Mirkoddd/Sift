@@ -17,6 +17,8 @@ package com.mirkoddd.sift.annotations;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import jakarta.validation.ValidationException;
+
 import java.util.regex.Pattern;
 
 /**
@@ -45,7 +47,7 @@ public final class SiftMatchValidator implements ConstraintValidator<SiftMatch, 
 
             this.compiledPattern = Pattern.compile(rawRegex, combinedFlags);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize SiftRegexProvider: " + constraintAnnotation.value().getName() + ". Ensure it has a public no-args constructor.", e);
+            throw new ValidationException("Failed to initialize SiftRegexProvider: " + constraintAnnotation.value().getName() + ". Ensure it has a public no-args constructor.", e);
         }
     }
 
