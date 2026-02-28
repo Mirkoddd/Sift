@@ -224,29 +224,26 @@ class SiftPatternsTest {
     }
 
     @Test
-    @DisplayName("sieve() should return a cached compiled Pattern that correctly matches the input")
-    void testSieveReturnsCachedPattern() {
-        // 1. Creiamo un costrutto semplice: esattamente 3 cifre
-        com.mirkoddd.sift.core.SiftBuilder builder =
-                (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().exactly(3).digits();
+    @DisplayName("SiftPattern interface should correctly expose and execute sieve()")
+    void testSiftPatternInterfaceSieveCoverage() {
+        com.mirkoddd.sift.core.dsl.SiftPattern patternInterface =
+                Sift.fromStart().exactly(3).digits();
 
-        // 2. Invochiamo sieve() per la prima volta
-        java.util.regex.Pattern firstPattern = builder.sieve();
+        java.util.regex.Pattern compiled = patternInterface.sieve();
 
-        // Verifichiamo che non sia nullo e che la stringa regex sia corretta
-        assertNotNull(firstPattern, "sieve() should not return a null Pattern");
-        assertEquals("^[0-9]{3}", firstPattern.pattern(), "The compiled pattern should match the DSL logic");
+        assertNotNull(compiled, "The interface method should return a valid Pattern");
+        assertEquals("^[0-9]{3}", compiled.pattern());
+    }
 
-        // 3. Verifichiamo il comportamento del motore regex compilato
-        assertTrue(firstPattern.matcher("123").matches(), "The Pattern should match '123'");
-        assertFalse(firstPattern.matcher("12").matches(), "The Pattern should NOT match '12'");
-        assertFalse(firstPattern.matcher("abc").matches(), "The Pattern should NOT match letters");
+    @Test
+    @DisplayName("SiftPattern default sieve() should compile the result of shake()")
+    void testDefaultSieveImplementation() {
+        com.mirkoddd.sift.core.dsl.SiftPattern anonymousPattern = () -> "[a-z]+";
 
-        // 4. Invochiamo sieve() per la seconda volta per testare la CACHE
-        java.util.regex.Pattern secondPattern = builder.sieve();
+        java.util.regex.Pattern compiled = anonymousPattern.sieve();
 
-        // Verifichiamo l'identità dell'oggetto: devono essere la STESSA istanza in memoria
-        assertSame(firstPattern, secondPattern,
-                "sieve() should return the exactly same Pattern instance from cache on subsequent calls");
+        assertNotNull(compiled, "The default sieve() should return a valid Pattern");
+        assertEquals("[a-z]+", compiled.pattern(), "The compiled pattern should match the shake() output");
+        assertTrue(compiled.matcher("abc").matches(), "The Pattern should correctly match valid strings");
     }
 }

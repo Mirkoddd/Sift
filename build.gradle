@@ -59,6 +59,12 @@ public final class BuildInfo {
             }
 
             sourceSets.main.java.srcDir(genVersionTask)
+
+            tasks.withType(JacocoReport).configureEach {
+                classDirectories.setFrom(sourceSets.main.output.classesDirs.getAsFileTree().matching {
+                    exclude '**/BuildInfo.class'
+                })
+            }
         }
     }
 }

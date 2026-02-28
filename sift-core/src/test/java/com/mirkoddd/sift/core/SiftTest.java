@@ -415,6 +415,27 @@ class SiftTest {
         }
 
         @Test
+        @DisplayName("sieve() should return a cached compiled Pattern that correctly matches the input")
+        void testSieveReturnsCachedPattern() {
+            com.mirkoddd.sift.core.SiftBuilder builder =
+                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().exactly(3).digits();
+
+            java.util.regex.Pattern firstPattern = builder.sieve();
+
+            assertNotNull(firstPattern, "sieve() should not return a null Pattern");
+            assertEquals("^[0-9]{3}", firstPattern.pattern(), "The compiled pattern should match the DSL logic");
+
+            assertTrue(firstPattern.matcher("123").matches(), "The Pattern should match '123'");
+            assertFalse(firstPattern.matcher("12").matches(), "The Pattern should NOT match '12'");
+            assertFalse(firstPattern.matcher("abc").matches(), "The Pattern should NOT match letters");
+
+            java.util.regex.Pattern secondPattern = builder.sieve();
+
+            assertSame(firstPattern, secondPattern,
+                    "sieve() should return the exactly same Pattern instance from cache on subsequent calls");
+        }
+
+        @Test
         @DisplayName("equals() and hashCode() should evaluate structural identity based on the regex")
         void testBuilderIdentity() {
             com.mirkoddd.sift.core.SiftBuilder builderA =
