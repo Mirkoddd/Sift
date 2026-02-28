@@ -1310,6 +1310,15 @@ class SiftTest {
         }
 
         @Test
+        @DisplayName("range(char, char) should correctly delegate and append the range")
+        void testCharRangeDelegation() {
+            String regex = Sift.fromStart().range('A', 'Z').shake();
+
+            assertNotNull(regex);
+            assertTrue(regex.contains("A-Z"), "The regex should contain the A-Z range");
+        }
+
+        @Test
         @DisplayName("range() should throw an exception if the boundaries are inverted")
         void testInvalidCustomRange() {
             // Verifies that defensive programming blocks invalid logical ranges
