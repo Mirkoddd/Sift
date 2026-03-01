@@ -20,24 +20,17 @@ import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
 
 class VariableType extends AbstractTypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> {
 
-    private final VariableConnectorStep normalConnector;
-    private final VariableCharacterClassConnectorStep charClassConnector;
-
-    VariableType(PatternAssembler assembler,
-                 VariableConnectorStep normalConnector,
-                 VariableCharacterClassConnectorStep charClassConnector) {
-        super(assembler);
-        this.normalConnector = normalConnector;
-        this.charClassConnector = charClassConnector;
+    VariableType(SiftBuilder parentBuilder) {
+        super(parentBuilder);
     }
 
     @Override
-    protected VariableConnectorStep getNormalConnector() {
-        return normalConnector;
+    protected VariableConnectorStep getNormalConnector(SiftBuilder clone) {
+        return clone;
     }
 
     @Override
-    protected VariableCharacterClassConnectorStep getCharacterClassConnector() {
-        return charClassConnector;
+    protected VariableCharacterClassConnectorStep getCharacterClassConnector(SiftBuilder clone) {
+        return clone;
     }
 }

@@ -220,4 +220,15 @@ class PatternAssembler {
         flush();
         return mainPattern.toString();
     }
+
+    PatternAssembler copy() {
+        PatternAssembler clone = new PatternAssembler();
+        clone.mainPattern.append(this.mainPattern);
+        clone.pendingClass.append(this.pendingClass);
+        clone.currentQuantifier = this.currentQuantifier;
+        clone.isBuildingClass = this.isBuildingClass;
+        clone.canMakePossessiveToMain = this.canMakePossessiveToMain;
+        clone.registeredGroups.addAll(this.registeredGroups);
+        return clone;
+    }
 }

@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  */
 class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorStep, VariableCharacterClassConnectorStep {
 
-    private final PatternAssembler assembler;
+    final PatternAssembler assembler;
     private final FixedType fixedType;
     private final VariableType variableType;
     private String cachedRegex = null;
@@ -37,8 +37,8 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
      */
     SiftBuilder() {
         this.assembler = new PatternAssembler();
-        this.fixedType = new FixedType(assembler, this, this);
-        this.variableType = new VariableType(assembler, this, this);
+        this.fixedType = new FixedType(this);
+        this.variableType = new VariableType(this);
     }
 
     /**
@@ -48,75 +48,95 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
      */
     SiftBuilder(SiftGlobalFlag... flags) {
         this.assembler = new PatternAssembler(flags);
-        this.fixedType = new FixedType(assembler, this, this);
-        this.variableType = new VariableType(assembler, this, this);
+        this.fixedType = new FixedType(this);
+        this.variableType = new VariableType(this);
+    }
+
+    private SiftBuilder(PatternAssembler clonedAssembler) {
+        this.assembler = clonedAssembler;
+        this.fixedType = new FixedType(this);
+        this.variableType = new VariableType(this);
+    }
+
+    SiftBuilder cloneBuilder() {
+        return new SiftBuilder(this.assembler.copy());
     }
 
     public SiftBuilder anchorStart() {
-        assembler.addAnchor(RegexSyntax.START_OF_LINE);
-        return this;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.addAnchor(RegexSyntax.START_OF_LINE);
+        return clone;
     }
 
     @Override
     public TypeStep<ConnectorStep, CharacterClassConnectorStep> exactly(int n) {
         if (n <= 0) throw new IllegalArgumentException("Quantity must be strictly positive: " + n);
-        assembler.setQuantifier((n == 1) ? RegexSyntax.EMPTY :
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.setQuantifier((n == 1) ? RegexSyntax.EMPTY :
                 RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.QUANTIFIER_CLOSE);
-        return fixedType;
+        return clone.fixedType;
     }
 
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> atLeast(int n) {
         if (n < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + n);
-        assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.COMMA + RegexSyntax.QUANTIFIER_CLOSE);
-        return variableType;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.COMMA + RegexSyntax.QUANTIFIER_CLOSE);
+        return clone.variableType;
     }
 
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> oneOrMore() {
-        assembler.setQuantifier(RegexSyntax.ONE_OR_MORE);
-        return variableType;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.setQuantifier(RegexSyntax.ONE_OR_MORE);
+        return clone.variableType;
     }
 
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> zeroOrMore() {
-        assembler.setQuantifier(RegexSyntax.ZERO_OR_MORE);
-        return variableType;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.setQuantifier(RegexSyntax.ZERO_OR_MORE);
+        return clone.variableType;
     }
 
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> optional() {
-        assembler.setQuantifier(RegexSyntax.OPTIONAL);
-        return variableType;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.setQuantifier(RegexSyntax.OPTIONAL);
+        return clone.variableType;
     }
 
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> atMost(int max) {
         if (max < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + max);
-        assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + "0" + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE);
-        return variableType;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + "0" + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE);
+        return clone.variableType;
     }
 
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> between(int min, int max) {
         if (min < 0 || max < 0) throw new IllegalArgumentException("Quantities cannot be negative");
         if (min > max) throw new IllegalArgumentException("Min cannot be greater than max");
-        assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + min + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE);
-        return variableType;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + min + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE);
+        return clone.variableType;
     }
 
     @Override
     public ConnectorStep namedCapture(NamedCapture group) {
         Objects.requireNonNull(group, "NamedCapture cannot be null.");
-        assembler.addNamedCapture(group);
-        return this;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.addNamedCapture(group);
+        return clone;
     }
 
     @Override
     public ConnectorStep backreference(NamedCapture group) {
         Objects.requireNonNull(group, "Backreference group cannot be null.");
-        assembler.addBackreference(group);
-        return this;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.addBackreference(group);
+        return clone;
     }
 
     @Override
@@ -284,55 +304,65 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
 
     @Override
     public QuantifierStep then() {
-        assembler.flush();
-        return this;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.flush();
+        return clone;
     }
 
     @Override
     public VariableCharacterClassConnectorStep including(char extra, char... additionalExtras) {
-        assembler.addClassInclusion(extra, additionalExtras);
-        return this;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.addClassInclusion(extra, additionalExtras);
+        return clone;
     }
 
     @Override
     public VariableCharacterClassConnectorStep excluding(char excluded, char... additionalExcluded) {
-        assembler.addClassExclusion(excluded, additionalExcluded);
-        return this;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.addClassExclusion(excluded, additionalExcluded);
+        return clone;
     }
 
     @Override
     public ConnectorStep wordBoundary() {
-        assembler.addWordBoundary();
-        return this;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.addWordBoundary();
+        return clone;
     }
 
     @Override
     public ConnectorStep withoutBacktracking() {
-        assembler.applyPossessiveModifier();
-        return this;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.applyPossessiveModifier();
+        return clone;
     }
 
     @Override
     public ConnectorStep asFewAsPossible() {
-        assembler.applyLazyModifier();
-        return this;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.applyLazyModifier();
+        return clone;
     }
 
     @Override
     public SiftPattern andNothingElse() {
-        assembler.addAnchor(RegexSyntax.END_OF_LINE);
-        return this;
+        SiftBuilder clone = this.cloneBuilder();
+        clone.assembler.addAnchor(RegexSyntax.END_OF_LINE);
+        return clone;
     }
 
     @Override
     public String shake() {
         if (cachedRegex == null) {
-            cachedRegex = assembler.build();
+
+            PatternAssembler tempAssembler = this.assembler.copy();
+            String generatedRegex = tempAssembler.build();
 
             try {
-                cachedPattern = Pattern.compile(cachedRegex);
+                cachedPattern = Pattern.compile(generatedRegex);
+                cachedRegex = generatedRegex;
             } catch (java.util.regex.PatternSyntaxException e) {
-                throw new IllegalStateException("Sift generated an invalid regex pattern: " + cachedRegex +
+                throw new IllegalStateException("Sift generated an invalid regex pattern: " + generatedRegex +
                         ". Please report this bug to the library maintainers.", e);
             }
         }

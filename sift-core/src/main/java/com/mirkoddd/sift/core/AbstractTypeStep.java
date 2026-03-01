@@ -26,204 +26,221 @@ import java.util.Objects;
  * Base template class for evaluating type definitions in the Sift DSL.
  * <p>
  * This abstract class implements the Template Method pattern to centralize the
- * interaction with the {@link PatternAssembler}. It prevents code duplication
- * across different quantification states (e.g., fixed length vs. variable length)
- * by delegating the decision of the return type to its concrete subclasses.
+ * interaction with the regex engine. In the immutable architecture of Sift,
+ * this class acts as a secure bridge: every time a type is selected, it forces
+ * the parent builder to clone its state before applying the new mutation.
+ * This ensures absolute Thread-Safety and prevents state poisoning when
+ * reusing intermediate builder variables.
  *
  * @param <T> The specific {@link ConnectorStep} returned for standard type definitions.
  * @param <C> The specific {@link CharacterClassConnectorStep} returned for character classes.
  */
 abstract class AbstractTypeStep<T extends ConnectorStep, C extends CharacterClassConnectorStep> implements TypeStep<T, C> {
 
-    protected final PatternAssembler assembler;
+    protected final SiftBuilder parentBuilder;
 
-    /**
-     * Constructs the base step with the shared regex assembler.
-     *
-     * @param assembler The stateful assembler building the regex string.
-     */
-    protected AbstractTypeStep(PatternAssembler assembler) {
-        this.assembler = assembler;
+    protected AbstractTypeStep(SiftBuilder parentBuilder) {
+        this.parentBuilder = parentBuilder;
     }
 
-    /**
-     * Provides the appropriate step for standard type definitions (e.g., any, literal).
-     * @return The next step in the DSL chain.
-     */
-    protected abstract T getNormalConnector();
+    protected abstract T getNormalConnector(SiftBuilder clone);
 
-    /**
-     * Provides the appropriate step for character class definitions (e.g., digits, letters).
-     * @return The next step in the DSL chain, exposing character class modifiers.
-     */
-    protected abstract C getCharacterClassConnector();
+    protected abstract C getCharacterClassConnector(SiftBuilder clone);
 
     @Override
     public T any() {
-        assembler.addAnyChar();
-        return getNormalConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addAnyChar();
+        return getNormalConnector(clone);
     }
 
     @Override
     public T character(char literal) {
-        assembler.addCharacter(literal);
-        return getNormalConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addCharacter(literal);
+        return getNormalConnector(clone);
     }
 
     @Override
     public T pattern(SiftPattern pattern) {
         Objects.requireNonNull(pattern, "SiftPattern cannot be null");
-        assembler.addPattern(pattern);
-        return getNormalConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addPattern(pattern);
+        return getNormalConnector(clone);
     }
 
     @Override
     public C digits() {
-        assembler.addClassRange(RegexSyntax.RANGE_DIGITS);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.RANGE_DIGITS);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C nonDigits() {
-        assembler.addClassRange(RegexSyntax.NON_DIGITS);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.NON_DIGITS);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C unicodeDigits() {
-        assembler.addClassRange(RegexSyntax.UNICODE_DIGITS);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.UNICODE_DIGITS);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C nonUnicodeDigits() {
-        assembler.addClassRange(RegexSyntax.NON_UNICODE_DIGITS);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.NON_UNICODE_DIGITS);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C letters() {
-        assembler.addClassRange(RegexSyntax.RANGE_LETTERS);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.RANGE_LETTERS);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C nonLetters() {
-        assembler.addClassRange(RegexSyntax.NON_LETTERS);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.NON_LETTERS);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C lettersUppercaseOnly() {
-        assembler.addClassRange(RegexSyntax.RANGE_LETTERS_UPPERCASE_ONLY);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.RANGE_LETTERS_UPPERCASE_ONLY);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C lettersLowercaseOnly() {
-        assembler.addClassRange(RegexSyntax.RANGE_LETTERS_LOWERCASE_ONLY);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.RANGE_LETTERS_LOWERCASE_ONLY);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C unicodeLetters() {
-        assembler.addClassRange(RegexSyntax.UNICODE_LETTERS);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.UNICODE_LETTERS);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C nonUnicodeLetters() {
-        assembler.addClassRange(RegexSyntax.NON_UNICODE_LETTERS);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.NON_UNICODE_LETTERS);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C unicodeLettersUppercaseOnly() {
-        assembler.addClassRange(RegexSyntax.UNICODE_LETTERS_UPPERCASE_ONLY);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.UNICODE_LETTERS_UPPERCASE_ONLY);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C unicodeLettersLowercaseOnly() {
-        assembler.addClassRange(RegexSyntax.UNICODE_LETTERS_LOWERCASE_ONLY);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.UNICODE_LETTERS_LOWERCASE_ONLY);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C alphanumeric() {
-        assembler.addClassRange(RegexSyntax.RANGE_ALPHANUMERIC);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.RANGE_ALPHANUMERIC);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C nonAlphanumeric() {
-        assembler.addClassRange(RegexSyntax.NON_ALPHANUMERIC);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.NON_ALPHANUMERIC);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C unicodeAlphanumeric() {
-        assembler.addClassRange(RegexSyntax.UNICODE_ALPHANUMERIC);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.UNICODE_ALPHANUMERIC);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C nonUnicodeAlphanumeric() {
-        assembler.addClassRange(RegexSyntax.NON_UNICODE_ALPHANUMERIC);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.NON_UNICODE_ALPHANUMERIC);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C wordCharacters() {
-        assembler.addClassRange(RegexSyntax.WORD_CHARACTERS);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.WORD_CHARACTERS);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C nonWordCharacters() {
-        assembler.addClassRange(RegexSyntax.NON_WORD_CHARACTERS);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.NON_WORD_CHARACTERS);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C unicodeWordCharacters() {
-        assembler.addClassRange(RegexSyntax.UNICODE_WORD_CHARACTERS);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.UNICODE_WORD_CHARACTERS);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C nonUnicodeWordCharacters() {
-        assembler.addClassRange(RegexSyntax.NON_UNICODE_WORD_CHARACTERS);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.NON_UNICODE_WORD_CHARACTERS);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C whitespace() {
-        assembler.addClassRange(RegexSyntax.WHITESPACE);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.WHITESPACE);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C nonWhitespace() {
-        assembler.addClassRange(RegexSyntax.NON_WHITESPACE);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.NON_WHITESPACE);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C unicodeWhitespace() {
-        assembler.addClassRange(RegexSyntax.UNICODE_WHITESPACE);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.UNICODE_WHITESPACE);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C nonUnicodeWhitespace() {
-        assembler.addClassRange(RegexSyntax.NON_UNICODE_WHITESPACE);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addClassRange(RegexSyntax.NON_UNICODE_WHITESPACE);
+        return getCharacterClassConnector(clone);
     }
 
     @Override
     public C range(char start, char end) {
-        assembler.addCustomRange(start, end);
-        return getCharacterClassConnector();
+        SiftBuilder clone = parentBuilder.cloneBuilder();
+        clone.assembler.addCustomRange(start, end);
+        return getCharacterClassConnector(clone);
     }
 }

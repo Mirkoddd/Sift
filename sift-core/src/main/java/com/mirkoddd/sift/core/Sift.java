@@ -27,10 +27,12 @@ import java.util.Objects;
  * Sift enforces a state machine flow (Start -> Quantifier -> Type -> Connector) to prevent
  * syntax errors at compile-time.
  * <p>
- * <b>Thread Safety:</b>
- * Builder instances returned by this class are <b>not</b> thread-safe.
- * You should always create a new builder chain for each regular expression generation,
- * especially in multi-threaded environments like Web Servers (e.g., Spring Boot) or Kotlin Coroutines.
+ * <b>Thread Safety & Immutability:</b>
+ * SiftBuilder instances are <b>100% immutable and thread-safe</b>.
+ * Every step in the fluent chain returns a new independent instance.
+ * You can safely assign intermediate steps to variables, reuse them to branch off
+ * into different regex patterns without poisoning the state, and share them safely
+ * across multiple threads (e.g., in Spring Boot controllers or Kotlin Coroutines).
  * <p>
  * <b>Usage Example:</b>
  * <pre>

@@ -881,22 +881,31 @@ class SiftTest {
                     "Should allow lazy modifier on optional character classes");
 
             // BRANCH 2: isBuildingClass = true, endsWith(RegexSyntax.LAZY) == true
-            VariableCharacterClassConnectorStep step1 = Sift.fromStart().oneOrMore().digits();
-            step1.asFewAsPossible();
-            ((VariableCharacterClassConnectorStep) step1).asFewAsPossible();
-            assertEquals("^[0-9]+?", ((com.mirkoddd.sift.core.SiftBuilder) step1).shake(),
+            // Capture the result of the first call
+            ConnectorStep step1Lazy = Sift.fromStart().oneOrMore().digits().asFewAsPossible();
+
+            // Capture the result of the attempted second call
+            ConnectorStep step1DoubleLazy = ((VariableCharacterClassConnectorStep) step1Lazy).asFewAsPossible();
+
+            assertEquals("^[0-9]+?", step1DoubleLazy.shake(),
                     "Should ignore a second lazy call on a character class");
 
             // BRANCH 3: isBuildingClass = true, currentQuantifier.isEmpty() == true
             CharacterClassConnectorStep step2 = Sift.fromStart().digits();
-            ((VariableCharacterClassConnectorStep) step2).asFewAsPossible();
-            assertEquals("^[0-9]", ((com.mirkoddd.sift.core.SiftBuilder) step2).shake(),
+
+            // Capture the invalid attempt
+            ConnectorStep step2LazyAttempt = ((VariableCharacterClassConnectorStep) step2).asFewAsPossible();
+
+            assertEquals("^[0-9]", step2LazyAttempt.shake(),
                     "Should ignore lazy modifier if the class quantifier is empty");
 
             // BRANCH 4: isBuildingClass = false, canMakePossessiveToMain = false
-            ConnectorStep step3 = Sift.fromStart().oneOrMore().any().asFewAsPossible();
-            ((VariableConnectorStep) step3).asFewAsPossible();
-            assertEquals("^.+?", ((com.mirkoddd.sift.core.SiftBuilder) step3).shake(),
+            ConnectorStep step3Base = Sift.fromStart().oneOrMore().any().asFewAsPossible();
+
+            // Capture the second attempt
+            ConnectorStep step3DoubleLazy = ((VariableConnectorStep) step3Base).asFewAsPossible();
+
+            assertEquals("^.+?", step3DoubleLazy.shake(),
                     "Should ignore a second lazy call on the main pattern");
         }
     }
