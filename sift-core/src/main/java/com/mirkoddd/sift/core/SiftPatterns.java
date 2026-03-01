@@ -262,14 +262,15 @@ public final class SiftPatterns {
     }
 
     /**
-     * Creates a <b>Negated Character Class</b> {@code [^...]}.
+     * Creates a pattern that matches any single character EXCEPT those provided in the given string.
      * <p>
-     * Matches any single character that is <b>not</b> present in the provided string.
-     * Special characters are automatically safely escaped to ensure they are treated
-     * as literals within the regex brackets.
+     * This translates to a negated character class in standard regex syntax (e.g., {@code [^abc]}).
+     * All characters within the provided string are automatically and safely escaped.
      *
-     * @param chars A string containing the exact characters to exclude (e.g., "aeiou" to exclude vowels).
-     * @return A SiftPattern representing the negated character set.
+     * @param chars A string containing the literal characters to be excluded.
+     * @return A {@link SiftPattern} representing the negated character class.
+     * @throws NullPointerException if the {@code chars} string is null.
+     * @throws IllegalArgumentException if the {@code chars} string is empty.
      */
     public static SiftPattern anythingBut(String chars) {
         Objects.requireNonNull(chars, "Excluded characters string cannot be null");
@@ -279,12 +280,12 @@ public final class SiftPatterns {
         }
 
         return () -> {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder(3 + (chars.length() * 2));
             sb.append(RegexSyntax.CLASS_OPEN);
             sb.append(RegexSyntax.NEGATION);
 
-            for (char c : chars.toCharArray()) {
-                RegexEscaper.escapeInsideBrackets(c, sb);
+            for (int i = 0; i < chars.length(); i++) {
+                RegexEscaper.escapeInsideBrackets(chars.charAt(i), sb);
             }
 
             sb.append(RegexSyntax.CLASS_CLOSE);
