@@ -30,8 +30,8 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
     final PatternAssembler assembler;
     private final FixedType fixedType;
     private final VariableType variableType;
-    private String cachedRegex = null;
-    private Pattern cachedPattern = null;
+    private volatile String cachedRegex = null;
+    private volatile Pattern cachedPattern = null;
     /**
      * Default constructor for standard builder.
      */
