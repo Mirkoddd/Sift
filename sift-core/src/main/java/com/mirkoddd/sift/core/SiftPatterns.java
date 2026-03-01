@@ -18,6 +18,7 @@ package com.mirkoddd.sift.core;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * <h2>SiftPatterns - Component Factory</h2>
@@ -54,7 +55,7 @@ public final class SiftPatterns {
             Objects.requireNonNull(opt, "Additional option cannot be null");
         }
 
-        return () -> {
+        return memoize(() -> {
             StringBuilder sb = new StringBuilder();
             sb.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN);
 
@@ -69,7 +70,7 @@ public final class SiftPatterns {
 
             sb.append(RegexSyntax.GROUP_CLOSE);
             return sb.toString();
-        };
+        });
     }
 
     /**
@@ -83,7 +84,7 @@ public final class SiftPatterns {
      */
     public static SiftPattern capture(SiftPattern pattern) {
         Objects.requireNonNull(pattern, "Pattern to capture cannot be null");
-        return () -> RegexSyntax.GROUP_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
+        return memoize(() -> RegexSyntax.GROUP_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
     /**
@@ -106,7 +107,7 @@ public final class SiftPatterns {
      */
     public static SiftPattern positiveLookahead(SiftPattern pattern) {
         Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
-        return () -> RegexSyntax.POSITIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
+        return memoize(() -> RegexSyntax.POSITIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
     /**
@@ -129,7 +130,7 @@ public final class SiftPatterns {
      */
     public static SiftPattern negativeLookahead(SiftPattern pattern) {
         Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
-        return () -> RegexSyntax.NEGATIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
+        return memoize(() -> RegexSyntax.NEGATIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
     /**
@@ -152,7 +153,7 @@ public final class SiftPatterns {
      */
     public static SiftPattern positiveLookbehind(SiftPattern pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
-        return () -> RegexSyntax.POSITIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
+        return memoize(() -> RegexSyntax.POSITIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
     /**
@@ -175,7 +176,7 @@ public final class SiftPatterns {
      */
     public static SiftPattern negativeLookbehind(SiftPattern pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
-        return () -> RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE;
+        return memoize(() -> RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
     /**
@@ -213,7 +214,7 @@ public final class SiftPatterns {
             Objects.requireNonNull(opt, "Additional option cannot be null");
         }
 
-        return () -> {
+        return memoize(() -> {
             StringBuilder sb = new StringBuilder();
             sb.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN);
 
@@ -225,7 +226,7 @@ public final class SiftPatterns {
 
             sb.append(RegexSyntax.GROUP_CLOSE);
             return sb.toString();
-        };
+        });
     }
 
     /**
@@ -254,11 +255,11 @@ public final class SiftPatterns {
             throw new IllegalArgumentException("Literal text cannot be empty. Use zero-width assertions if intentional.");
         }
 
-        return () -> {
+        return memoize(() -> {
             StringBuilder sb = new StringBuilder();
             RegexEscaper.escapeString(text, sb);
             return sb.toString();
-        };
+        });
     }
 
     /**
@@ -279,7 +280,7 @@ public final class SiftPatterns {
             throw new IllegalArgumentException("Excluded characters string cannot be empty");
         }
 
-        return () -> {
+        return memoize(() -> {
             StringBuilder sb = new StringBuilder(3 + (chars.length() * 2));
             sb.append(RegexSyntax.CLASS_OPEN);
             sb.append(RegexSyntax.NEGATION);
@@ -290,6 +291,36 @@ public final class SiftPatterns {
 
             sb.append(RegexSyntax.CLASS_CLOSE);
             return sb.toString();
+        });
+    }
+
+    /**
+     * Internal helper to memoize the result of a pattern.
+     * Guarantees that shake() and sieve() are computed only once in a thread-safe manner.
+     *
+     * @param generator The underlying SiftPattern generation logic.
+     * @return A thread-safe, caching SiftPattern instance.
+     */
+    private static SiftPattern memoize(SiftPattern generator) {
+        return new SiftPattern() {
+            private volatile String cachedRegex = null;
+            private volatile Pattern cachedPattern = null;
+
+            @Override
+            public String shake() {
+                if (cachedRegex == null) {
+                    cachedRegex = generator.shake();
+                }
+                return cachedRegex;
+            }
+
+            @Override
+            public Pattern sieve() {
+                if (cachedPattern == null) {
+                    cachedPattern = Pattern.compile(shake());
+                }
+                return cachedPattern;
+            }
         };
     }
 }

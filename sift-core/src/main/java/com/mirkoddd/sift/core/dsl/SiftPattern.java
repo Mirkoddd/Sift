@@ -15,8 +15,6 @@
  */
 package com.mirkoddd.sift.core.dsl;
 
-import java.util.Collections;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -54,9 +52,28 @@ public interface SiftPattern {
      * @return A new SiftPattern wrapped in an atomic group {@code (?>...)}.
      */
     default SiftPattern preventBacktracking() {
-        String ATOMIC_OPEN = "(?>";
-        String ATOMIC_CLOSE = ")";
-        return () -> ATOMIC_OPEN + this.shake() + ATOMIC_CLOSE;
+        final String atomicOpen = "(?>";
+        final String atomicClose = ")";
+        return new SiftPattern() {
+            private volatile String cachedRegex = null;
+            private volatile Pattern cachedPattern = null;
+
+            @Override
+            public String shake() {
+                if (cachedRegex == null) {
+                    cachedRegex = atomicOpen + SiftPattern.this.shake() + atomicClose;
+                }
+                return cachedRegex;
+            }
+
+            @Override
+            public Pattern sieve() {
+                if (cachedPattern == null) {
+                    cachedPattern = Pattern.compile(shake());
+                }
+                return cachedPattern;
+            }
+        };
     }
 
     /**

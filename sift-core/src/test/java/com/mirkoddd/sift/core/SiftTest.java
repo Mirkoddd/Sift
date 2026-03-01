@@ -908,6 +908,26 @@ class SiftTest {
             assertEquals("^.+?", step3DoubleLazy.shake(),
                     "Should ignore a second lazy call on the main pattern");
         }
+
+        @Test
+        void shouldMemoizeShakeAndSieveForPreventBacktracking() {
+            SiftPattern basePattern = SiftPatterns.literal("atomic");
+            SiftPattern atomicPattern = basePattern.preventBacktracking();
+
+            // 1. Verify shake() caching
+            String firstShake = atomicPattern.shake();
+            String secondShake = atomicPattern.shake();
+
+            assertEquals("(?>atomic)", firstShake);
+            assertSame(firstShake, secondShake, "shake() on preventBacktracking() should return the same String instance.");
+
+            // 2. Verify sieve() caching
+            Pattern firstSieve = atomicPattern.sieve();
+            Pattern secondSieve = atomicPattern.sieve();
+
+            assertEquals("(?>atomic)", firstSieve.pattern());
+            assertSame(firstSieve, secondSieve, "sieve() on preventBacktracking() should return the same Pattern instance.");
+        }
     }
 
     @Nested

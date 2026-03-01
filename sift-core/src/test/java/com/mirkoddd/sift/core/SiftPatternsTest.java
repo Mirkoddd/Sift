@@ -246,4 +246,24 @@ class SiftPatternsTest {
         assertEquals("[a-z]+", compiled.pattern(), "The compiled pattern should match the shake() output");
         assertTrue(compiled.matcher("abc").matches(), "The Pattern should correctly match valid strings");
     }
+
+    @Test
+    void shouldMemoizeShakeAndSieveResults() {
+        // We use literal() as it's wrapped by the memoize() helper
+        SiftPattern memoizedPattern = SiftPatterns.literal("cache-test");
+
+        // 1. Verify shake() caching
+        String firstShake = memoizedPattern.shake();
+        String secondShake = memoizedPattern.shake();
+
+        assertEquals("cache-test", firstShake);
+        assertSame(firstShake, secondShake, "shake() should return the exact same String instance from cache.");
+
+        // 2. Verify sieve() caching
+        Pattern firstSieve = memoizedPattern.sieve();
+        Pattern secondSieve = memoizedPattern.sieve();
+
+        assertEquals("cache-test", firstSieve.pattern());
+        assertSame(firstSieve, secondSieve, "sieve() should return the exact same Pattern instance from cache.");
+    }
 }
