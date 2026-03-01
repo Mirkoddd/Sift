@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  */
 class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorStep, VariableCharacterClassConnectorStep {
 
-    final PatternAssembler assembler;
+    private final PatternAssembler assembler;
     private final FixedType fixedType;
     private final VariableType variableType;
     private volatile String cachedRegex = null;
@@ -60,6 +60,10 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
 
     SiftBuilder cloneBuilder() {
         return new SiftBuilder(this.assembler.copy());
+    }
+
+    PatternAssembler getAssembler() {
+        return this.assembler;
     }
 
     public SiftBuilder anchorStart() {
