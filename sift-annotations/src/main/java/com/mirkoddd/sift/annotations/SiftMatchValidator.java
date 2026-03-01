@@ -46,7 +46,7 @@ public final class SiftMatchValidator implements ConstraintValidator<SiftMatch, 
             }
 
             this.compiledPattern = Pattern.compile(rawRegex, combinedFlags);
-        } catch (Exception e) {
+        } catch (ReflectiveOperationException e) {
             throw new ValidationException("Failed to initialize SiftRegexProvider: " + constraintAnnotation.value().getName() + ". Ensure it has a public no-args constructor.", e);
         }
     }
