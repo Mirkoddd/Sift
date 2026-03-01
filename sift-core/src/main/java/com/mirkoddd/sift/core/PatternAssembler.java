@@ -177,12 +177,12 @@ class PatternAssembler {
         if (isBuildingClass) {
             if (!currentQuantifier.isEmpty()) {
                 if (currentQuantifier.equals(RegexSyntax.ONE_OR_MORE) ||
-                        !currentQuantifier.endsWith(RegexSyntax.POSSESSIVE)) {
-                    currentQuantifier += RegexSyntax.POSSESSIVE;
+                        !currentQuantifier.endsWith(RegexSyntax.POSSESSIVE_MODIFIER)) {
+                    currentQuantifier += RegexSyntax.POSSESSIVE_MODIFIER;
                 }
             }
         } else if (canMakePossessiveToMain) {
-            mainPattern.append(RegexSyntax.POSSESSIVE);
+            mainPattern.append(RegexSyntax.POSSESSIVE_MODIFIER);
             canMakePossessiveToMain = false;
         }
     }
@@ -191,12 +191,12 @@ class PatternAssembler {
         if (isBuildingClass) {
             if (!currentQuantifier.isEmpty()) {
                 if (currentQuantifier.equals(RegexSyntax.OPTIONAL) ||
-                        !currentQuantifier.endsWith(RegexSyntax.LAZY)) {
-                    currentQuantifier += RegexSyntax.LAZY;
+                        !currentQuantifier.endsWith(RegexSyntax.LAZY_MODIFIER)) {
+                    currentQuantifier += RegexSyntax.LAZY_MODIFIER;
                 }
             }
         } else if (canMakePossessiveToMain) {
-            mainPattern.append(RegexSyntax.LAZY);
+            mainPattern.append(RegexSyntax.LAZY_MODIFIER);
             canMakePossessiveToMain = false;
         }
     }
