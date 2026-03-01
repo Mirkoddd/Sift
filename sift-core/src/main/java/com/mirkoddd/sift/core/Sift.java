@@ -27,7 +27,7 @@ import java.util.Objects;
  * Sift enforces a state machine flow (Start -> Quantifier -> Type -> Connector) to prevent
  * syntax errors at compile-time.
  * <p>
- * <b>Thread Safety & Immutability:</b>
+ * <b>Thread Safety &amp; Immutability:</b>
  * SiftBuilder instances are <b>100% immutable and thread-safe</b>.
  * Every step in the fluent chain returns a new independent instance.
  * You can safely assign intermediate steps to variables, reuse them to branch off
