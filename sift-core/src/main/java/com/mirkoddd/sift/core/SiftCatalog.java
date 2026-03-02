@@ -34,15 +34,13 @@ public final class SiftCatalog {
     }
 
     /**
-     * Reusable definition of a single Hexadecimal character [a-fA-F0-9].
+     * Reusable, pre-computed pattern for a single hexadecimal character.
      */
-    private static SiftPattern hexChar() {
-        return SiftPatterns.anyOf(
-                Sift.fromAnywhere().range('a', 'f'),
-                Sift.fromAnywhere().range('A', 'F'),
-                Sift.fromAnywhere().digits()
-        );
-    }
+    private static final SiftPattern HEX_CHAR = SiftPatterns.anyOf(
+            Sift.fromAnywhere().range('a', 'f'),
+            Sift.fromAnywhere().range('A', 'F'),
+            Sift.fromAnywhere().digits()
+    );
 
     /**
      * Matches a standard 128-bit UUID/GUID (Universally Unique Identifier).
@@ -54,15 +52,15 @@ public final class SiftCatalog {
      */
     public static SiftPattern uuid() {
         return Sift.fromAnywhere()
-                .exactly(8).pattern(hexChar())
+                .exactly(8).pattern(HEX_CHAR)
                 .followedBy('-')
-                .then().exactly(4).pattern(hexChar())
+                .then().exactly(4).pattern(HEX_CHAR)
                 .followedBy('-')
-                .then().exactly(4).pattern(hexChar())
+                .then().exactly(4).pattern(HEX_CHAR)
                 .followedBy('-')
-                .then().exactly(4).pattern(hexChar())
+                .then().exactly(4).pattern(HEX_CHAR)
                 .followedBy('-')
-                .then().exactly(12).pattern(hexChar())
+                .then().exactly(12).pattern(HEX_CHAR)
                 .preventBacktracking();
     }
 
@@ -106,7 +104,7 @@ public final class SiftCatalog {
      */
     public static SiftPattern macAddress() {
         SiftPattern hexPair = Sift.fromAnywhere()
-                .exactly(2).pattern(hexChar());
+                .exactly(2).pattern(HEX_CHAR);
 
         SiftPattern colonGroup = SiftPatterns.group(SiftPatterns.literal(":"), hexPair);
         SiftPattern hyphenGroup = SiftPatterns.group(SiftPatterns.literal("-"), hexPair);
@@ -124,12 +122,20 @@ public final class SiftCatalog {
     }
 
     /**
-     * Matches a standard Email address.
+     * Matches a standard, everyday Email address.
      * <p>
-     * Validates typical format {@code local@domain.tld}, safely supporting
-     * subdomains, plus-addressing, and common special characters.
+     * <b>Important:</b> This pattern provides a pragmatic validation for the vast majority of standard email formats
+     * (e.g., {@code local@domain.tld}). It safely supports subdomains, plus-addressing, and common special characters.
+     * <p>
+     * It intentionally makes simplifications and does <b>not</b> support extreme edge-cases from RFC 5322 such as:
+     * <ul>
+     * <li>Quoted local parts (e.g., {@code "user name"@domain.com})</li>
+     * <li>IP addresses enclosed in square brackets (e.g., {@code user@[192.168.2.1]})</li>
+     * <li>Internationalized Domain Names (IDN) requiring Punycode</li>
+     * </ul>
+     * For absolute, pedantic RFC compliance, a dedicated email parsing library is recommended.
      *
-     * @return A SiftPattern representing an Email.
+     * @return A SiftPattern representing a practical, ReDoS-safe Email format.
      */
     public static SiftPattern email() {
         SiftPattern localPart = Sift.fromAnywhere()
