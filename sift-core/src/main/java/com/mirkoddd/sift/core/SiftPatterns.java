@@ -74,6 +74,35 @@ public final class SiftPatterns {
     }
 
     /**
+     * Creates a non-capturing group matching any of the provided patterns dynamically.
+     *
+     * @param patterns A list of SiftPatterns.
+     * @return A SiftPattern combining the provided options.
+     * @throws IllegalArgumentException if the list is null or empty.
+     */
+    public static SiftPattern anyOf(java.util.List<? extends SiftPattern> patterns) {
+        if (patterns == null || patterns.isEmpty()) {
+            throw new IllegalArgumentException("anyOf() requires at least one pattern in the list.");
+        }
+        if (patterns.size() == 1) {
+            return patterns.get(0); // QoL Optimization: no need to wrap a single element
+        }
+
+        return () -> {
+            StringBuilder sb = new StringBuilder();
+            sb.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN);
+            for (int i = 0; i < patterns.size(); i++) {
+                sb.append(patterns.get(i).shake());
+                if (i < patterns.size() - 1) {
+                    sb.append(RegexSyntax.OR);
+                }
+            }
+            sb.append(RegexSyntax.GROUP_CLOSE);
+            return sb.toString();
+        };
+    }
+
+    /**
      * Wraps a pattern in a <b>Capturing Group</b> {@code (...)}.
      * <p>
      * Capturing groups allow you to extract specific parts of the matched string

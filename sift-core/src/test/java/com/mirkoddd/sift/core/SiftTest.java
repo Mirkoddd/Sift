@@ -258,6 +258,35 @@ class SiftTest {
         }
 
         @Test
+        @DisplayName("atMost() and between() should exhaustively validate boundaries and throw IllegalArgumentException")
+        void testQuantifierBoundaryGuards() {
+            // --- atMost() exhaustive branches ---
+            assertThrows(IllegalArgumentException.class, () -> Sift.fromStart().atMost(0),
+                    "Should block atMost(0)");
+            assertThrows(IllegalArgumentException.class, () -> Sift.fromStart().atMost(-1),
+                    "Should block negative max values in atMost()");
+
+            // --- between() exhaustive branches ---
+            assertThrows(IllegalArgumentException.class, () -> Sift.fromStart().between(0, 0),
+                    "Should block between(0, 0) specifically");
+
+            assertThrows(IllegalArgumentException.class, () -> Sift.fromStart().between(-1, 5),
+                    "Should block negative min values");
+
+            assertThrows(IllegalArgumentException.class, () -> Sift.fromStart().between(2, 0),
+                    "Should block max <= 0 (e.g., 0 with a valid min)");
+
+            assertThrows(IllegalArgumentException.class, () -> Sift.fromStart().between(2, -1),
+                    "Should block max <= 0 (e.g., negative max with a valid min)");
+
+            assertThrows(IllegalArgumentException.class, () -> Sift.fromStart().between(5, 2),
+                    "Should block when min is strictly greater than max");
+
+            assertDoesNotThrow(() -> Sift.fromStart().between(0, 5),
+                    "Should successfully allow min=0 as long as max > 0 (e.g., {0,5})");
+        }
+
+        @Test
         @DisplayName("Should correctly generate regex for wordChars, whitespace, optionally, and andNothingElse")
         void testNewTypesAndTerminals() {
             String regex = fromStart()

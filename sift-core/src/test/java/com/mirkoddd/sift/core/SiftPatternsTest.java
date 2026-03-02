@@ -266,4 +266,65 @@ class SiftPatternsTest {
         assertEquals("cache-test", firstSieve.pattern());
         assertSame(firstSieve, secondSieve, "sieve() should return the exact same Pattern instance from cache.");
     }
+
+    @Test
+    @DisplayName("anyOf(List) should throw IllegalArgumentException for null or empty lists")
+    void testAnyOfListNullOrEmpty() {
+        IllegalArgumentException nullEx = assertThrows(IllegalArgumentException.class,
+                () -> SiftPatterns.anyOf((java.util.List<SiftPattern>) null));
+        assertTrue(nullEx.getMessage().contains("requires at least one pattern"));
+
+        IllegalArgumentException emptyEx = assertThrows(IllegalArgumentException.class,
+                () -> SiftPatterns.anyOf(java.util.Collections.emptyList()));
+        assertTrue(emptyEx.getMessage().contains("requires at least one pattern"));
+    }
+
+    @Test
+    @DisplayName("anyOf(List) should optimize single-element lists by avoiding unnecessary grouping")
+    void testAnyOfListSingleElementOptimization() {
+        SiftPattern singlePattern = Sift.fromStart().digits();
+
+        SiftPattern result = SiftPatterns.anyOf(java.util.Collections.singletonList(singlePattern));
+
+        assertEquals("^[0-9]", result.shake(),
+                "Should return the exact pattern without the (?:...) wrapper overhead");
+    }
+
+    @Test
+    @DisplayName("anyOf(List) should wrap multiple elements in a non-capturing OR group")
+    void testAnyOfListMultipleElements() {
+        SiftPattern p1 = Sift.fromAnywhere().letters();
+        SiftPattern p2 = Sift.fromAnywhere().digits();
+        SiftPattern p3 = Sift.fromAnywhere().character('-');
+
+        SiftPattern result = SiftPatterns.anyOf(java.util.Arrays.asList(p1, p2, p3));
+
+        assertEquals("(?:[a-zA-Z]|[0-9]|-)", result.shake(),
+                "Should accurately wrap multiple patterns separated by the OR operator");
+    }
+
+    @Test
+    @DisplayName("matches(CharSequence) should correctly evaluate inputs, handle nulls, and support StringBuilders")
+    void testPatternMatchesConvenienceMethod() {
+        SiftPattern pattern = Sift.fromStart().exactly(3).digits().andNothingElse();
+
+        // Branch 1: Null safety
+        assertFalse(pattern.matches(null),
+                "Should gracefully return false when the input is null, avoiding NullPointerException");
+
+        // Branch 2: Valid match (Standard String)
+        assertTrue(pattern.matches("123"),
+                "Should return true for a string that perfectly matches the pattern");
+
+        // Branch 3: Invalid match
+        assertFalse(pattern.matches("12a"),
+                "Should return false for a string with invalid characters");
+        assertFalse(pattern.matches("1234"),
+                "Should return false for a string that exceeds the exact length bounds");
+
+        // Branch 4: CharSequence polymorphism (Zero-cost abstraction)
+        StringBuilder sbInput = new StringBuilder("987");
+        assertTrue(pattern.matches(sbInput),
+                "Should natively support other CharSequence implementations like StringBuilder without allocations");
+    }
 }

@@ -30,4 +30,16 @@ public interface VariableCharacterClassConnectorStep extends VariableConnectorSt
 
     @Override
     VariableCharacterClassConnectorStep excluding(char excluded, char... additionalExcluded);
+
+    /**
+     * Anchors the pattern to the end of the input string using {@code $}.
+     * <p>
+     * Use this terminal operation when you want to ensure that there are no trailing
+     * characters after the matched sequence. Calling this method immediately concludes
+     * the fluent chain and returns the final executable pattern.
+     *
+     * @return The final {@link SiftPattern} ready for evaluation.
+     */
+    @Override
+    SiftPattern andNothingElse();
 }

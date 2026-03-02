@@ -100,4 +100,18 @@ public interface SiftPattern {
     default Pattern sieve() {
         return Pattern.compile(this.shake());
     }
+
+    /**
+     * Convenience method to quickly test if a given input matches this pattern completely.
+     * Under the hood, this compiles the regex (or uses the cached one) and evaluates it.
+     *
+     * @param input The text to evaluate.
+     * @return true if the entire input matches the pattern, false otherwise or if input is null.
+     */
+    default boolean matches(CharSequence input) {
+        if (input == null) {
+            return false;
+        }
+        return sieve().matcher(input).matches();
+    }
 }
