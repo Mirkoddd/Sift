@@ -358,16 +358,17 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
     @Override
     public String shake() {
         if (cachedRegex == null) {
-
-            PatternAssembler tempAssembler = this.assembler.copy();
-            String generatedRegex = tempAssembler.build();
-
-            try {
-                cachedPattern = Pattern.compile(generatedRegex);
-                cachedRegex = generatedRegex;
-            } catch (java.util.regex.PatternSyntaxException e) {
-                throw new IllegalStateException("Sift generated an invalid regex pattern: " + generatedRegex +
-                        ". Please report this bug to the library maintainers.", e);
+            synchronized (this) {
+                if (cachedRegex == null) {
+                    PatternAssembler tempAssembler = this.assembler.copy();
+                    String generatedRegex = tempAssembler.build();
+                    try {
+                        cachedPattern = Pattern.compile(generatedRegex);
+                        cachedRegex = generatedRegex;
+                    } catch (java.util.regex.PatternSyntaxException e) {
+                        throw new IllegalStateException("Sift generated an invalid regex pattern...", e);
+                    }
+                }
             }
         }
         return cachedRegex;

@@ -309,7 +309,11 @@ public final class SiftPatterns {
             @Override
             public String shake() {
                 if (cachedRegex == null) {
-                    cachedRegex = generator.shake();
+                    synchronized (this) {
+                        if (cachedRegex == null) {
+                            cachedRegex = generator.shake();
+                        }
+                    }
                 }
                 return cachedRegex;
             }
@@ -317,7 +321,11 @@ public final class SiftPatterns {
             @Override
             public Pattern sieve() {
                 if (cachedPattern == null) {
-                    cachedPattern = Pattern.compile(shake());
+                    synchronized (this) {
+                        if (cachedPattern == null) {
+                            cachedPattern = Pattern.compile(shake());
+                        }
+                    }
                 }
                 return cachedPattern;
             }

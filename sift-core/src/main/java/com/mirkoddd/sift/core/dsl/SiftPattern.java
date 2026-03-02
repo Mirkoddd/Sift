@@ -61,7 +61,11 @@ public interface SiftPattern {
             @Override
             public String shake() {
                 if (cachedRegex == null) {
-                    cachedRegex = atomicOpen + SiftPattern.this.shake() + atomicClose;
+                    synchronized (this) {
+                        if (cachedRegex == null) {
+                            cachedRegex = atomicOpen + SiftPattern.this.shake() + atomicClose;
+                        }
+                    }
                 }
                 return cachedRegex;
             }
@@ -69,7 +73,11 @@ public interface SiftPattern {
             @Override
             public Pattern sieve() {
                 if (cachedPattern == null) {
-                    cachedPattern = Pattern.compile(shake());
+                    synchronized (this) {
+                        if (cachedPattern == null) {
+                            cachedPattern = Pattern.compile(shake());
+                        }
+                    }
                 }
                 return cachedPattern;
             }

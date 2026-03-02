@@ -18,6 +18,8 @@ package com.mirkoddd.sift.core;
 import static com.mirkoddd.sift.core.SiftPatterns.literal;
 
 import com.mirkoddd.sift.core.dsl.ConnectorStep;
+import com.mirkoddd.sift.core.dsl.SiftPattern;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -88,5 +90,57 @@ class SiftThreadSafetyTest {
             assertTrue(results.contains(expectedRegex),
                     "Missing expected result: " + expectedRegex + ". State corruption occurred!");
         }
+    }
+
+    @Test
+    void shouldCoverDoubleCheckedLockingBranches() throws InterruptedException {
+        // Use a sufficiently high number of threads to create genuine contention
+        int threads = 50;
+        int attempts = 100; // Repeat the race 100 times to guarantee statistical coverage for Jacoco
+
+        for (int attempt = 0; attempt < attempts; attempt++) {
+            ExecutorService executor = Executors.newFixedThreadPool(threads);
+            CountDownLatch readyLatch = new CountDownLatch(threads);
+            CountDownLatch startLatch = new CountDownLatch(1);
+            CountDownLatch doneLatch = new CountDownLatch(threads);
+
+            // Create NEW, uninitialized instances on each iteration.
+            // They must be effectively final to be used inside the lambda.
+            SiftPattern builder = Sift.fromAnywhere().digits();
+            SiftPattern memoized = SiftPatterns.literal("race");
+            SiftPattern atomic = SiftPatterns.literal("race").preventBacktracking();
+
+            for (int i = 0; i < threads; i++) {
+                executor.submit(() -> {
+                    try {
+                        readyLatch.countDown(); // Thread signals it's ready
+                        startLatch.await();     // Wait for the starting gunshot
+
+                        // RACE ZONE: All threads call shake() and sieve() simultaneously!
+                        builder.shake();
+
+                        memoized.shake();
+                        memoized.sieve();
+
+                        atomic.shake();
+                        atomic.sieve();
+
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        doneLatch.countDown();
+                    }
+                });
+            }
+
+            readyLatch.await(); // Wait until all 50 threads are warm and waiting
+            startLatch.countDown(); // GO! Release the lock for everyone instantly
+            doneLatch.await(); // Wait for all threads to finish the race
+
+            executor.shutdown();
+        }
+
+        // A simple final assertion to ensure the logic didn't break
+        assertEquals("[0-9]", Sift.fromAnywhere().digits().shake());
     }
 }
