@@ -323,28 +323,6 @@ class SiftTest {
         }
 
         @Test
-        @DisplayName("Should ignore possessive modifier on character classes without quantifiers")
-        void coverageIgnorePossessiveOnEmptyQuantifierClass() {
-            // Bypass the compiler by casting to VariableConnectorStep
-            var step = (VariableConnectorStep) Sift.fromAnywhere().digits();
-
-            // isBuildingClass = true, currentQuantifier = empty.
-            // Should gracefully ignore without throwing errors.
-            String regex = step.withoutBacktracking().shake();
-
-            assertEquals("[0-9]", regex);
-        }
-
-        @Test
-        @DisplayName("Should prevent possessive modifier on main pattern if invalid or duplicated")
-        void coverageIgnorePossessiveOnMainPattern() {
-            // No quantifier on a literal (canMakePossessiveToMain = false)
-            var step1 = (VariableConnectorStep) Sift.fromAnywhere().character('a');
-            String regex1 = step1.withoutBacktracking().shake();
-            assertEquals("a", regex1);
-        }
-
-        @Test
         @DisplayName("Should skip possessive modifier if quantifier already ends with + (Coverage Booster)")
         void coverageDuplicatePossessiveCondition() {
             VariableConnectorStep step1 = Sift.fromAnywhere().zeroOrMore().digits();
@@ -401,11 +379,11 @@ class SiftTest {
         @Test
         @DisplayName("shake() should be idempotent and cache the generated regex")
         void testShakeIdempotency() {
-            com.mirkoddd.sift.core.SiftBuilder builder =
-                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().oneOrMore().digits();
+            SiftPattern pattern =
+                    Sift.fromStart().oneOrMore().digits();
 
-            String firstShake = builder.shake();
-            String secondShake = builder.shake();
+            String firstShake = pattern.shake();
+            String secondShake = pattern.shake();
 
             assertEquals(firstShake, secondShake,
                     "Multiple calls to shake() should return the exact same string");
@@ -417,10 +395,9 @@ class SiftTest {
         @Test
         @DisplayName("sieve() should return a cached compiled Pattern that correctly matches the input")
         void testSieveReturnsCachedPattern() {
-            com.mirkoddd.sift.core.SiftBuilder builder =
-                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().exactly(3).digits();
+            SiftPattern pattern = Sift.fromStart().exactly(3).digits();
 
-            java.util.regex.Pattern firstPattern = builder.sieve();
+            java.util.regex.Pattern firstPattern = pattern.sieve();
 
             assertNotNull(firstPattern, "sieve() should not return a null Pattern");
             assertEquals("^[0-9]{3}", firstPattern.pattern(), "The compiled pattern should match the DSL logic");
@@ -429,7 +406,7 @@ class SiftTest {
             assertFalse(firstPattern.matcher("12").matches(), "The Pattern should NOT match '12'");
             assertFalse(firstPattern.matcher("abc").matches(), "The Pattern should NOT match letters");
 
-            java.util.regex.Pattern secondPattern = builder.sieve();
+            java.util.regex.Pattern secondPattern = pattern.sieve();
 
             assertSame(firstPattern, secondPattern,
                     "sieve() should return the exactly same Pattern instance from cache on subsequent calls");
@@ -437,37 +414,36 @@ class SiftTest {
 
         @Test
         @DisplayName("equals() and hashCode() should evaluate structural identity based on the regex")
-        void testBuilderIdentity() {
-            com.mirkoddd.sift.core.SiftBuilder builderA =
-                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().optional().letters();
+        void testPatternIdentity() {
+            com.mirkoddd.sift.core.dsl.SiftPattern patternA =
+                    Sift.fromStart().optional().letters();
 
-            com.mirkoddd.sift.core.SiftBuilder builderB =
-                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().optional().letters();
+            com.mirkoddd.sift.core.dsl.SiftPattern patternB =
+                    Sift.fromStart().optional().letters();
 
-            com.mirkoddd.sift.core.SiftBuilder builderDifferent =
-                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().optional().digits();
+            com.mirkoddd.sift.core.dsl.SiftPattern patternDifferent =
+                    Sift.fromStart().optional().digits();
 
-            assertEquals(builderA, builderB, "Identical builders should be equal");
-            assertEquals(builderA.hashCode(), builderB.hashCode(), "Identical builders should have the same hash code");
+            assertEquals(patternA, patternB, "Identical patterns should be equal");
+            assertEquals(patternA.hashCode(), patternB.hashCode(), "Identical patterns should have the same hash code");
 
-            assertNotEquals(builderA, builderDifferent, "Different builders should not be equal");
+            assertNotEquals(patternA, patternDifferent, "Different patterns should not be equal");
 
-            assertEquals(builderA, builderA, "A builder should be equal to itself");
+            assertEquals(patternA, patternA, "A pattern should be equal to itself");
 
-            assertNotEquals(builderA, null, "A builder should never be equal to null");
+            assertNotEquals(patternA, null, "A pattern should never be equal to null");
 
-            assertNotEquals(builderA, "^[a-zA-Z]??", "A builder should not be equal to an object of a different class");
+            assertNotEquals(patternA, "^[a-zA-Z]??", "A pattern should not be equal to an object of a different class");
         }
 
         @Test
         @DisplayName("toString() should return the generated pattern string")
-        void testBuilderToString() {
-            com.mirkoddd.sift.core.SiftBuilder builder =
-                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().exactly(3).digits();
+        void testPatternToString() {
+            SiftPattern pattern = Sift.fromStart().exactly(3).digits();
 
-            assertEquals("^[0-9]{3}", builder.toString(),
+            assertEquals("^[0-9]{3}", pattern.toString(),
                     "toString() should expose the raw regex pattern");
-            assertEquals(builder.shake(), builder.toString(),
+            assertEquals(pattern.shake(), pattern.toString(),
                     "toString() must rely on the cached shake() output");
         }
 
@@ -476,10 +452,9 @@ class SiftTest {
         void testShakeFailFastValidation() {
             SiftPattern malformedPattern = () -> "(?unclosedGroup";
 
-            com.mirkoddd.sift.core.SiftBuilder builder =
-                    (com.mirkoddd.sift.core.SiftBuilder) Sift.fromStart().pattern(malformedPattern);
+            SiftPattern pattern = Sift.fromStart().pattern(malformedPattern);
 
-            IllegalStateException exception = assertThrows(IllegalStateException.class, builder::shake,
+            IllegalStateException exception = assertThrows(IllegalStateException.class, pattern::shake,
                     "shake() should throw an IllegalStateException if the generated regex is physically invalid");
 
             assertTrue(exception.getMessage().contains("Sift generated an invalid regex pattern"),
@@ -715,7 +690,6 @@ class SiftTest {
         @Test
         @DisplayName("Should apply possessive quantifier (+) via withoutBacktracking() on variable lengths")
         void applyPossessiveQuantifier() {
-            // Questo compila perché oneOrMore() restituisce un VariableConnectorStep
             String regex = Sift.fromAnywhere()
                     .oneOrMore().digits()
                     .withoutBacktracking()
@@ -727,10 +701,8 @@ class SiftTest {
         @Test
         @DisplayName("Should wrap pattern in atomic group (?>...) via preventBacktracking()")
         void applyAtomicGroup() {
-            // Creiamo un pattern base
             SiftPattern basePattern = Sift.fromAnywhere().exactly(3).digits();
 
-            // Lo blindiamo come gruppo atomico
             String regex = basePattern.preventBacktracking().shake();
 
             assertEquals("(?>[0-9]{3})", regex);
@@ -874,39 +846,71 @@ class SiftTest {
         @Test
         @DisplayName("asFewAsPossible() exhaustive branch coverage for internal state protections")
         void testLazyModifierEdgeCasesAndProtections() {
+            // We bypass the DSL and test the internal PatternAssembler directly
+            // to achieve 100% coverage on its defensive programming branches,
+            // since the new type-safe DSL physically prevents these invalid states.
 
-            // BRANCH 1: isBuildingClass = true, currentQuantifier.equals(RegexSyntax.OPTIONAL)
-            String regexOptionalClass = Sift.fromStart().optional().digits().asFewAsPossible().shake();
-            assertEquals("^[0-9]??", regexOptionalClass,
-                    "Should allow lazy modifier on optional character classes");
+            // BRANCH 1: Valid optional class
+            PatternAssembler assembler1 = new PatternAssembler();
+            assembler1.addClassRange("0-9");
+            assembler1.setQuantifier("?");
+            assembler1.applyLazyModifier();
+            assertEquals("[0-9]??", assembler1.build(), "Should allow lazy modifier on optional character classes");
 
-            // BRANCH 2: isBuildingClass = true, endsWith(RegexSyntax.LAZY) == true
-            // Capture the result of the first call
-            ConnectorStep step1Lazy = Sift.fromStart().oneOrMore().digits().asFewAsPossible();
+            // BRANCH 2: Ignore second lazy call on a class
+            PatternAssembler assembler2 = new PatternAssembler();
+            assembler2.addClassRange("0-9");
+            assembler2.setQuantifier("+?");
+            assembler2.applyLazyModifier(); // Attempt double lazy
+            assertEquals("[0-9]+?", assembler2.build(), "Should ignore a second lazy call on a character class");
 
-            // Capture the result of the attempted second call
-            ConnectorStep step1DoubleLazy = ((VariableCharacterClassConnectorStep) step1Lazy).asFewAsPossible();
+            // BRANCH 3: Ignore lazy if the class quantifier is empty (Fixed length)
+            PatternAssembler assembler3 = new PatternAssembler();
+            assembler3.addClassRange("0-9");
+            assembler3.setQuantifier(""); // Empty quantifier
+            assembler3.applyLazyModifier(); // Invalid call
+            assertEquals("[0-9]", assembler3.build(), "Should ignore lazy modifier if the class quantifier is empty");
 
-            assertEquals("^[0-9]+?", step1DoubleLazy.shake(),
-                    "Should ignore a second lazy call on a character class");
+            // BRANCH 4: Ignore second lazy call on the main pattern
+            PatternAssembler assembler4 = new PatternAssembler();
+            assembler4.setQuantifier("+");
+            assembler4.addAnyChar();
+            assembler4.applyLazyModifier(); // First valid call
+            assembler4.applyLazyModifier(); // Second invalid attempt
+            assertEquals(".+?", assembler4.build(), "Should ignore a second lazy call on the main pattern");
+        }
 
-            // BRANCH 3: isBuildingClass = true, currentQuantifier.isEmpty() == true
-            CharacterClassConnectorStep step2 = Sift.fromStart().digits();
+        @Test
+        @DisplayName("withoutBacktracking() exhaustive branch coverage for internal state protections")
+        void testPossessiveModifierEdgeCasesAndProtections() {
+            // BRANCH 1: Valid one-or-more class
+            PatternAssembler assembler1 = new PatternAssembler();
+            assembler1.addClassRange("0-9");
+            assembler1.setQuantifier("+");
+            assembler1.applyPossessiveModifier();
+            assertEquals("[0-9]++", assembler1.build(), "Should allow possessive modifier on classes");
 
-            // Capture the invalid attempt
-            ConnectorStep step2LazyAttempt = ((VariableCharacterClassConnectorStep) step2).asFewAsPossible();
+            // BRANCH 2: Ignore second possessive call on a class
+            PatternAssembler assembler2 = new PatternAssembler();
+            assembler2.addClassRange("0-9");
+            assembler2.setQuantifier("++");
+            assembler2.applyPossessiveModifier(); // Attempt double possessive
+            assertEquals("[0-9]++", assembler2.build(), "Should ignore a second possessive call on a character class");
 
-            assertEquals("^[0-9]", step2LazyAttempt.shake(),
-                    "Should ignore lazy modifier if the class quantifier is empty");
+            // BRANCH 3: Ignore possessive if the class quantifier is empty (Fixed length)
+            PatternAssembler assembler3 = new PatternAssembler();
+            assembler3.addClassRange("0-9");
+            assembler3.setQuantifier(""); // Empty quantifier
+            assembler3.applyPossessiveModifier(); // Invalid call
+            assertEquals("[0-9]", assembler3.build(), "Should ignore possessive modifier if the class quantifier is empty");
 
-            // BRANCH 4: isBuildingClass = false, canMakePossessiveToMain = false
-            ConnectorStep step3Base = Sift.fromStart().oneOrMore().any().asFewAsPossible();
-
-            // Capture the second attempt
-            ConnectorStep step3DoubleLazy = ((VariableConnectorStep) step3Base).asFewAsPossible();
-
-            assertEquals("^.+?", step3DoubleLazy.shake(),
-                    "Should ignore a second lazy call on the main pattern");
+            // BRANCH 4: Ignore second possessive call on the main pattern
+            PatternAssembler assembler4 = new PatternAssembler();
+            assembler4.setQuantifier("*");
+            assembler4.addAnyChar();
+            assembler4.applyPossessiveModifier(); // First valid call
+            assembler4.applyPossessiveModifier(); // Second invalid attempt
+            assertEquals(".*+", assembler4.build(), "Should ignore a second possessive call on the main pattern");
         }
 
         @Test

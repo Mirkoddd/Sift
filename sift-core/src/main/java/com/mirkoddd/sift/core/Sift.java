@@ -28,7 +28,7 @@ import java.util.Objects;
  * syntax errors at compile-time.
  * <p>
  * <b>Thread Safety &amp; Immutability:</b>
- * SiftBuilder instances are <b>100% immutable and thread-safe</b>.
+ * Sift nodes are <b>100% immutable and thread-safe</b>.
  * Every step in the fluent chain returns a new independent instance.
  * You can safely assign intermediate steps to variables, reuse them to branch off
  * into different regex patterns without poisoning the state, and share them safely
@@ -47,7 +47,7 @@ import java.util.Objects;
  *
  * @author Mirko Dimartino
  * @version {@value BuildInfo#VERSION}
- * */
+ */
 public final class Sift {
     private Sift() {
     }
@@ -82,7 +82,9 @@ public final class Sift {
      * @return A builder configured in the initial state, anchored to the start.
      */
     public static QuantifierStep fromStart() {
-        return new SiftBuilder().anchorStart();
+        PatternAssembler assembler = new PatternAssembler();
+        assembler.addAnchor(RegexSyntax.START_OF_LINE);
+        return new SiftQuantifier(assembler);
     }
 
     /**
@@ -94,7 +96,8 @@ public final class Sift {
      * @return A builder configured for free-floating search (no anchors).
      */
     public static QuantifierStep fromAnywhere() {
-        return new SiftBuilder();
+        PatternAssembler assembler = new PatternAssembler();
+        return new SiftQuantifier(assembler);
     }
 
     /**
@@ -107,7 +110,9 @@ public final class Sift {
      * @return A connector step ready to append the word to match.
      */
     public static ConnectorStep fromWordBoundary() {
-        return new SiftBuilder().wordBoundary();
+        PatternAssembler assembler = new PatternAssembler();
+        assembler.addWordBoundary();
+        return new SiftConnector(assembler);
     }
 
     /**
@@ -130,7 +135,9 @@ public final class Sift {
          * @return A builder configured in the initial state, anchored to the start.
          */
         public QuantifierStep fromStart() {
-            return new SiftBuilder(flags).anchorStart();
+            PatternAssembler assembler = new PatternAssembler(flags);
+            assembler.addAnchor(RegexSyntax.START_OF_LINE);
+            return new SiftQuantifier(assembler);
         }
 
         /**
@@ -143,7 +150,8 @@ public final class Sift {
          * @return A builder configured for free-floating search (no anchors).
          */
         public QuantifierStep fromAnywhere() {
-            return new SiftBuilder(flags);
+            PatternAssembler assembler = new PatternAssembler(flags);
+            return new SiftQuantifier(assembler);
         }
 
         /**
@@ -157,7 +165,9 @@ public final class Sift {
          * @return A connector step ready to append the word to match.
          */
         public ConnectorStep fromWordBoundary() {
-            return new SiftBuilder(flags).wordBoundary();
+            PatternAssembler assembler = new PatternAssembler(flags);
+            assembler.addWordBoundary();
+            return new SiftConnector(assembler);
         }
     }
 }

@@ -96,16 +96,7 @@ class PatternAssembler {
                     "' has already been defined. Each group name must be unique.");
         }
 
-        if (group.getPattern() instanceof SiftBuilder) {
-            SiftBuilder subBuilder = (SiftBuilder) group.getPattern();
-            for (String incomingGroup : subBuilder.getRegisteredGroupNames()) {
-                if (!registeredGroups.add(incomingGroup)) {
-                    throw new IllegalStateException("Collision detected: The pattern inside capturing group '" +
-                            group.getName() + "' contains a nested group named '" + incomingGroup +
-                            "' which has already been defined in the current builder.");
-                }
-            }
-        }
+        extractAndCheckGroups(group.getPattern(), group.getName());
 
         mainPattern.append(RegexSyntax.NAMED_GROUP_OPEN)
                 .append(group.getName())
@@ -143,16 +134,8 @@ class PatternAssembler {
     void addPattern(SiftPattern pattern) {
         flush();
 
-        if (pattern instanceof SiftBuilder) {
-            SiftBuilder subBuilder = (SiftBuilder) pattern;
-            for (String incomingGroup : subBuilder.getRegisteredGroupNames()) {
-                boolean isAdded = registeredGroups.add(incomingGroup);
-                if (!isAdded) {
-                    throw new IllegalStateException("Collision detected: The sub-pattern contains a capturing group named '" +
-                            incomingGroup + "' which has already been defined in the current pattern.");
-                }
-            }
-        }
+        // Pass null since this is a general sub-pattern, not a named wrapper
+        extractAndCheckGroups(pattern, null);
 
         if (!currentQuantifier.isEmpty()) {
             mainPattern.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN)
@@ -165,6 +148,35 @@ class PatternAssembler {
             canMakePossessiveToMain = false;
         }
         currentQuantifier = RegexSyntax.EMPTY;
+    }
+    private void extractAndCheckGroups(SiftPattern pattern, String wrapperGroupName) {
+        Set<String> incomingGroups = getIncomingGroups(pattern);
+
+        if (incomingGroups != null) {
+            for (String incomingGroup : incomingGroups) {
+                if (!registeredGroups.add(incomingGroup)) {
+                    if (wrapperGroupName != null) {
+                        throw new IllegalStateException("Collision detected: The pattern inside capturing group '" +
+                                wrapperGroupName + "' contains a nested group named '" + incomingGroup +
+                                "' which has already been defined in the current builder.");
+                    } else {
+                        throw new IllegalStateException("Collision detected: The sub-pattern contains a capturing group named '" +
+                                incomingGroup + "' which has already been defined in the current pattern.");
+                    }
+                }
+            }
+        }
+    }
+
+    private static Set<String> getIncomingGroups(SiftPattern pattern) {
+        // Only terminal nodes (Connectors) implement SiftPattern in our internal engine.
+        // Other intermediate nodes (Quantifiers, Types) cannot be passed here.
+        if (pattern instanceof SiftConnector) {
+            return ((SiftConnector) pattern).assembler.getRegisteredGroups();
+        }
+
+        // Returns null for external/custom implementations of SiftPattern
+        return null;
     }
 
     void addWordBoundary() {

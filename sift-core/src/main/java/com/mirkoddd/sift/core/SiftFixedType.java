@@ -18,19 +18,19 @@ package com.mirkoddd.sift.core;
 import com.mirkoddd.sift.core.dsl.CharacterClassConnectorStep;
 import com.mirkoddd.sift.core.dsl.ConnectorStep;
 
-class FixedType extends AbstractTypeStep<ConnectorStep, CharacterClassConnectorStep> {
+class SiftFixedType extends AbstractTypeStep<ConnectorStep, CharacterClassConnectorStep> {
 
-    FixedType(SiftBuilder parentBuilder) {
-        super(parentBuilder);
+    SiftFixedType(PatternAssembler assembler) {
+        super(assembler);
     }
 
     @Override
-    protected ConnectorStep getNormalConnector(SiftBuilder clone) {
-        return clone;
+    protected ConnectorStep getNormalConnector(PatternAssembler nextAssembler) {
+        return new SiftConnector(nextAssembler);
     }
 
     @Override
-    protected CharacterClassConnectorStep getCharacterClassConnector(SiftBuilder clone) {
-        return clone;
+    protected CharacterClassConnectorStep getCharacterClassConnector(PatternAssembler nextAssembler) {
+        return new SiftConnector(nextAssembler);
     }
 }

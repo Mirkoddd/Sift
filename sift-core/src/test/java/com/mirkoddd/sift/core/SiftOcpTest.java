@@ -30,7 +30,7 @@ class SiftOcpTest {
     // =================================================================================
     // 1. THE EXTENSION (Open for Extension)
     // This class adds new capabilities (grammar) using only the public API of Sift.
-    // We are NOT modifying SiftBuilder.java.
+    // We are NOT modifying Sift's core classes (like Sift.java or SiftConnector.java).
     // =================================================================================
     static class LogGrammar {
 

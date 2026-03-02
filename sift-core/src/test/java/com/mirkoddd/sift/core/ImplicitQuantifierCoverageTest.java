@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Ensures that omitting the quantifier in the Sift DSL implicitly defaults
  * to exactly(1) for every single type definition available in the engine.
- * This guarantees 100% coverage on the internal FixedType delegation.
+ * This guarantees 100% coverage on the internal SiftFixedType delegation.
  */
 class ImplicitQuantifierCoverageTest {
 

@@ -22,7 +22,7 @@ import com.mirkoddd.sift.core.dsl.SiftPattern;
  * A curated collection of highly optimized, ReDoS-safe regular expressions for common data formats.
  * <p>
  * These patterns can be used as standalone validators or seamlessly integrated into larger
- * {@link SiftBuilder} chains using {@code .pattern(SiftCatalog.xxx())}.
+ * {@link SiftPattern} chains using {@code .pattern(SiftCatalog.xxx())}.
  *
  * @author Mirko Dimartino
  * @since 2.0.0
