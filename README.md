@@ -36,7 +36,7 @@ Add Sift to your project dependencies:
 **Gradle:**
 
 ```Groovy
-    // Replace <latest-version> with the version shown in the Maven Central badge above
+// Replace <latest-version> with the version shown in the Maven Central badge above
 
 // Core Engine: Fluent API for Regex generation (Zero external dependencies)
 implementation 'com.mirkoddd:sift-core:<latest-version>'
@@ -52,17 +52,19 @@ However, the internal codebase and test suite utilize modern **Java 17** feature
 
 # Key Features
 
-* **Type-Safe by Design:** Sift is built on a rigid State Machine architecture (`QuantifierStep` -> `TypeStep` -> `ConnectorStep` / `VariableConnectorStep`). It is physically impossible to build structurally invalid regex sequences (like applying possessive modifiers to fixed-length strings) using the builder.
+* **Compile-Time Structural Guarantees:** Sift is not just fluent — it enforces a strict Type-State machine. Invalid regex constructions are impossible to express in the DSL. Entire classes of runtime errors are eliminated before your code even compiles.
+* **Immutable & Thread-Safe Builders:** Every Sift pattern is built in a controlled, predictable flow. No hidden shared state, no side effects. Safe to use in concurrent environments such as web servers and reactive systems.
 * **Advanced Regex Capabilities:** Don't hit a wall when requirements get complex. Sift fully supports advanced engine features like Named Capturing Groups, Backreferences, and Lookarounds (Lookahead/Lookbehind), perfectly integrated into the fluent DSL.
+* **100% Native Regex Output:** Sift generates pure Java-compatible regular expressions. No wrappers, no runtime interpreters, no performance penalties. The resulting pattern can be stored, logged, shared, or used anywhere a standard regex String is accepted.
+* **Semantic Over Symbolic:** Express intent using meaningful method names instead of cryptic symbols. Write `.atLeast(3).digits()` instead of `{3,}[0-9]` and make your code self-documenting.
 * **Self-Contained Global Flags:** Apply Case-Insensitive, Multiline, or DotAll modes effortlessly via `Sift.filteringWith(...)`. Sift uses inline flags (e.g., `(?i)`), making the resulting `String` 100% portable across databases, JSON payloads, or other languages without relying on external configurations.
 * **ASCII by Default:** Predictability is key. Standard methods like `letters()` or `digits()` default strictly to ASCII (`[a-zA-Z]`, `[0-9]`), preventing unexpected matches with foreign alphabets or alternative numbering systems.
-* **Global Ready:** Need internationalization? Switch explicitly to the `unicode...()` counterparts (e.g., `unicodeLetters()`) to instantly support characters from any language safely.
+* **Global Ready:** Need internationalization? Switch explicitly to the `...Unicode()` counterparts (e.g., `lettersUnicode()`) to instantly support characters from any language safely.
 * **ReDoS Mitigation Tools:** Java's default regex engine is vulnerable to catastrophic backtracking. Sift helps you write safer patterns without memorizing obscure syntax by exposing possessive quantifiers via `.withoutBacktracking()` and atomic groups via `.preventBacktracking()`.
-* **High Performance & Zero Allocation:** Internally optimized with pre-computed O(1) cache lookups and careful memory management. Sift avoids unnecessary object allocations, ensuring lightning-fast regex generation even in tight loops.
 * **Zero Dependencies:** The `sift-core` engine is pure Java. It doesn't pull in any bloated transitive dependencies, keeping your final artifact size incredibly small.
 * **Android & Enterprise Ready:** Compiled to Java 8 bytecode for maximum compatibility. It ships with built-in Proguard/R8 rules, guaranteeing flawless integration out-of-the-box for both Android applications and modern/legacy Spring Boot servers.
 * **Global Null-Safety & Fail-Fast:** Every method in the DSL is protected by strict null-checks. Sift fails immediately with clear feedback if invalid parameters are passed, preventing inconsistent regex states in production.
-* **100% Test Coverage:** Rock-solid reliability tested against edge cases, negations, and complex nested group scenarios.
+* **Production-Grade Quality:** 100% test coverage, CI-verified builds, strict fail-fast validation, and zero external dependencies ensure long-term reliability in enterprise systems.
 
 
 # Usage Examples
@@ -74,9 +76,9 @@ Forget about counting backslashes or memorizing obscure symbols. Sift guides you
 ```Java    
     // Goal: Match an international username securely
     String regex = Sift.fromStart()
-        .exactly(1).unicodeLettersUppercaseOnly() // Must start with an uppercase letter
+        .exactly(1).uppercaseLettersUnicode() // Must start with an uppercase letter
         .then()
-        .between(3, 15).unicodeWordCharacters().withoutBacktracking() // Secure against ReDoS
+        .between(3, 15).wordCharactersUnicode().withoutBacktracking() // Secure against ReDoS
         .then()
         .optional().digits() // May end with an ASCII number
         .andNothingElse()
