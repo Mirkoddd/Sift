@@ -206,9 +206,9 @@ class SiftPatternsTest {
     void fullPossessiveBranchCoverage() {
         // --- 1. Method addAnyChar() ---
         // FALSE branch (empty quantifier)
-        Sift.fromAnywhere().any().shake();
+        Sift.fromAnywhere().anyCharacter().shake();
         // TRUE branch (quantifier present)
-        Sift.fromAnywhere().oneOrMore().any().withoutBacktracking().shake();
+        Sift.fromAnywhere().oneOrMore().anyCharacter().withoutBacktracking().shake();
 
         // --- 2. Method addCharacter() ---
         // FALSE branch

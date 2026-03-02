@@ -28,8 +28,8 @@ class ImplicitQuantifierCoverageTest {
     @DisplayName("Implicit quantifier matches exactly(1) for core types and literals")
     void verifyCoreTypes() {
         assertImplicitEqualsExplicit(
-                Sift.fromStart().any().shake(),
-                Sift.fromStart().exactly(1).any().shake()
+                Sift.fromStart().anyCharacter().shake(),
+                Sift.fromStart().exactly(1).anyCharacter().shake()
         );
 
         assertImplicitEqualsExplicit(
@@ -55,12 +55,12 @@ class ImplicitQuantifierCoverageTest {
                 Sift.fromStart().exactly(1).nonDigits().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().unicodeDigits().shake(),
-                Sift.fromStart().exactly(1).unicodeDigits().shake()
+                Sift.fromStart().digitsUnicode().shake(),
+                Sift.fromStart().exactly(1).digitsUnicode().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().nonUnicodeDigits().shake(),
-                Sift.fromStart().exactly(1).nonUnicodeDigits().shake()
+                Sift.fromStart().nonDigitsUnicode().shake(),
+                Sift.fromStart().exactly(1).nonDigitsUnicode().shake()
         );
     }
 
@@ -76,28 +76,28 @@ class ImplicitQuantifierCoverageTest {
                 Sift.fromStart().exactly(1).nonLetters().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().lettersLowercaseOnly().shake(),
-                Sift.fromStart().exactly(1).lettersLowercaseOnly().shake()
+                Sift.fromStart().lowercaseLetters().shake(),
+                Sift.fromStart().exactly(1).lowercaseLetters().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().lettersUppercaseOnly().shake(),
-                Sift.fromStart().exactly(1).lettersUppercaseOnly().shake()
+                Sift.fromStart().uppercaseLetters().shake(),
+                Sift.fromStart().exactly(1).uppercaseLetters().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().unicodeLetters().shake(),
-                Sift.fromStart().exactly(1).unicodeLetters().shake()
+                Sift.fromStart().lettersUnicode().shake(),
+                Sift.fromStart().exactly(1).lettersUnicode().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().nonUnicodeLetters().shake(),
-                Sift.fromStart().exactly(1).nonUnicodeLetters().shake()
+                Sift.fromStart().nonLettersUnicode().shake(),
+                Sift.fromStart().exactly(1).nonLettersUnicode().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().unicodeLettersLowercaseOnly().shake(),
-                Sift.fromStart().exactly(1).unicodeLettersLowercaseOnly().shake()
+                Sift.fromStart().lowercaseLettersUnicode().shake(),
+                Sift.fromStart().exactly(1).lowercaseLettersUnicode().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().unicodeLettersUppercaseOnly().shake(),
-                Sift.fromStart().exactly(1).unicodeLettersUppercaseOnly().shake()
+                Sift.fromStart().uppercaseLettersUnicode().shake(),
+                Sift.fromStart().exactly(1).uppercaseLettersUnicode().shake()
         );
     }
 
@@ -113,12 +113,12 @@ class ImplicitQuantifierCoverageTest {
                 Sift.fromStart().exactly(1).nonAlphanumeric().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().unicodeAlphanumeric().shake(),
-                Sift.fromStart().exactly(1).unicodeAlphanumeric().shake()
+                Sift.fromStart().alphanumericUnicode().shake(),
+                Sift.fromStart().exactly(1).alphanumericUnicode().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().nonUnicodeAlphanumeric().shake(),
-                Sift.fromStart().exactly(1).nonUnicodeAlphanumeric().shake()
+                Sift.fromStart().nonAlphanumericUnicode().shake(),
+                Sift.fromStart().exactly(1).nonAlphanumericUnicode().shake()
         );
     }
 
@@ -135,12 +135,12 @@ class ImplicitQuantifierCoverageTest {
                 Sift.fromStart().exactly(1).nonWordCharacters().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().unicodeWordCharacters().shake(),
-                Sift.fromStart().exactly(1).unicodeWordCharacters().shake()
+                Sift.fromStart().wordCharactersUnicode().shake(),
+                Sift.fromStart().exactly(1).wordCharactersUnicode().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().nonUnicodeWordCharacters().shake(),
-                Sift.fromStart().exactly(1).nonUnicodeWordCharacters().shake()
+                Sift.fromStart().nonWordCharactersUnicode().shake(),
+                Sift.fromStart().exactly(1).nonWordCharactersUnicode().shake()
         );
 
         // Whitespaces
@@ -153,12 +153,12 @@ class ImplicitQuantifierCoverageTest {
                 Sift.fromStart().exactly(1).nonWhitespace().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().unicodeWhitespace().shake(),
-                Sift.fromStart().exactly(1).unicodeWhitespace().shake()
+                Sift.fromStart().whitespaceUnicode().shake(),
+                Sift.fromStart().exactly(1).whitespaceUnicode().shake()
         );
         assertImplicitEqualsExplicit(
-                Sift.fromStart().nonUnicodeWhitespace().shake(),
-                Sift.fromStart().exactly(1).nonUnicodeWhitespace().shake()
+                Sift.fromStart().nonWhitespaceUnicode().shake(),
+                Sift.fromStart().exactly(1).nonWhitespaceUnicode().shake()
         );
     }
 

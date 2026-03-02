@@ -41,7 +41,7 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @return The standard connector step to continue building.
      */
-    T any();
+    T anyCharacter();
 
     /**
      * Applies the pending quantifier to a specific literal character.
@@ -92,7 +92,7 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C unicodeDigits();
+    C digitsUnicode();
 
     /**
      * Matches any character that is NOT a Unicode decimal digit.
@@ -101,7 +101,7 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C nonUnicodeDigits();
+    C nonDigitsUnicode();
 
     /**
      * Matches any ASCII letter from the English alphabet (both uppercase and lowercase).
@@ -128,7 +128,7 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C lettersUppercaseOnly();
+    C uppercaseLetters();
 
     /**
      * Matches only lowercase ASCII letters.
@@ -137,7 +137,7 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C lettersLowercaseOnly();
+    C lowercaseLetters();
 
     /**
      * Matches any Unicode letter from any language or script.
@@ -148,7 +148,7 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C unicodeLetters();
+    C lettersUnicode();
 
     /**
      * Matches any character that is NOT a Unicode letter.
@@ -157,29 +157,29 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C nonUnicodeLetters();
+    C nonLettersUnicode();
 
     /**
      * Matches any uppercase Unicode letter from any language.
      * <p>
      * Equivalent to the regex {@code \p{Lu}}.
-     * Unlike {@link #lettersUppercaseOnly()} which is strictly ASCII {@code [A-Z]},
+     * Unlike {@link #uppercaseLetters()} which is strictly ASCII {@code [A-Z]},
      * this correctly matches uppercase international characters like 'È' or 'Ñ'.
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C unicodeLettersUppercaseOnly();
+    C uppercaseLettersUnicode();
 
     /**
      * Matches any lowercase Unicode letter from any language.
      * <p>
      * Equivalent to the regex {@code \p{Ll}}.
-     * Unlike {@link #lettersLowercaseOnly()} which is strictly ASCII {@code [a-z]},
+     * Unlike {@link #lowercaseLetters()} which is strictly ASCII {@code [a-z]},
      * this correctly matches lowercase international characters like 'è' or 'ñ'.
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C unicodeLettersLowercaseOnly();
+    C lowercaseLettersUnicode();
 
     /**
      * Matches any ASCII alphanumeric character (letters and digits).
@@ -203,11 +203,11 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      * Matches any Unicode alphanumeric character (Unicode letters and Unicode digits).
      * <p>
      * Equivalent to the regex {@code [\p{L}\p{Nd}]}.
-     * Unlike {@link #unicodeWordCharacters()}, this does NOT include the underscore.
+     * Unlike {@link #wordCharactersUnicode()}, this does NOT include the underscore.
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C unicodeAlphanumeric();
+    C alphanumericUnicode();
 
     /**
      * Matches any character that is NOT a Unicode alphanumeric character.
@@ -216,7 +216,7 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C nonUnicodeAlphanumeric();
+    C nonAlphanumericUnicode();
 
     /**
      * Matches any ASCII word character (ASCII letters, digits, and underscores).
@@ -245,7 +245,7 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C unicodeWordCharacters();
+    C wordCharactersUnicode();
 
     /**
      * Matches any character that is NOT a Unicode word character.
@@ -254,7 +254,7 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C nonUnicodeWordCharacters();
+    C nonWordCharactersUnicode();
 
     // ===================================================================================
     // WHITESPACE
@@ -285,7 +285,7 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C unicodeWhitespace();
+    C whitespaceUnicode();
 
     /**
      * Matches any character that is NOT a Unicode whitespace.
@@ -294,7 +294,7 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C nonUnicodeWhitespace();
+    C nonWhitespaceUnicode();
 
     /**
      * Matches any single character within the specified custom range (inclusive).

@@ -103,32 +103,32 @@ class SiftQuantifier implements QuantifierStep {
         return new SiftConnector(next);
     }
 
-    @Override public ConnectorStep any() { return exactly(1).any(); }
+    @Override public ConnectorStep anyCharacter() { return exactly(1).anyCharacter(); }
     @Override public ConnectorStep character(char literal) { return exactly(1).character(literal); }
     @Override public ConnectorStep pattern(SiftPattern pattern) { return exactly(1).pattern(pattern); }
     @Override public CharacterClassConnectorStep digits() { return exactly(1).digits(); }
     @Override public CharacterClassConnectorStep nonDigits() { return exactly(1).nonDigits(); }
-    @Override public CharacterClassConnectorStep unicodeDigits() { return exactly(1).unicodeDigits(); }
-    @Override public CharacterClassConnectorStep nonUnicodeDigits() { return exactly(1).nonUnicodeDigits(); }
+    @Override public CharacterClassConnectorStep digitsUnicode() { return exactly(1).digitsUnicode(); }
+    @Override public CharacterClassConnectorStep nonDigitsUnicode() { return exactly(1).nonDigitsUnicode(); }
     @Override public CharacterClassConnectorStep letters() { return exactly(1).letters(); }
     @Override public CharacterClassConnectorStep nonLetters() { return exactly(1).nonLetters(); }
-    @Override public CharacterClassConnectorStep lettersUppercaseOnly() { return exactly(1).lettersUppercaseOnly(); }
-    @Override public CharacterClassConnectorStep lettersLowercaseOnly() { return exactly(1).lettersLowercaseOnly(); }
-    @Override public CharacterClassConnectorStep unicodeLetters() { return exactly(1).unicodeLetters(); }
-    @Override public CharacterClassConnectorStep nonUnicodeLetters() { return exactly(1).nonUnicodeLetters(); }
-    @Override public CharacterClassConnectorStep unicodeLettersUppercaseOnly() { return exactly(1).unicodeLettersUppercaseOnly(); }
-    @Override public CharacterClassConnectorStep unicodeLettersLowercaseOnly() { return exactly(1).unicodeLettersLowercaseOnly(); }
+    @Override public CharacterClassConnectorStep uppercaseLetters() { return exactly(1).uppercaseLetters(); }
+    @Override public CharacterClassConnectorStep lowercaseLetters() { return exactly(1).lowercaseLetters(); }
+    @Override public CharacterClassConnectorStep lettersUnicode() { return exactly(1).lettersUnicode(); }
+    @Override public CharacterClassConnectorStep nonLettersUnicode() { return exactly(1).nonLettersUnicode(); }
+    @Override public CharacterClassConnectorStep uppercaseLettersUnicode() { return exactly(1).uppercaseLettersUnicode(); }
+    @Override public CharacterClassConnectorStep lowercaseLettersUnicode() { return exactly(1).lowercaseLettersUnicode(); }
     @Override public CharacterClassConnectorStep alphanumeric() { return exactly(1).alphanumeric(); }
     @Override public CharacterClassConnectorStep nonAlphanumeric() { return exactly(1).nonAlphanumeric(); }
-    @Override public CharacterClassConnectorStep unicodeAlphanumeric() { return exactly(1).unicodeAlphanumeric(); }
-    @Override public CharacterClassConnectorStep nonUnicodeAlphanumeric() { return exactly(1).nonUnicodeAlphanumeric(); }
+    @Override public CharacterClassConnectorStep alphanumericUnicode() { return exactly(1).alphanumericUnicode(); }
+    @Override public CharacterClassConnectorStep nonAlphanumericUnicode() { return exactly(1).nonAlphanumericUnicode(); }
     @Override public CharacterClassConnectorStep wordCharacters() { return exactly(1).wordCharacters(); }
     @Override public CharacterClassConnectorStep nonWordCharacters() { return exactly(1).nonWordCharacters(); }
-    @Override public CharacterClassConnectorStep unicodeWordCharacters() { return exactly(1).unicodeWordCharacters(); }
-    @Override public CharacterClassConnectorStep nonUnicodeWordCharacters() { return exactly(1).nonUnicodeWordCharacters(); }
+    @Override public CharacterClassConnectorStep wordCharactersUnicode() { return exactly(1).wordCharactersUnicode(); }
+    @Override public CharacterClassConnectorStep nonWordCharactersUnicode() { return exactly(1).nonWordCharactersUnicode(); }
     @Override public CharacterClassConnectorStep whitespace() { return exactly(1).whitespace(); }
     @Override public CharacterClassConnectorStep nonWhitespace() { return exactly(1).nonWhitespace(); }
-    @Override public CharacterClassConnectorStep unicodeWhitespace() { return exactly(1).unicodeWhitespace(); }
-    @Override public CharacterClassConnectorStep nonUnicodeWhitespace() { return exactly(1).nonUnicodeWhitespace(); }
+    @Override public CharacterClassConnectorStep whitespaceUnicode() { return exactly(1).whitespaceUnicode(); }
+    @Override public CharacterClassConnectorStep nonWhitespaceUnicode() { return exactly(1).nonWhitespaceUnicode(); }
     @Override public CharacterClassConnectorStep range(char start, char end) { return exactly(1).range(start, end); }
 }

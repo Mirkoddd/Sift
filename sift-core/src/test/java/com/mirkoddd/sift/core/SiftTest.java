@@ -33,10 +33,8 @@ import static com.mirkoddd.sift.core.SiftGlobalFlag.CASE_INSENSITIVE;
 import static com.mirkoddd.sift.core.SiftPatterns.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.mirkoddd.sift.core.dsl.CharacterClassConnectorStep;
 import com.mirkoddd.sift.core.dsl.ConnectorStep;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
-import com.mirkoddd.sift.core.dsl.VariableCharacterClassConnectorStep;
 import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
 
 /**
@@ -128,7 +126,7 @@ class SiftTest {
         void excluding() {
             // Target: Consonants only (letters minus vowels)
             String regex = fromAnywhere()
-                    .oneOrMore().lettersLowercaseOnly()
+                    .oneOrMore().lowercaseLetters()
                     .excluding('a', 'e', 'i', 'o', 'u')
                     .andNothingElse()
                     .shake();
@@ -151,7 +149,7 @@ class SiftTest {
         @Test
         @DisplayName("Should match uppercase letters only")
         void uppercaseOnly() {
-            String regex = fromAnywhere().oneOrMore().lettersUppercaseOnly().andNothingElse().shake();
+            String regex = fromAnywhere().oneOrMore().uppercaseLetters().andNothingElse().shake();
 
             assertEquals("[A-Z]+$", regex);
             assertRegexMatches(regex, "HELLO");
@@ -229,7 +227,7 @@ class SiftTest {
         @Test
         @DisplayName("Should handle 'any' (dot) correctly")
         void anyChar() {
-            String regex = fromStart().exactly(3).any().shake();
+            String regex = fromStart().exactly(3).anyCharacter().shake();
             assertEquals("^.{3}", regex);
         }
 
@@ -604,7 +602,7 @@ class SiftTest {
 
             String regex = fromStart()
                     .pattern(open).then().namedCapture(tagGroup).then().pattern(close)             // <tag>
-                    .then().zeroOrMore().any()                                                     // content
+                    .then().zeroOrMore().anyCharacter()                                                     // content
                     .then().pattern(slashOpen).then().backreference(tagGroup).then().pattern(close)// </tag>
                     .shake();
 
@@ -849,7 +847,7 @@ class SiftTest {
             String regex = Sift.fromStart()
                     .exactly(1).pattern(SiftPatterns.literal("/*"))
                     .then()
-                    .zeroOrMore().any().asFewAsPossible()
+                    .zeroOrMore().anyCharacter().asFewAsPossible()
                     .then()
                     .exactly(1).pattern(SiftPatterns.literal("*/"))
                     .shake();
@@ -1001,20 +999,20 @@ class SiftTest {
         @DisplayName("Should correctly handle Unicode Letters and Case Specifics")
         void unicodeLettersAndCases() {
             // unicodeLetters: [\p{L}]
-            String uniLetters = fromStart().oneOrMore().unicodeLetters().andNothingElse().shake();
+            String uniLetters = fromStart().oneOrMore().lettersUnicode().andNothingElse().shake();
             assertEquals("^[\\p{L}]+$", uniLetters);
             assertRegexMatches(uniLetters, "Aimé");
             assertRegexMatches(uniLetters, "Müller");
             assertRegexDoesNotMatch(uniLetters, "123");
 
             // nonUnicodeLetters: [\P{L}]
-            String nonUniLetters = fromStart().oneOrMore().nonUnicodeLetters().andNothingElse().shake();
+            String nonUniLetters = fromStart().oneOrMore().nonLettersUnicode().andNothingElse().shake();
             assertEquals("^[\\P{L}]+$", nonUniLetters);
             assertRegexMatches(nonUniLetters, "123 !!");
             assertRegexDoesNotMatch(nonUniLetters, "è");
 
             // unicodeLettersUppercaseOnly: [\p{Lu}]
-            String uniUpper = fromStart().oneOrMore().unicodeLettersUppercaseOnly().andNothingElse().shake();
+            String uniUpper = fromStart().oneOrMore().uppercaseLettersUnicode().andNothingElse().shake();
             assertEquals("^[\\p{Lu}]+$", uniUpper);
             assertRegexMatches(uniUpper, "È");
             assertRegexMatches(uniUpper, "Ñ");
@@ -1022,7 +1020,7 @@ class SiftTest {
             assertRegexDoesNotMatch(uniUpper, "A1");
 
             // unicodeLettersLowercaseOnly: [\p{Ll}]
-            String uniLower = fromStart().oneOrMore().unicodeLettersLowercaseOnly().andNothingElse().shake();
+            String uniLower = fromStart().oneOrMore().lowercaseLettersUnicode().andNothingElse().shake();
             assertEquals("^[\\p{Ll}]+$", uniLower);
             assertRegexMatches(uniLower, "è");
             assertRegexMatches(uniLower, "ñ");
@@ -1033,27 +1031,27 @@ class SiftTest {
         @DisplayName("Should correctly handle Unicode Digits and Whitespaces")
         void unicodeDigitsAndWhitespace() {
             // unicodeDigits: [\p{Nd}]
-            String uniDigits = fromStart().exactly(1).unicodeDigits().andNothingElse().shake();
+            String uniDigits = fromStart().exactly(1).digitsUnicode().andNothingElse().shake();
             assertEquals("^[\\p{Nd}]$", uniDigits);
             assertRegexMatches(uniDigits, "5");
             assertRegexMatches(uniDigits, "٣"); // Arabic-Indic digit 3
             assertRegexDoesNotMatch(uniDigits, "a");
 
             // nonUnicodeDigits: [\P{Nd}]
-            String nonUniDigits = fromStart().exactly(1).nonUnicodeDigits().andNothingElse().shake();
+            String nonUniDigits = fromStart().exactly(1).nonDigitsUnicode().andNothingElse().shake();
             assertEquals("^[\\P{Nd}]$", nonUniDigits);
             assertRegexMatches(nonUniDigits, "A");
             assertRegexDoesNotMatch(nonUniDigits, "٣");
 
             // unicodeWhitespace: [\p{IsWhite_Space}]
-            String uniSpace = fromStart().exactly(1).unicodeWhitespace().andNothingElse().shake();
+            String uniSpace = fromStart().exactly(1).whitespaceUnicode().andNothingElse().shake();
             assertEquals("^[\\p{IsWhite_Space}]$", uniSpace);
             assertRegexMatches(uniSpace, " ");
             assertRegexMatches(uniSpace, "\u00A0"); // Non-breaking space
             assertRegexDoesNotMatch(uniSpace, "a");
 
             // nonUnicodeWhitespace: [\P{IsWhite_Space}]
-            String nonUniSpace = fromStart().exactly(1).nonUnicodeWhitespace().andNothingElse().shake();
+            String nonUniSpace = fromStart().exactly(1).nonWhitespaceUnicode().andNothingElse().shake();
             assertEquals("^[\\P{IsWhite_Space}]$", nonUniSpace);
             assertRegexMatches(nonUniSpace, "a");
             assertRegexDoesNotMatch(nonUniSpace, "\u00A0");
@@ -1063,14 +1061,14 @@ class SiftTest {
         @DisplayName("Should correctly handle Unicode Word Characters and Alphanumeric")
         void unicodeAlphanumericAndWords() {
             // unicodeAlphanumeric: [\p{L}\p{Nd}]
-            String uniAlpha = fromStart().exactly(1).unicodeAlphanumeric().andNothingElse().shake();
+            String uniAlpha = fromStart().exactly(1).alphanumericUnicode().andNothingElse().shake();
             assertEquals("^[\\p{L}\\p{Nd}]$", uniAlpha);
             assertRegexMatches(uniAlpha, "è");
             assertRegexMatches(uniAlpha, "٣");
             assertRegexDoesNotMatch(uniAlpha, "_"); // Does NOT include underscore
 
             // nonUnicodeAlphanumeric: [^\p{L}\p{Nd}]
-            String nonUniAlpha = fromStart().exactly(1).nonUnicodeAlphanumeric().andNothingElse().shake();
+            String nonUniAlpha = fromStart().exactly(1).nonAlphanumericUnicode().andNothingElse().shake();
             assertEquals("^[^\\p{L}\\p{Nd}]$", nonUniAlpha);
             assertRegexMatches(nonUniAlpha, "!");
             assertRegexMatches(nonUniAlpha, " ");
@@ -1079,7 +1077,7 @@ class SiftTest {
             assertRegexDoesNotMatch(nonUniAlpha, "٣");
 
             // unicodeWordCharacters: [\p{L}\p{Nd}_]
-            String uniWord = fromStart().exactly(1).unicodeWordCharacters().andNothingElse().shake();
+            String uniWord = fromStart().exactly(1).wordCharactersUnicode().andNothingElse().shake();
             assertEquals("^[\\p{L}\\p{Nd}_]$", uniWord);
             assertRegexMatches(uniWord, "è");
             assertRegexMatches(uniWord, "٣");
@@ -1087,7 +1085,7 @@ class SiftTest {
             assertRegexDoesNotMatch(uniWord, " ");
 
             // nonUnicodeWordCharacters: [^\p{L}\p{Nd}_]
-            String nonUniWord = fromStart().exactly(1).nonUnicodeWordCharacters().andNothingElse().shake();
+            String nonUniWord = fromStart().exactly(1).nonWordCharactersUnicode().andNothingElse().shake();
             assertEquals("^[^\\p{L}\\p{Nd}_]$", nonUniWord);
             assertRegexMatches(nonUniWord, "!");
             assertRegexMatches(nonUniWord, " ");
@@ -1104,7 +1102,7 @@ class SiftTest {
         void singleFlag() {
             String regex = filteringWith(CASE_INSENSITIVE)
                     .fromStart()
-                    .exactly(5).lettersUppercaseOnly()
+                    .exactly(5).uppercaseLetters()
                     .andNothingElse()
                     .shake();
 
@@ -1149,7 +1147,7 @@ class SiftTest {
         void dotallFlag() {
             String regex = filteringWith(SiftGlobalFlag.DOTALL)
                     .fromStart()
-                    .exactly(3).any()
+                    .exactly(3).anyCharacter()
                     .andNothingElse()
                     .shake();
 
@@ -1164,7 +1162,7 @@ class SiftTest {
         void flagsFromAnywhere() {
             String regex = filteringWith(CASE_INSENSITIVE)
                     .fromAnywhere()
-                    .exactly(4).lettersUppercaseOnly()
+                    .exactly(4).uppercaseLetters()
                     .shake();
 
             assertEquals("(?i)[A-Z]{4}", regex);

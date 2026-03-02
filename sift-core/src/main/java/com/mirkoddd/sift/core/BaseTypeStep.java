@@ -48,7 +48,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
     protected abstract C getCharacterClassConnector(PatternAssembler nextAssembler);
 
     @Override
-    public T any() {
+    public T anyCharacter() {
         PatternAssembler next = assembler.copy();
         next.addAnyChar();
         return getNormalConnector(next);
@@ -84,14 +84,14 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
     }
 
     @Override
-    public C unicodeDigits() {
+    public C digitsUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.UNICODE_DIGITS);
         return getCharacterClassConnector(next);
     }
 
     @Override
-    public C nonUnicodeDigits() {
+    public C nonDigitsUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.NON_UNICODE_DIGITS);
         return getCharacterClassConnector(next);
@@ -112,42 +112,42 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
     }
 
     @Override
-    public C lettersUppercaseOnly() {
+    public C uppercaseLetters() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.RANGE_LETTERS_UPPERCASE_ONLY);
         return getCharacterClassConnector(next);
     }
 
     @Override
-    public C lettersLowercaseOnly() {
+    public C lowercaseLetters() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.RANGE_LETTERS_LOWERCASE_ONLY);
         return getCharacterClassConnector(next);
     }
 
     @Override
-    public C unicodeLetters() {
+    public C lettersUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.UNICODE_LETTERS);
         return getCharacterClassConnector(next);
     }
 
     @Override
-    public C nonUnicodeLetters() {
+    public C nonLettersUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.NON_UNICODE_LETTERS);
         return getCharacterClassConnector(next);
     }
 
     @Override
-    public C unicodeLettersUppercaseOnly() {
+    public C uppercaseLettersUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.UNICODE_LETTERS_UPPERCASE_ONLY);
         return getCharacterClassConnector(next);
     }
 
     @Override
-    public C unicodeLettersLowercaseOnly() {
+    public C lowercaseLettersUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.UNICODE_LETTERS_LOWERCASE_ONLY);
         return getCharacterClassConnector(next);
@@ -168,14 +168,14 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
     }
 
     @Override
-    public C unicodeAlphanumeric() {
+    public C alphanumericUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.UNICODE_ALPHANUMERIC);
         return getCharacterClassConnector(next);
     }
 
     @Override
-    public C nonUnicodeAlphanumeric() {
+    public C nonAlphanumericUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.NON_UNICODE_ALPHANUMERIC);
         return getCharacterClassConnector(next);
@@ -196,14 +196,14 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
     }
 
     @Override
-    public C unicodeWordCharacters() {
+    public C wordCharactersUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.UNICODE_WORD_CHARACTERS);
         return getCharacterClassConnector(next);
     }
 
     @Override
-    public C nonUnicodeWordCharacters() {
+    public C nonWordCharactersUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.NON_UNICODE_WORD_CHARACTERS);
         return getCharacterClassConnector(next);
@@ -224,14 +224,14 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
     }
 
     @Override
-    public C unicodeWhitespace() {
+    public C whitespaceUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.UNICODE_WHITESPACE);
         return getCharacterClassConnector(next);
     }
 
     @Override
-    public C nonUnicodeWhitespace() {
+    public C nonWhitespaceUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.NON_UNICODE_WHITESPACE);
         return getCharacterClassConnector(next);
