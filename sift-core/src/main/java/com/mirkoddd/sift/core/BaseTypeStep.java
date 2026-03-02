@@ -35,11 +35,11 @@ import java.util.Objects;
  * @param <T> The specific {@link ConnectorStep} returned for standard type definitions.
  * @param <C> The specific {@link CharacterClassConnectorStep} returned for character classes.
  */
-abstract class AbstractTypeStep<T extends ConnectorStep, C extends CharacterClassConnectorStep> implements TypeStep<T, C> {
+abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassConnectorStep> implements TypeStep<T, C> {
 
     protected final PatternAssembler assembler;
 
-    protected AbstractTypeStep(PatternAssembler assembler) {
+    protected BaseTypeStep(PatternAssembler assembler) {
         this.assembler = assembler;
     }
 

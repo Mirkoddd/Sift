@@ -18,7 +18,7 @@ package com.mirkoddd.sift.core;
 import com.mirkoddd.sift.core.dsl.VariableCharacterClassConnectorStep;
 import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
 
-class SiftVariableType extends AbstractTypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> {
+class SiftVariableType extends BaseTypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> {
 
     SiftVariableType(PatternAssembler assembler) {
         super(assembler);

@@ -18,7 +18,7 @@ package com.mirkoddd.sift.core;
 import com.mirkoddd.sift.core.dsl.CharacterClassConnectorStep;
 import com.mirkoddd.sift.core.dsl.ConnectorStep;
 
-class SiftFixedType extends AbstractTypeStep<ConnectorStep, CharacterClassConnectorStep> {
+class SiftFixedType extends BaseTypeStep<ConnectorStep, CharacterClassConnectorStep> {
 
     SiftFixedType(PatternAssembler assembler) {
         super(assembler);
