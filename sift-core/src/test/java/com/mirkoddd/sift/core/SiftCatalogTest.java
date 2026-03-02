@@ -72,4 +72,53 @@ class SiftCatalogTest {
         assertFalse(macPattern.matcher("00:1A:2B:3C:4D:5G").matches(), "Should reject invalid hex character 'G'");
         assertFalse(macPattern.matcher("00:1a-2b:3c:4d:5e").matches(), "Should reject mixed separators");
     }
+
+    @Test
+    void shouldValidateEmail() {
+        Pattern emailPattern = SiftCatalog.email().sieve();
+
+        // Valid
+        assertTrue(emailPattern.matcher("test@example.com").matches());
+        assertTrue(emailPattern.matcher("user.name+tag@domain.co.uk").matches());
+        assertTrue(emailPattern.matcher("123_456@test-domain.org").matches());
+
+        // Invalid
+        assertFalse(emailPattern.matcher("plainaddress").matches());
+        assertFalse(emailPattern.matcher("@missinguser.com").matches());
+        assertFalse(emailPattern.matcher("user@.com").matches());
+        assertFalse(emailPattern.matcher("user_name@.com").matches(), "underscore not allowed");
+        assertFalse(emailPattern.matcher("user@domain.c").matches(), "TLD too short");
+    }
+
+    @Test
+    void shouldValidateWebUrl() {
+        Pattern urlPattern = SiftCatalog.webUrl().sieve();
+
+        // Valid
+        assertTrue(urlPattern.matcher("https://www.google.com").matches());
+        assertTrue(urlPattern.matcher("http://example.org/path/to/resource?query=1").matches());
+        assertTrue(urlPattern.matcher("https://my-domain.net/").matches());
+
+        // Invalid
+        assertFalse(urlPattern.matcher("ftp://example.com").matches(), "Should reject non http/https protocols");
+        assertFalse(urlPattern.matcher("https://example").matches(), "Should reject missing TLD");
+        assertFalse(urlPattern.matcher("https://example.com/ space").matches(), "Should reject spaces in path");
+    }
+
+    @Test
+    void shouldValidateIsoDate() {
+        Pattern datePattern = SiftCatalog.isoDate().sieve();
+
+        // Valid
+        assertTrue(datePattern.matcher("2026-03-02").matches());
+        assertTrue(datePattern.matcher("1999-12-31").matches());
+        assertTrue(datePattern.matcher("2000-01-01").matches());
+
+        // Invalid
+        assertFalse(datePattern.matcher("2026-13-01").matches(), "Should reject invalid month 13");
+        assertFalse(datePattern.matcher("2026-00-01").matches(), "Should reject invalid month 00");
+        assertFalse(datePattern.matcher("2026-01-32").matches(), "Should reject invalid day 32");
+        assertFalse(datePattern.matcher("2026-01-00").matches(), "Should reject invalid day 00");
+        assertFalse(datePattern.matcher("26-01-01").matches(), "Should reject non-4-digit years");
+    }
 }

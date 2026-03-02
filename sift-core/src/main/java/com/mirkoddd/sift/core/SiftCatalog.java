@@ -122,4 +122,96 @@ public final class SiftCatalog {
         return SiftPatterns.anyOf(colonSeparated, hyphenSeparated)
                 .preventBacktracking();
     }
+
+    /**
+     * Matches a standard Email address.
+     * <p>
+     * Validates typical format {@code local@domain.tld}, safely supporting
+     * subdomains, plus-addressing, and common special characters.
+     *
+     * @return A SiftPattern representing an Email.
+     */
+    public static SiftPattern email() {
+        SiftPattern localPart = Sift.fromAnywhere()
+                .oneOrMore().alphanumeric().including('.', '_', '%', '+', '-');
+
+        SiftPattern domainPart = Sift.fromAnywhere()
+                .oneOrMore().alphanumeric().including('.', '-');
+
+        SiftPattern tld = Sift.fromAnywhere()
+                .between(2, 63).letters();
+
+        return Sift.fromAnywhere()
+                .pattern(localPart)
+                .followedBy('@')
+                .then().exactly(1).pattern(domainPart)
+                .followedBy('.')
+                .then().exactly(1).pattern(tld)
+                .preventBacktracking();
+    }
+
+    /**
+     * Matches a standard HTTP/HTTPS URL.
+     * <p>
+     * Enforces the protocol, a valid domain/TLD structure, and allows an optional path.
+     *
+     * @return A SiftPattern representing a Web URL.
+     */
+    public static SiftPattern webUrl() {
+        SiftPattern protocol = SiftPatterns.anyOf(
+                SiftPatterns.literal("http://"),
+                SiftPatterns.literal("https://")
+        );
+
+        SiftPattern domain = Sift.fromAnywhere()
+                .oneOrMore().alphanumeric().including('.', '-');
+
+        SiftPattern tld = Sift.fromAnywhere()
+                .between(2, 63).letters();
+
+        // Optional path allowing anything except whitespace and angle brackets/quotes
+        SiftPattern pathChar = SiftPatterns.anythingBut(" \t\n\r<>\"'");
+
+        return Sift.fromAnywhere()
+                .pattern(protocol)
+                .then().exactly(1).pattern(domain)
+                .followedBy('.')
+                .then().exactly(1).pattern(tld)
+                .then().zeroOrMore().pattern(pathChar)
+                .preventBacktracking();
+    }
+
+    /**
+     * Matches a structural ISO 8601 Date format (YYYY-MM-DD).
+     * <p>
+     * <b>Important:</b> This pattern performs <i>syntactic</i> validation only. It ensures the string
+     * matches the shape of a valid date (4 digits for year, 01-12 for month, 01-31 for day).
+     * It does <b>not</b> perform <i>semantic</i> calendar validation (e.g., it will structurally accept "2026-02-31").
+     * Developers should pass the matched string to a dedicated date parser like
+     * {@link java.time.LocalDate#parse(CharSequence)} for true leap-year and month-length validation.
+     *
+     * @return A SiftPattern representing the structural format of an ISO Date.
+     */
+    public static SiftPattern isoDate() {
+        SiftPattern year = Sift.fromAnywhere().exactly(4).digits();
+
+        SiftPattern month = SiftPatterns.anyOf(
+                Sift.fromAnywhere().character('0').then().exactly(1).range('1', '9'),
+                Sift.fromAnywhere().character('1').then().exactly(1).range('0', '2')
+        );
+
+        SiftPattern day = SiftPatterns.anyOf(
+                Sift.fromAnywhere().character('0').then().exactly(1).range('1', '9'),
+                Sift.fromAnywhere().range('1', '2').then().exactly(1).digits(),
+                Sift.fromAnywhere().character('3').then().exactly(1).range('0', '1')
+        );
+
+        return Sift.fromAnywhere()
+                .pattern(year)
+                .followedBy('-')
+                .then().exactly(1).pattern(month)
+                .followedBy('-')
+                .then().exactly(1).pattern(day)
+                .preventBacktracking();
+    }
 }
