@@ -85,9 +85,9 @@ public interface QuantifierStep extends TypeStep<ConnectorStep, CharacterClassCo
     /**
      * Matches at most {@code max} times. Generates {@code {0,max}}.
      *
-     * @param max The maximum number of repetitions (must be >= 0).
+     * @param max The maximum number of repetitions (must be strictly positive, i.e., > 0).
      * @return The next step to define WHAT to repeat (variable length).
-     * @throws IllegalArgumentException if max is negative.
+     * @throws IllegalArgumentException if max is zero or negative.
      */
     TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> atMost(int max);
 
@@ -95,9 +95,9 @@ public interface QuantifierStep extends TypeStep<ConnectorStep, CharacterClassCo
      * Matches between {@code min} and {@code max} times inclusive. Generates {@code {min,max}}.
      *
      * @param min The minimum number of repetitions (must be >= 0).
-     * @param max The maximum number of repetitions (must be >= min).
+     * @param max The maximum number of repetitions (must be strictly positive, i.e., > 0, and >= min).
      * @return The next step to define WHAT to repeat (variable length).
-     * @throws IllegalArgumentException if boundaries are invalid.
+     * @throws IllegalArgumentException if min is negative, max is zero or negative, or if min is greater than max.
      */
     TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> between(int min, int max);
 

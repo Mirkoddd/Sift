@@ -112,7 +112,7 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
 
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> atMost(int max) {
-        if (max < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + max);
+        if (max <= 0) throw new IllegalArgumentException("Max quantity must be strictly positive: " + max);
         SiftBuilder clone = this.cloneBuilder();
         clone.assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + "0" + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE);
         return clone.variableType;
@@ -120,7 +120,8 @@ class SiftBuilder implements QuantifierStep, ConnectorStep, VariableConnectorSte
 
     @Override
     public TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> between(int min, int max) {
-        if (min < 0 || max < 0) throw new IllegalArgumentException("Quantities cannot be negative");
+        if (min < 0) throw new IllegalArgumentException("Min quantity cannot be negative: " + min);
+        if (max <= 0) throw new IllegalArgumentException("Max quantity must be strictly positive: " + max);
         if (min > max) throw new IllegalArgumentException("Min cannot be greater than max");
         SiftBuilder clone = this.cloneBuilder();
         clone.assembler.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + min + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE);
