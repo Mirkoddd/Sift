@@ -57,7 +57,6 @@ public final class Sift {
      *
      * @param flag  The primary, mandatory flag to apply to the entire regular expression.
      * @param flags Additional optional flags to apply.
-     *
      * @return An intermediate step to define the starting position or search strategy for the pattern.
      */
     public static SiftStarter filteringWith(SiftGlobalFlag flag, SiftGlobalFlag... flags) {
