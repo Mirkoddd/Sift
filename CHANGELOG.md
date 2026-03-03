@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.2](https://github.com/Mirkoddd/Sift/compare/sift-v2.3.1...sift-v2.3.2) (2026-03-03)
+
+
+### Bug Fixes
+
+* **docs:** remove extra space in javadoc to test pipeline ([47038e3](https://github.com/Mirkoddd/Sift/commit/47038e3f07ecf0d7451ebe73da7e5699228ddc51))
+
 ## [2.3.1](https://github.com/Mirkoddd/Sift/compare/sift-v2.3.0...sift-v2.3.1) (2026-03-03)
 
 
