@@ -4,9 +4,7 @@
       "release-type": "simple",
       "package-name": "sift",
       "extra-files": [
-        "gradle.properties",
-        "sift-core/build.gradle",
-        "sift-annotations/build.gradle"
+        "build.gradle"
       ]
     }
   }
