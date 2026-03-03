@@ -88,7 +88,7 @@ public final class SiftPatterns {
             return patterns.get(0); // QoL Optimization: no need to wrap a single element
         }
 
-        return () -> {
+        return memoize(() -> {
             StringBuilder sb = new StringBuilder();
             sb.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN);
             for (int i = 0; i < patterns.size(); i++) {
@@ -99,7 +99,7 @@ public final class SiftPatterns {
             }
             sb.append(RegexSyntax.GROUP_CLOSE);
             return sb.toString();
-        };
+        });
     }
 
     /**
