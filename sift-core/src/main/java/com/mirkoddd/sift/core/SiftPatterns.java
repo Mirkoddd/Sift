@@ -103,10 +103,16 @@ public final class SiftPatterns {
     }
 
     /**
-     * Wraps a pattern in a <b>Capturing Group</b> {@code (...)}.
+     * Wraps a pattern in an <b>Anonymous Capturing Group</b> {@code (...)}.
      * <p>
      * Capturing groups allow you to extract specific parts of the matched string
-     * using {@code Matcher.group(int)}.
+     * using the standard Java {@code Matcher.group(int)} after evaluation.
+     * <p>
+     * <b>Limitation Note:</b> Because this creates an anonymous (numbered) group,
+     * it is <b>not</b> tracked by Sift's internal group registry. This means you cannot
+     * reference it using Sift's DSL backreference methods, and it bypasses group collision detection.
+     * If you need to use backreferences within your Sift builder chain, or want strict
+     * collision safety, use {@link #capture(String, SiftPattern)} to create a {@link NamedCapture} instead.
      *
      * @param pattern The pattern to capture.
      * @return A SiftPattern wrapped in parentheses.
