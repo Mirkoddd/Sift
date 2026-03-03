@@ -20,6 +20,16 @@ import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
 
 /**
  * Specialized connector for variable-length steps.
+ * <p>
+ * <b>Architectural Note (Interface Segregation & Memory Optimization):</b><br>
+ * Similar to {@link SiftConnector}, this single package-private class implements multiple
+ * variable-length state interfaces (e.g., {@link VariableConnectorStep} and
+ * {@link VariableCharacterClassConnectorStep}). These logically distinct states are unified
+ * into a single concrete implementation to prevent "class explosion" and minimize memory
+ * overhead, which is particularly beneficial in Android environments.
+ * <p>
+ * Compile-time type-safety is strictly enforced because this class is not public, and
+ * external consumers only interact with the narrowly-scoped public interfaces.
  */
 class SiftVariableConnector extends SiftConnector implements VariableConnectorStep, VariableCharacterClassConnectorStep {
 

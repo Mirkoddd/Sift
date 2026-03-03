@@ -22,6 +22,15 @@ import java.util.regex.Pattern;
 
 /**
  * Node responsible for connecting steps and terminating the DSL chain.
+ * <p>
+ * <b>Architectural Note (Interface Segregation & Memory Optimization):</b><br>
+ * This single package-private class implements multiple state interfaces (e.g., {@link ConnectorStep}
+ * and {@link CharacterClassConnectorStep}). While these represent logically distinct states in the DSL,
+ * they are unified into a single concrete implementation to prevent "class explosion" and reduce
+ * memory footprint (especially useful for Android environments).
+ * <p>
+ * Strict type-safety is guaranteed at compile-time because this class is not public.
+ * External consumers interact exclusively with the narrowly-scoped public interfaces returned by the engine.
  */
 class SiftConnector implements ConnectorStep, CharacterClassConnectorStep {
 
