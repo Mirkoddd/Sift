@@ -1,0 +1,16 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "pom.xml",
+          "xpath": "/project/version"
+        },
+        "build.gradle",
+        "gradle.properties"
+      ]
+    }
+  }
+}
