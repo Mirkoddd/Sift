@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.1](https://github.com/Mirkoddd/Sift/compare/sift-v2.3.0...sift-v2.3.1) (2026-03-03)
+
+
+### Bug Fixes
+
+* **docs:** correct spacing in documentation ([32229a2](https://github.com/Mirkoddd/Sift/commit/32229a2adfddc32c977fc6e26392fa6f09289279))
+
 ## [2.3.0](https://github.com/Mirkoddd/Sift/compare/sift-v2.2.0...sift-v2.3.0) (2026-03-03)
 
 
