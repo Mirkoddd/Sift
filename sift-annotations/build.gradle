@@ -19,7 +19,7 @@ tasks.named('compileJava') {
 dependencies {
     api project(':sift-core')
 
-    compileOnly 'jakarta.validation:jakarta.validation-api:3.0.2'
+    compileOnly 'jakarta.validation:jakarta.validation-api:3.1.1'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.hibernate.validator:hibernate-validator:9.1.0.Final'
