@@ -1,15 +1,13 @@
 {
-  "id": "sift-parent",
   "packages": {
-    "sift-core": {
+    ".": {
       "release-type": "java",
-      "package-name": "sift-core",
-      "extra-files": ["../gradle.properties"]
-    },
-    "sift-annotations": {
-      "release-type": "java",
-      "package-name": "sift-annotations",
-      "extra-files": ["../gradle.properties"]
+      "package-name": "sift",
+      "extra-files": [
+        "gradle.properties",
+        "sift-core/build.gradle",
+        "sift-annotations/build.gradle"
+      ]
     }
   }
 }
