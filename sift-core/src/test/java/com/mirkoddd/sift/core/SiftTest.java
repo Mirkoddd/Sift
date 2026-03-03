@@ -887,7 +887,8 @@ class SiftTest {
             // BRANCH 2: Ignore second lazy call on a class
             PatternAssembler assembler2 = new PatternAssembler();
             assembler2.addClassRange("0-9");
-            assembler2.setQuantifier("+?");
+            assembler2.setQuantifier("+");
+            assembler2.applyLazyModifier();
             assembler2.applyLazyModifier(); // Attempt double lazy
             assertEquals("[0-9]+?", assembler2.build(), "Should ignore a second lazy call on a character class");
 
@@ -920,7 +921,8 @@ class SiftTest {
             // BRANCH 2: Ignore second possessive call on a class
             PatternAssembler assembler2 = new PatternAssembler();
             assembler2.addClassRange("0-9");
-            assembler2.setQuantifier("++");
+            assembler2.setQuantifier("+");
+            assembler2.applyPossessiveModifier();
             assembler2.applyPossessiveModifier(); // Attempt double possessive
             assertEquals("[0-9]++", assembler2.build(), "Should ignore a second possessive call on a character class");
 

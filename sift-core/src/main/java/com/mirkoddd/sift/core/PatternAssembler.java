@@ -26,11 +26,30 @@ import java.util.Set;
  */
 class PatternAssembler {
 
+    /**
+     * Represents the optional modifier that can be applied to a quantifier.
+     * <p>
+     * Using an explicit enum instead of string comparisons guarantees that possessive ({@code +})
+     * and lazy ({@code ?}) modifiers are tracked as separate semantic concepts, even though their
+     * regex symbols happen to coincide with those of the {@code ONE_OR_MORE} and {@code OPTIONAL}
+     * quantifiers respectively. This removes any dependency on the concrete values defined in
+     * {@link RegexSyntax} and eliminates the class of bugs that would arise if those values changed.
+     */
+    private enum QuantifierModifier {
+        /** No modifier applied. The quantifier behaves greedily (default). */
+        NONE,
+        /** Possessive modifier ({@code ++}, {@code *+}, {@code ?+}, {@code {n,m}+}). Disables backtracking. */
+        POSSESSIVE,
+        /** Lazy modifier ({@code +?}, {@code *?}, {@code ??}, {@code {n,m}?}). Matches as few characters as possible. */
+        LAZY
+    }
+
     private final StringBuilder mainPattern = new StringBuilder();
     private final StringBuilder pendingClass = new StringBuilder();
     private String currentQuantifier = RegexSyntax.EMPTY;
     private boolean isBuildingClass = false;
-    private boolean canMakePossessiveToMain = false;
+    private QuantifierModifier quantifierModifier = QuantifierModifier.NONE;
+    private boolean canModifyMain = false;
     private final Set<String> registeredGroups = new HashSet<>();
 
     PatternAssembler() {
@@ -118,7 +137,7 @@ class PatternAssembler {
     void addAnyChar() {
         flush();
         mainPattern.append(RegexSyntax.ANY_CHAR).append(currentQuantifier);
-        canMakePossessiveToMain = !currentQuantifier.isEmpty();
+        canModifyMain = !currentQuantifier.isEmpty();
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
@@ -127,7 +146,7 @@ class PatternAssembler {
         StringBuilder esc = new StringBuilder();
         RegexEscaper.escapeString(String.valueOf(literal), esc);
         mainPattern.append(esc).append(currentQuantifier);
-        canMakePossessiveToMain = !currentQuantifier.isEmpty();
+        canModifyMain = !currentQuantifier.isEmpty();
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
@@ -142,13 +161,14 @@ class PatternAssembler {
                     .append(pattern.shake())
                     .append(RegexSyntax.GROUP_CLOSE)
                     .append(currentQuantifier);
-            canMakePossessiveToMain = true;
+            canModifyMain = true;
         } else {
             mainPattern.append(pattern.shake());
-            canMakePossessiveToMain = false;
+            canModifyMain = false;
         }
         currentQuantifier = RegexSyntax.EMPTY;
     }
+
     private void extractAndCheckGroups(SiftPattern pattern, String wrapperGroupName) {
         Set<String> incomingGroups = getIncomingGroups(pattern);
 
@@ -188,43 +208,47 @@ class PatternAssembler {
     void applyPossessiveModifier() {
         if (isBuildingClass) {
             if (!currentQuantifier.isEmpty()) {
-                if (currentQuantifier.equals(RegexSyntax.ONE_OR_MORE) ||
-                        !currentQuantifier.endsWith(RegexSyntax.POSSESSIVE_MODIFIER)) {
-                    currentQuantifier += RegexSyntax.POSSESSIVE_MODIFIER;
-                }
+                quantifierModifier = QuantifierModifier.POSSESSIVE;
             }
-        } else if (canMakePossessiveToMain) {
+        } else if (canModifyMain) {
             mainPattern.append(RegexSyntax.POSSESSIVE_MODIFIER);
-            canMakePossessiveToMain = false;
+            canModifyMain = false;
         }
     }
 
     void applyLazyModifier() {
         if (isBuildingClass) {
             if (!currentQuantifier.isEmpty()) {
-                if (currentQuantifier.equals(RegexSyntax.OPTIONAL) ||
-                        !currentQuantifier.endsWith(RegexSyntax.LAZY_MODIFIER)) {
-                    currentQuantifier += RegexSyntax.LAZY_MODIFIER;
-                }
+                quantifierModifier = QuantifierModifier.LAZY;
             }
-        } else if (canMakePossessiveToMain) {
+        } else if (canModifyMain) {
             mainPattern.append(RegexSyntax.LAZY_MODIFIER);
-            canMakePossessiveToMain = false;
+            canModifyMain = false;
         }
     }
 
     void flush() {
         if (isBuildingClass) {
+            String modifier;
+            switch (quantifierModifier) {
+                case POSSESSIVE: modifier = RegexSyntax.POSSESSIVE_MODIFIER; break;
+                case LAZY:       modifier = RegexSyntax.LAZY_MODIFIER;       break;
+                default:         modifier = RegexSyntax.EMPTY;               break;
+            }
+            String fullQuantifier = currentQuantifier + modifier;
+
             mainPattern.append(RegexSyntax.CLASS_OPEN)
                     .append(pendingClass)
                     .append(RegexSyntax.CLASS_CLOSE)
-                    .append(currentQuantifier);
-            canMakePossessiveToMain = !currentQuantifier.isEmpty();
+                    .append(fullQuantifier);
+
+            canModifyMain = !fullQuantifier.isEmpty();
             pendingClass.setLength(0);
             isBuildingClass = false;
             currentQuantifier = RegexSyntax.EMPTY;
+            quantifierModifier = QuantifierModifier.NONE;
         } else {
-            canMakePossessiveToMain = false;
+            canModifyMain = false;
         }
     }
 
@@ -239,7 +263,8 @@ class PatternAssembler {
         clone.pendingClass.append(this.pendingClass);
         clone.currentQuantifier = this.currentQuantifier;
         clone.isBuildingClass = this.isBuildingClass;
-        clone.canMakePossessiveToMain = this.canMakePossessiveToMain;
+        clone.quantifierModifier = this.quantifierModifier;
+        clone.canModifyMain = this.canModifyMain;
         clone.registeredGroups.addAll(this.registeredGroups);
         return clone;
     }
