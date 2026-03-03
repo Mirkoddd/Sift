@@ -46,7 +46,7 @@ class SiftConnector implements ConnectorStep, CharacterClassConnectorStep {
     public QuantifierStep then() {
         PatternAssembler next = assembler.copy();
         next.flush();
-        return new SiftQuantifier(next); // Ritorna all'inizio del loop!
+        return new SiftQuantifier(next);
     }
 
     @Override
@@ -97,10 +97,6 @@ class SiftConnector implements ConnectorStep, CharacterClassConnectorStep {
         next.addAnchor(RegexSyntax.END_OF_LINE);
         return new SiftConnector(next);
     }
-
-    // ==========================================
-    // TERMINAL OPERATIONS & DCL CACHE
-    // ==========================================
 
     @Override
     public String shake() {

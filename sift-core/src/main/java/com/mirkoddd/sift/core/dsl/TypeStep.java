@@ -256,10 +256,6 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      */
     C nonWordCharactersUnicode();
 
-    // ===================================================================================
-    // WHITESPACE
-    // ===================================================================================
-
     /**
      * Matches any ASCII whitespace character (spaces, tabs, line breaks).
      * <p>
