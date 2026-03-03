@@ -1187,6 +1187,43 @@ class SiftTest {
             assertRegexMatches(regex, "fatal ERROR occurred");
             assertRegexMatches(regex, "fatal error occurred");
         }
+
+        @Test
+        @DisplayName("Should handle COMMENTS (verbose) mode correctly")
+        void commentsFlag() {
+            String regex = filteringWith(SiftGlobalFlag.COMMENTS)
+                    .fromStart()
+                    .exactly(3).letters()
+                    .andNothingElse()
+                    .shake();
+
+            // Ensure the 'x' flag is correctly injected
+            assertEquals("(?x)^[a-zA-Z]{3}$", regex);
+
+            // Ensure standard matching still works perfectly
+            assertRegexMatches(regex, "abc");
+            assertRegexDoesNotMatch(regex, "a c"); // Space is not matched unless explicitly requested
+        }
+
+        @Test
+        @DisplayName("Should handle UNICODE_CASE mode correctly alongside CASE_INSENSITIVE")
+        void unicodeCaseFlag() {
+            // Unicode Case is usually combined with Case Insensitive
+            String regex = filteringWith(CASE_INSENSITIVE, SiftGlobalFlag.UNICODE_CASE)
+                    .fromStart()
+                    .oneOrMore().lettersUnicode() // Using the \p{L} class
+                    .andNothingElse()
+                    .shake();
+
+            // Ensure 'i' and 'u' are concatenated correctly inside the flag group
+            assertEquals("(?iu)^[\\p{L}]+$", regex);
+
+            // Should match Unicode letters case-insensitively
+            assertRegexMatches(regex, "è");
+            assertRegexMatches(regex, "È");
+            assertRegexMatches(regex, "ω"); // Greek lowercase omega
+            assertRegexMatches(regex, "Ω"); // Greek uppercase omega
+        }
     }
 
     @Test
