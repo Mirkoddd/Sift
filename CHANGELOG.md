@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0](https://github.com/Mirkoddd/Sift/compare/v2.0.0...v2.1.0) (2026-03-03)
+
+
+### Features
+
+* **core:** add support for COMMENTS and UNICODE_CASE global flags ([4b0a26b](https://github.com/Mirkoddd/Sift/commit/4b0a26bb9d077d3f8b1c49311633ece2142f7c75))
+
+
+### Performance Improvements
+
+* **core:** eager initialization of HEX_CHAR in SiftCatalog ([1551305](https://github.com/Mirkoddd/Sift/commit/155130580523b553655f909c8afd3cd9f9d4579b))
+* **core:** memoize anyOf(List) pattern generation to prevent redundant allocations ([3d2d0bd](https://github.com/Mirkoddd/Sift/commit/3d2d0bded46716a7acc44323ddae48bff56cdec7))
+
 ## [2.1.0] - Unreleased
 ### Features
 * **Core:** Add support for `COMMENTS` (`?x`) and `UNICODE_CASE` (`?u`) global flags.
