@@ -34,13 +34,21 @@ public final class SiftCatalog {
     }
 
     /**
-     * Reusable, pre-computed pattern for a single hexadecimal character.
+     * Reusable, eager pre-computed pattern for a single hexadecimal character.
+     * Evaluated at class-load time to guarantee zero overhead during runtime.
      */
-    private static final SiftPattern HEX_CHAR = SiftPatterns.anyOf(
-            Sift.fromAnywhere().range('a', 'f'),
-            Sift.fromAnywhere().range('A', 'F'),
-            Sift.fromAnywhere().digits()
-    );
+    private static final SiftPattern HEX_CHAR;
+
+    static {
+        // We force eager evaluation during class loading.
+        // This ensures the memoized value is instantly available for all threads.
+        HEX_CHAR = SiftPatterns.anyOf(
+                Sift.fromAnywhere().range('a', 'f'),
+                Sift.fromAnywhere().range('A', 'F'),
+                Sift.fromAnywhere().digits()
+        );
+        HEX_CHAR.sieve(); // Triggers the internal lazy initialization immediately
+    }
 
     /**
      * Matches a standard 128-bit UUID/GUID (Universally Unique Identifier).
