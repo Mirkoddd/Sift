@@ -34,23 +34,6 @@ public final class SiftCatalog {
     }
 
     /**
-     * Reusable, eager pre-computed pattern for a single hexadecimal character.
-     * Evaluated at class-load time to guarantee zero overhead during runtime.
-     */
-    private static final SiftPattern HEX_CHAR;
-
-    static {
-        // We force eager evaluation during class loading.
-        // This ensures the memoized value is instantly available for all threads.
-        HEX_CHAR = SiftPatterns.anyOf(
-                Sift.fromAnywhere().range('a', 'f'),
-                Sift.fromAnywhere().range('A', 'F'),
-                Sift.fromAnywhere().digits()
-        );
-        HEX_CHAR.sieve(); // Triggers the internal lazy initialization immediately
-    }
-
-    /**
      * Matches a standard 128-bit UUID/GUID (Universally Unique Identifier).
      * <p>
      * Format: {@code 8-4-4-4-12} hexadecimal characters (case-insensitive).
@@ -60,15 +43,15 @@ public final class SiftCatalog {
      */
     public static SiftPattern uuid() {
         return Sift.fromAnywhere()
-                .exactly(8).pattern(HEX_CHAR)
+                .exactly(8).hexDigits()
                 .followedBy('-')
-                .then().exactly(4).pattern(HEX_CHAR)
+                .then().exactly(4).hexDigits()
                 .followedBy('-')
-                .then().exactly(4).pattern(HEX_CHAR)
+                .then().exactly(4).hexDigits()
                 .followedBy('-')
-                .then().exactly(4).pattern(HEX_CHAR)
+                .then().exactly(4).hexDigits()
                 .followedBy('-')
-                .then().exactly(12).pattern(HEX_CHAR)
+                .then().exactly(12).hexDigits()
                 .preventBacktracking();
     }
 
@@ -112,7 +95,7 @@ public final class SiftCatalog {
      */
     public static SiftPattern macAddress() {
         SiftPattern hexPair = Sift.fromAnywhere()
-                .exactly(2).pattern(HEX_CHAR);
+                .exactly(2).hexDigits();
 
         SiftPattern colonGroup = SiftPatterns.group(SiftPatterns.literal(":"), hexPair);
         SiftPattern hyphenGroup = SiftPatterns.group(SiftPatterns.literal("-"), hexPair);
