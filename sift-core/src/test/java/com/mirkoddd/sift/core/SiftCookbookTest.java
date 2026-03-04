@@ -245,4 +245,88 @@ class SiftCookbookTest {
         // Proof that backreference works: a mismatched closing tag will fail
         assertFalse(pattern.matcher("<TITLE>My Awesome Cookbook</H1>").find());
     }
+
+    @Test
+    @DisplayName("Recipe 6: Advanced Assertions (Lookaheads and Alternation)")
+    void testLookaheadAndAnyOfRecipe() {
+        // Goal 1: Validate a complex password using Lookaheads
+        // Must contain at least one uppercase, one digit, and be at least 8 chars long.
+
+        var requiresUppercase = Sift.fromAnywhere()
+                .pattern(SiftPatterns.positiveLookahead(
+                        Sift.fromAnywhere().zeroOrMore().anyCharacter().then().exactly(1).uppercaseLetters()
+                ));
+
+        var requiresDigit = Sift.fromAnywhere()
+                .pattern(SiftPatterns.positiveLookahead(
+                        Sift.fromAnywhere().zeroOrMore().anyCharacter().then().exactly(1).digits()
+                ));
+
+        var passwordPattern = Sift.fromStart()
+                .pattern(requiresUppercase)
+                .then().pattern(requiresDigit)
+                .then().between(8, 64).anyCharacter()
+                .andNothingElse()
+                .shake();
+
+        assertMatches(passwordPattern, "SecurePass123");
+        assertDoesNotMatch(passwordPattern, "securepass123"); // Missing uppercase
+        assertDoesNotMatch(passwordPattern, "SecurePassword"); // Missing digit
+        assertDoesNotMatch(passwordPattern, "Sec1"); // Too short
+
+        // Goal 2: Match specific keywords using Alternation (anyOf)
+        // Extracting valid HTTP methods
+        var httpMethodPattern = Sift.fromStart()
+                .pattern(SiftPatterns.anyOf(
+                        SiftPatterns.literal("GET"),
+                        SiftPatterns.literal("POST"),
+                        SiftPatterns.literal("PUT"),
+                        SiftPatterns.literal("DELETE"),
+                        SiftPatterns.literal("PATCH")
+                ))
+                .andNothingElse()
+                .shake();
+
+        assertMatches(httpMethodPattern, "POST");
+        assertDoesNotMatch(httpMethodPattern, "OPTIONS"); // Not in the allowed list
+    }
+
+    @Test
+    @DisplayName("Recipe 7: Security and ReDoS Mitigation (Possessive & Lazy Quantifiers)")
+    void testReDoSMitigationRecipe() {
+        // Goal: Prevent Catastrophic Backtracking on complex inputs.
+        // We use the possessive modifier (.withoutBacktracking()) to tell the engine to NEVER give back
+        // matched characters. This prevents infinite loop evaluations.
+
+        var safePayloadExtractor = Sift.fromStart()
+                .character('{')
+                // We use wordCharacters() so it stops capturing BEFORE the '}'.
+                // Using .withoutBacktracking() prevents the engine from trying alternative
+                // match permutations if the pattern fails later, avoiding ReDoS.
+                .then().oneOrMore().wordCharacters().withoutBacktracking()
+                .then().character('}')
+                .shake();
+
+        // Testing the syntax output (expecting "\w++" or similar based on your engine)
+        assertTrue(safePayloadExtractor.contains("++") || safePayloadExtractor.contains("*+"),
+                "The pattern should contain possessive regex modifiers");
+
+        assertMatches(safePayloadExtractor, "{secured_payload_data}");
+
+        // This will correctly fail without catastrophic backtracking
+        assertDoesNotMatch(safePayloadExtractor, "{invalid payload}");
+
+        // Example of LAZY matching (finding the shortest path instead of greedy)
+        var lazyTagExtractor = Sift.fromStart()
+                .character('<')
+                .then().oneOrMore().anyCharacter().asFewAsPossible() // Translates to "+?"
+                .then().character('>')
+                .shake();
+
+        // Standard regex would match from the first '<' to the very last '>'
+        // Lazy matching stops at the first closing '>'
+        java.util.regex.Matcher lazyMatcher = java.util.regex.Pattern.compile(lazyTagExtractor).matcher("<first>...<second>");
+        assertTrue(lazyMatcher.find());
+        assertEquals("<first>", lazyMatcher.group(0), "Lazy modifier should stop at the first closing bracket");
+    }
 }
