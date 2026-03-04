@@ -25,7 +25,7 @@ class ImplicitQuantifierCoverageTest {
     }
 
     @Test
-    @DisplayName("Implicit quantifier matches exactly(1) for core types and literals")
+    @DisplayName("Implicit quantifier matches exactly(1) for core types, literals, and control characters")
     void verifyCoreTypes() {
         assertImplicitEqualsExplicit(
                 Sift.fromStart().anyCharacter().shake(),
@@ -40,6 +40,22 @@ class ImplicitQuantifierCoverageTest {
         assertImplicitEqualsExplicit(
                 Sift.fromStart().pattern(SiftPatterns.literal("test")).shake(),
                 Sift.fromStart().exactly(1).pattern(SiftPatterns.literal("test")).shake()
+        );
+
+        // Control characters
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().newline().shake(),
+                Sift.fromStart().exactly(1).newline().shake()
+        );
+
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().carriageReturn().shake(),
+                Sift.fromStart().exactly(1).carriageReturn().shake()
+        );
+
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().tab().shake(),
+                Sift.fromStart().exactly(1).tab().shake()
         );
     }
 
@@ -163,6 +179,31 @@ class ImplicitQuantifierCoverageTest {
     }
 
     @Test
+    @DisplayName("Implicit quantifier matches exactly(1) for extended utility classes")
+    void verifyExtendedUtilityClasses() {
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().hexDigits().shake(),
+                Sift.fromStart().exactly(1).hexDigits().shake()
+        );
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().punctuation().shake(),
+                Sift.fromStart().exactly(1).punctuation().shake()
+        );
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().punctuationUnicode().shake(),
+                Sift.fromStart().exactly(1).punctuationUnicode().shake()
+        );
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().blank().shake(),
+                Sift.fromStart().exactly(1).blank().shake()
+        );
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().blankUnicode().shake(),
+                Sift.fromStart().exactly(1).blankUnicode().shake()
+        );
+    }
+
+    @Test
     @DisplayName("Implicit quantifier allows character class modifiers without explicit quantification")
     void verifyCharacterClassModifiersOnImplicitTypes() {
         // Ensures that methods like including() and excluding() work seamlessly
@@ -175,6 +216,16 @@ class ImplicitQuantifierCoverageTest {
         assertImplicitEqualsExplicit(
                 Sift.fromStart().digits().excluding('0').shake(),
                 Sift.fromStart().exactly(1).digits().excluding('0').shake()
+        );
+
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().hexDigits().excluding('a', 'A').shake(),
+                Sift.fromStart().exactly(1).hexDigits().excluding('a', 'A').shake()
+        );
+
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().punctuation().including('-').shake(),
+                Sift.fromStart().exactly(1).punctuation().including('-').shake()
         );
     }
 }

@@ -243,4 +243,60 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         next.addCustomRange(start, end);
         return getCharacterClassConnector(next);
     }
+
+    @Override
+    public T newline() {
+        PatternAssembler next = assembler.copy();
+        next.addCharacter('\n');
+        return getNormalConnector(next);
+    }
+
+    @Override
+    public T carriageReturn() {
+        PatternAssembler next = assembler.copy();
+        next.addCharacter('\r');
+        return getNormalConnector(next);
+    }
+
+    @Override
+    public T tab() {
+        PatternAssembler next = assembler.copy();
+        next.addCharacter('\t');
+        return getNormalConnector(next);
+    }
+
+    @Override
+    public C hexDigits() {
+        PatternAssembler next = assembler.copy();
+        next.addClassRange(RegexSyntax.RANGE_HEX_DIGITS);
+        return getCharacterClassConnector(next);
+    }
+
+    @Override
+    public C punctuation() {
+        PatternAssembler next = assembler.copy();
+        next.addClassRange(RegexSyntax.PUNCTUATION);
+        return getCharacterClassConnector(next);
+    }
+
+    @Override
+    public C punctuationUnicode() {
+        PatternAssembler next = assembler.copy();
+        next.addClassRange(RegexSyntax.UNICODE_PUNCTUATION);
+        return getCharacterClassConnector(next);
+    }
+
+    @Override
+    public C blank() {
+        PatternAssembler next = assembler.copy();
+        next.addClassRange(RegexSyntax.BLANK);
+        return getCharacterClassConnector(next);
+    }
+
+    @Override
+    public C blankUnicode() {
+        PatternAssembler next = assembler.copy();
+        next.addClassRange(RegexSyntax.UNICODE_BLANK);
+        return getCharacterClassConnector(next);
+    }
 }

@@ -308,4 +308,76 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      * @return The specialized character class step to allow further class modifications.
      */
     C range(char start, char end);
+
+    /**
+     * Matches the newline character (Line Feed).
+     * <p>
+     * Equivalent to the literal {@code '\n'}.
+     *
+     * @return The standard connector step to continue building.
+     */
+    T newline();
+
+    /**
+     * Matches the Carriage Return character.
+     * <p>
+     * Equivalent to the literal {@code '\r'}.
+     *
+     * @return The standard connector step to continue building.
+     */
+    T carriageReturn();
+
+    /**
+     * Matches the horizontal tab character.
+     * <p>
+     * Equivalent to the literal {@code '\t'}.
+     *
+     * @return The standard connector step to continue building.
+     */
+    T tab();
+
+    /**
+     * Matches any hexadecimal digit (case-insensitive).
+     * <p>
+     * Equivalent to the regex range {@code [0-9a-fA-F]}.
+     *
+     * @return The specialized character class step to allow further class modifications.
+     */
+    C hexDigits();
+
+    /**
+     * Matches any ASCII punctuation character.
+     * <p>
+     * Equivalent to the regex {@code \p{Punct}} (one of {@code !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~}).
+     *
+     * @return The specialized character class step to allow further class modifications.
+     */
+    C punctuation();
+
+    /**
+     * Matches any Unicode punctuation character.
+     * <p>
+     * Equivalent to the regex {@code \p{P}}.
+     *
+     * @return The specialized character class step to allow further class modifications.
+     */
+    C punctuationUnicode();
+
+    /**
+     * Matches any ASCII blank character (space or tab).
+     * <p>
+     * Equivalent to the regex {@code \p{Blank}}. This does not include line terminators.
+     *
+     * @return The specialized character class step to allow further class modifications.
+     */
+    C blank();
+
+    /**
+     * Matches any Unicode blank character (Unicode space separators and tab).
+     * <p>
+     * This includes characters like non-breaking spaces but excludes line terminators.
+     *
+     * @return The specialized character class step to allow further class modifications.
+     */
+    C blankUnicode();
 }

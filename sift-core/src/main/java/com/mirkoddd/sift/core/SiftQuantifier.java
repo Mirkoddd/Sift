@@ -131,4 +131,44 @@ class SiftQuantifier implements QuantifierStep {
     @Override public CharacterClassConnectorStep whitespaceUnicode() { return exactly(1).whitespaceUnicode(); }
     @Override public CharacterClassConnectorStep nonWhitespaceUnicode() { return exactly(1).nonWhitespaceUnicode(); }
     @Override public CharacterClassConnectorStep range(char start, char end) { return exactly(1).range(start, end); }
+
+    @Override
+    public ConnectorStep newline() {
+        return exactly(1).newline();
+    }
+
+    @Override
+    public ConnectorStep carriageReturn() {
+        return exactly(1).carriageReturn();
+    }
+
+    @Override
+    public ConnectorStep tab() {
+        return exactly(1).tab();
+    }
+
+    @Override
+    public CharacterClassConnectorStep hexDigits() {
+        return exactly(1).hexDigits();
+    }
+
+    @Override
+    public CharacterClassConnectorStep punctuation() {
+        return exactly(1).punctuation();
+    }
+
+    @Override
+    public CharacterClassConnectorStep punctuationUnicode() {
+        return exactly(1).punctuationUnicode();
+    }
+
+    @Override
+    public CharacterClassConnectorStep blank() {
+        return exactly(1).blank();
+    }
+
+    @Override
+    public CharacterClassConnectorStep blankUnicode() {
+        return exactly(1).blankUnicode();
+    }
 }

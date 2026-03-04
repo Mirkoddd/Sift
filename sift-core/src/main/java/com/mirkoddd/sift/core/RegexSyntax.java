@@ -77,7 +77,11 @@ final class RegexSyntax {
     static final String NON_UNICODE_WORD_CHARACTERS = "^\\p{L}\\p{Nd}_"; // Stripped outer brackets
     static final String UNICODE_WHITESPACE = "\\p{IsWhite_Space}";
     static final String NON_UNICODE_WHITESPACE = "\\P{IsWhite_Space}";
-
+    static final String RANGE_HEX_DIGITS = "0-9a-fA-F";
+    static final String PUNCTUATION = "\\p{Punct}";
+    static final String UNICODE_PUNCTUATION = "\\p{P}";
+    static final String BLANK = "\\p{Blank}";
+    static final String UNICODE_BLANK = "\\p{Zs}\\t"; // Stripped outer brackets
     private RegexSyntax() {
         // Prevent instantiation of utility class
     }
