@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.2](https://github.com/Mirkoddd/Sift/compare/sift-v2.4.1...sift-v2.4.2) (2026-03-04)
+
+
+### Bug Fixes
+
+* **core:** implement lazy backreference validation ([2853a9a](https://github.com/Mirkoddd/Sift/commit/2853a9a9101892788261226213c8c783096e5013))
+
 ## [2.4.1](https://github.com/Mirkoddd/Sift/compare/sift-v2.4.0...sift-v2.4.1) (2026-03-04)
 
 
