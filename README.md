@@ -13,6 +13,14 @@ Writing raw Regular Expressions in Java is error-prone, hard to read, and diffic
 
 Build your rules step-by-step, filter out the noise, and when your pattern is ready, just `.shake()` the sieve!
 
+---
+
+## 📖 The Sift Cookbook
+Looking for real-world examples? Check out the **[Sift Cookbook](COOKBOOK.md)**!
+It contains advanced recipes demonstrating Sift's true power: parsing TSV logs, validating UUIDs/IPs, data extraction with named captures, lookarounds, and ReDoS mitigation techniques.
+
+---
+
 # Quick Start
 
 Add Sift to your project dependencies:
@@ -20,7 +28,6 @@ Add Sift to your project dependencies:
 **Maven:**
 
 ```XML
-<!-- Replace <latest-version> with the version shown in the Maven Central badge above -->
 <dependency>
     <groupId>com.mirkoddd</groupId>
     <artifactId>sift-core</artifactId>
@@ -53,50 +60,63 @@ However, the internal codebase and test suite utilize modern **Java 17** feature
 # Key Features
 
 * **Compile-Time Structural Guarantees:** Sift is not just fluent — it enforces a strict Type-State machine. Invalid regex constructions are impossible to express in the DSL. Entire classes of runtime errors are eliminated before your code even compiles.
-* **Immutable & Thread-Safe Builders:** Every Sift pattern is built in a controlled, predictable flow. No hidden shared state, no side effects. Safe to use in concurrent environments such as web servers and reactive systems.
-* **Advanced Regex Capabilities:** Don't hit a wall when requirements get complex. Sift fully supports advanced engine features like Named Capturing Groups, Backreferences, and Lookarounds (Lookahead/Lookbehind), perfectly integrated into the fluent DSL.
-* **100% Native Regex Output:** Sift generates pure Java-compatible regular expressions. No wrappers, no runtime interpreters, no performance penalties. The resulting pattern can be stored, logged, shared, or used anywhere a standard regex String is accepted.
+* **Modular "LEGO Brick" Composition:** Build unanchored, reusable intermediate patterns using `Sift.fromAnywhere()` and seamlessly compose them into larger, strict boundaries.
+* **Immutable & Thread-Safe Builders:** Every Sift pattern is built in a controlled, predictable flow using copy-on-write states and double-checked locking. No hidden shared state, no side effects. Safe to use in concurrent environments.
+* **Advanced Regex & Lazy Evaluation:** Sift fully supports advanced engine features like Named Capturing Groups, Lookarounds, and Backreferences. Sift uniquely features **Lazy Validation** for backreferences, allowing you to compose separated blocks and cross-reference them safely before final assembly.
+* **100% Native Regex Output:** Sift generates pure Java-compatible regular expressions. No wrappers, no runtime interpreters, no performance penalties. Call `.sieve()` to get a compiled `java.util.regex.Pattern`.
 * **Semantic Over Symbolic:** Express intent using meaningful method names instead of cryptic symbols. Write `.atLeast(3).digits()` instead of `{3,}[0-9]` and make your code self-documenting.
-* **Self-Contained Global Flags:** Apply Case-Insensitive, Multiline, or DotAll modes effortlessly via `Sift.filteringWith(...)`. Sift uses inline flags (e.g., `(?i)`), making the resulting `String` 100% portable across databases, JSON payloads, or other languages without relying on external configurations.
-* **ASCII by Default:** Predictability is key. Standard methods like `letters()` or `digits()` default strictly to ASCII (`[a-zA-Z]`, `[0-9]`), preventing unexpected matches with foreign alphabets or alternative numbering systems.
-* **Global Ready:** Need internationalization? Switch explicitly to the `...Unicode()` counterparts (e.g., `lettersUnicode()`) to instantly support characters from any language safely.
-* **ReDoS Mitigation Tools:** Java's default regex engine is vulnerable to catastrophic backtracking. Sift helps you write safer patterns without memorizing obscure syntax by exposing possessive quantifiers via `.withoutBacktracking()` and atomic groups via `.preventBacktracking()`.
+* **Self-Contained Global Flags:** Apply Case-Insensitive, Multiline, or DotAll modes effortlessly via `Sift.filteringWith(...)`. Sift uses inline flags (e.g., `(?i)`), making the resulting string 100% portable across databases or JSON payloads.
+* **ASCII by Default, Global Ready:** Standard methods like `letters()` or `digits()` default strictly to ASCII (`[a-zA-Z]`, `[0-9]`), preventing unexpected matches with foreign alphabets. Need internationalization? Switch explicitly to the `...Unicode()` counterparts.
+* **ReDoS Mitigation Tools:** Sift helps you write safer patterns without memorizing obscure syntax by exposing possessive quantifiers via `.withoutBacktracking()` and lazy modifiers via `.asFewAsPossible()`.
 * **Zero Dependencies:** The `sift-core` engine is pure Java. It doesn't pull in any bloated transitive dependencies, keeping your final artifact size incredibly small.
-* **Android & Enterprise Ready:** Compiled to Java 8 bytecode for maximum compatibility. It ships with built-in Proguard/R8 rules, guaranteeing flawless integration out-of-the-box for both Android applications and modern/legacy Spring Boot servers.
-* **Global Null-Safety & Fail-Fast:** Every method in the DSL is protected by strict null-checks. Sift fails immediately with clear feedback if invalid parameters are passed, preventing inconsistent regex states in production.
-* **Production-Grade Quality:** 100% test coverage, CI-verified builds, strict fail-fast validation, and zero external dependencies ensure long-term reliability in enterprise systems.
-
 
 # Usage Examples
 
-# 1. Fluent, Type-Safe Regex Generation
+### 1. Fluent, Type-Safe Regex Generation
 
 Forget about counting backslashes or memorizing obscure symbols. Sift guides your hand using your IDE's auto-completion.
 
 ```Java    
-    // Goal: Match an international username securely
-    String regex = Sift.fromStart()
-        .exactly(1).uppercaseLettersUnicode() // Must start with an uppercase letter
-        .then()
-        .between(3, 15).wordCharactersUnicode().withoutBacktracking() // Secure against ReDoS
-        .then()
-        .optional().digits() // May end with an ASCII number
-        .andNothingElse()
-        .shake(); 
-    
-    // Result: ^[\p{Lu}][\p{L}\p{Nd}_]{3,15}+[0-9]?$
+// Goal: Match an international username securely
+String regex = Sift.fromStart()
+    .exactly(1).uppercaseLettersUnicode() // Must start with an uppercase letter
+    .then()
+    .between(3, 15).wordCharactersUnicode().withoutBacktracking() // Secure against ReDoS
+    .then()
+    .optional().digits() // May end with an ASCII number
+    .andNothingElse()
+    .shake(); 
 
+// Result: ^[\p{Lu}][\p{L}\p{Nd}_]{3,15}+[0-9]?$
 ```
 
-# 2. Seamless Jakarta Validation
+### 2. Modular Composition (The LEGO Brick Approach)
+
+Break down complex patterns into highly readable, reusable semantic variables.
+
+```Java
+// Define reusable unanchored blocks
+var hex4 = Sift.fromAnywhere().exactly(4).hexDigits();
+var separator = Sift.fromAnywhere().character('-');
+
+var block = hex4.followedBy(separator);
+
+// Compose them safely into a strict anchor
+String strictRegex = Sift.fromStart()
+    .pattern(block)
+    .pattern(block)
+    .exactly(12).hexDigits()
+    .andNothingElse()
+    .shake();
+```
+
+### 3. Seamless Jakarta Validation
 
 Stop duplicating regex logic in your DTOs. Centralize your rules and reuse them elegantly with `@SiftMatch`.
 
 ```Java
-
 // 1. Define your reusable rule (e.g., matching "PROMO123")
 public class PromoCodeRule implements SiftRegexProvider {
-
     public String getRegex() {
         return Sift.fromStart()
                 .atLeast(4).letters()
@@ -116,8 +136,6 @@ public record ApplyPromoRequest(
         )
         String promoCode
 ) {}
-
 ```
 
 *Sift compiles the Pattern only once during initialization, ensuring zero performance overhead during validation.*
-
