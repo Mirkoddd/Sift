@@ -26,15 +26,6 @@ import java.util.Set;
  */
 class PatternAssembler {
 
-    /**
-     * Represents the optional modifier that can be applied to a quantifier.
-     * <p>
-     * Using an explicit enum instead of string comparisons guarantees that possessive ({@code +})
-     * and lazy ({@code ?}) modifiers are tracked as separate semantic concepts, even though their
-     * regex symbols happen to coincide with those of the {@code ONE_OR_MORE} and {@code OPTIONAL}
-     * quantifiers respectively. This removes any dependency on the concrete values defined in
-     * {@link RegexSyntax} and eliminates the class of bugs that would arise if those values changed.
-     */
     private enum QuantifierModifier {
         /** No modifier applied. The quantifier behaves greedily (default). */
         NONE,
@@ -51,6 +42,7 @@ class PatternAssembler {
     private QuantifierModifier quantifierModifier = QuantifierModifier.NONE;
     private boolean canModifyMain = false;
     private final Set<String> registeredGroups = new HashSet<>();
+    private final Set<String> requiredBackreferences = new HashSet<>();
 
     PatternAssembler() {
     }
@@ -65,6 +57,10 @@ class PatternAssembler {
 
     Set<String> getRegisteredGroups() {
         return registeredGroups;
+    }
+
+    Set<String> getRequiredBackreferences() {
+        return requiredBackreferences;
     }
 
     void setQuantifier(String quantifier) {
@@ -115,7 +111,7 @@ class PatternAssembler {
                     "' has already been defined. Each group name must be unique.");
         }
 
-        extractAndCheckGroups(group.getPattern(), group.getName());
+        extractAndCheckGroupsAndRequirements(group.getPattern(), group.getName());
 
         mainPattern.append(RegexSyntax.NAMED_GROUP_OPEN)
                 .append(group.getName())
@@ -125,10 +121,8 @@ class PatternAssembler {
     }
 
     void addBackreference(NamedCapture group) {
-        if (!registeredGroups.contains(group.getName())) {
-            throw new IllegalStateException("The group '" + group.getName() +
-                    "' must be captured with .namedCapture() before it can be referenced.");
-        }
+        requiredBackreferences.add(group.getName());
+
         mainPattern.append(RegexSyntax.NAMED_BACKREFERENCE_OPEN)
                 .append(group.getName())
                 .append(RegexSyntax.NAMED_BACKREFERENCE_CLOSE);
@@ -152,26 +146,25 @@ class PatternAssembler {
 
     void addPattern(SiftPattern pattern) {
         flush();
+        extractAndCheckGroupsAndRequirements(pattern, null);
 
-        // Pass null since this is a general sub-pattern, not a named wrapper
-        extractAndCheckGroups(pattern, null);
+        String rawSubPattern = extractRawString(pattern);
 
         if (!currentQuantifier.isEmpty()) {
             mainPattern.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN)
-                    .append(pattern.shake())
+                    .append(rawSubPattern)
                     .append(RegexSyntax.GROUP_CLOSE)
                     .append(currentQuantifier);
             canModifyMain = true;
         } else {
-            mainPattern.append(pattern.shake());
+            mainPattern.append(rawSubPattern);
             canModifyMain = false;
         }
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
-    private void extractAndCheckGroups(SiftPattern pattern, String wrapperGroupName) {
+    private void extractAndCheckGroupsAndRequirements(SiftPattern pattern, String wrapperGroupName) {
         Set<String> incomingGroups = getIncomingGroups(pattern);
-
         if (incomingGroups != null) {
             for (String incomingGroup : incomingGroups) {
                 if (!registeredGroups.add(incomingGroup)) {
@@ -186,16 +179,24 @@ class PatternAssembler {
                 }
             }
         }
+
+        Set<String> incomingBackreferences = getIncomingBackreferences(pattern);
+        if (incomingBackreferences != null) {
+            requiredBackreferences.addAll(incomingBackreferences);
+        }
     }
 
     private static Set<String> getIncomingGroups(SiftPattern pattern) {
-        // Only terminal nodes (Connectors) implement SiftPattern in our internal engine.
-        // Other intermediate nodes (Quantifiers, Types) cannot be passed here.
         if (pattern instanceof SiftConnector) {
             return ((SiftConnector) pattern).assembler.getRegisteredGroups();
         }
+        return null;
+    }
 
-        // Returns null for external/custom implementations of SiftPattern
+    private static Set<String> getIncomingBackreferences(SiftPattern pattern) {
+        if (pattern instanceof SiftConnector) {
+            return ((SiftConnector) pattern).assembler.getRequiredBackreferences();
+        }
         return null;
     }
 
@@ -257,6 +258,15 @@ class PatternAssembler {
         return mainPattern.toString();
     }
 
+    void validateFinalAssembly() {
+        for (String req : requiredBackreferences) {
+            if (!registeredGroups.contains(req)) {
+                throw new IllegalStateException("The group '" + req +
+                        "' must be captured with .namedCapture() before it can be referenced.");
+            }
+        }
+    }
+
     PatternAssembler copy() {
         PatternAssembler clone = new PatternAssembler();
         clone.mainPattern.append(this.mainPattern);
@@ -266,6 +276,14 @@ class PatternAssembler {
         clone.quantifierModifier = this.quantifierModifier;
         clone.canModifyMain = this.canModifyMain;
         clone.registeredGroups.addAll(this.registeredGroups);
+        clone.requiredBackreferences.addAll(this.requiredBackreferences);
         return clone;
+    }
+
+    private static String extractRawString(SiftPattern pattern) {
+        if (pattern instanceof SiftConnector) {
+            return ((SiftConnector) pattern).assembler.copy().build();
+        }
+        return pattern.shake();
     }
 }

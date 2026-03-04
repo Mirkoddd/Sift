@@ -104,6 +104,7 @@ class SiftConnector implements ConnectorStep, CharacterClassConnectorStep {
             synchronized (this) {
                 if (cachedRegex == null) {
                     PatternAssembler tempAssembler = assembler.copy();
+                    tempAssembler.validateFinalAssembly();
                     String generatedRegex = tempAssembler.build();
                     try {
                         cachedPattern = Pattern.compile(generatedRegex);

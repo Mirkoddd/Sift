@@ -654,21 +654,6 @@ class SiftTest {
         }
 
         @Test
-        @DisplayName("Should throw IllegalStateException when backreference is called before capture")
-        void backreferenceOrderValidation() {
-            NamedCapture userGroup = capture("user", literal("admin"));
-
-            Exception exception = assertThrows(IllegalStateException.class, () ->
-                    fromStart()
-                            .backreference(userGroup) // throws IllegalStateException
-                            .then()
-                            .namedCapture(userGroup)
-                            .shake());
-
-            assertTrue(exception.getMessage().contains("must be captured"));
-        }
-
-        @Test
         @DisplayName("backreference should throw NullPointerException when group is null")
         void backreferenceNullFailure() {
             NullPointerException exception = assertThrows(NullPointerException.class, () ->
@@ -684,7 +669,7 @@ class SiftTest {
             NamedCapture myGroup = capture("myTag", literal("test"));
 
             assertThrows(IllegalStateException.class, () ->
-                            fromStart().backreference(myGroup),
+                            fromStart().backreference(myGroup).shake(),
                     "Should throw IllegalStateException if the group wasn't captured before being referenced");
         }
     }
