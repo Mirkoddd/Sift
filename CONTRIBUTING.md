@@ -32,7 +32,7 @@ PRs introducing "God Classes", overly long methods, or tight coupling will be cl
 Sift is a core library, which means bugs are unacceptable. We adopt a strict **Test-Driven Development (TDD)** approach.
 
 * **100% Code Coverage Policy:** We enforce a strict 100% line and branch coverage rule. No PR will be accepted if it drops the coverage below this threshold.
-* **Tooling:** We use **JUnit Jupiter** (`org.junit.jupiter`) for unit testing and **JaCoCo** for coverage reports. Please ensure all new tests are written using the JUnit 5 API.
+* **Tooling:** We use **JUnit Jupiter** (`org.junit.jupiter`) for unit testing and **JaCoCo** for coverage reports. Please ensure all new tests are written using the JUnit Jupiter API.
 * If you add a feature (e.g., `feat:`), you must include unit tests that prove its functionality and cover all new branches and edge cases.
 * If you fix a bug (e.g., `fix:`), you must first write a failing test that reproduces the bug, and then write the code to make it pass.
 * Ensure the entire local test suite passes and verify the coverage report by running `./gradlew test jacocoTestReport` before submitting your code.
