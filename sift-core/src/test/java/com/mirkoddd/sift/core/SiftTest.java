@@ -477,7 +477,19 @@ class SiftTest {
         @Test
         @DisplayName("shake() should perform fail-fast validation and throw IllegalStateException on invalid regex")
         void testShakeFailFastValidation() {
-            SiftPattern malformedPattern = () -> "(?unclosedGroup";
+            // We simulate a deeply internal bug generating a malformed regex,
+            // fulfilling the restricted contract using an anonymous class.
+            SiftPattern malformedPattern = new SiftPattern() {
+                @Override
+                public String shake() {
+                    return "(?unclosedGroup";
+                }
+
+                @Override
+                public void preventExternalImplementation(InternalToken token) {
+                    // Intentionally left blank for testing purposes
+                }
+            };
 
             SiftPattern pattern = Sift.fromStart().pattern(malformedPattern);
 
@@ -488,6 +500,36 @@ class SiftTest {
                     "The exception message should clearly indicate a Sift compilation error");
             assertInstanceOf(java.util.regex.PatternSyntaxException.class, exception.getCause(),
                     "The root cause must be the original PatternSyntaxException from java.util.regex");
+        }
+
+        @Test
+        @DisplayName("preventExternalImplementation() should throw SecurityException when passed a null token")
+        void testPreventExternalImplementationThrowsSecurityExceptionOnNull() {
+            com.mirkoddd.sift.core.dsl.SiftPattern pattern = com.mirkoddd.sift.core.Sift.fromStart()
+                    .exactly(1).digits()
+                    .andNothingElse();
+
+            SecurityException exception = assertThrows(SecurityException.class, () -> pattern.preventExternalImplementation(null),
+                    "Calling preventExternalImplementation() with a null token must throw a SecurityException");
+
+            assertTrue(exception.getMessage().contains("External implementation of SiftPattern is not allowed."),
+                    "The exception message should clearly state the security restriction");
+        }
+
+        @Test
+        @DisplayName("preventExternalImplementation() should execute silently when passed a valid token (Branch Coverage)")
+        void testPreventExternalImplementationExecutesSilentlyOnValidToken() throws Exception {
+            java.lang.reflect.Constructor<com.mirkoddd.sift.core.InternalToken> constructor =
+                    com.mirkoddd.sift.core.InternalToken.class.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            com.mirkoddd.sift.core.InternalToken validToken = constructor.newInstance();
+
+            com.mirkoddd.sift.core.dsl.SiftPattern pattern = com.mirkoddd.sift.core.Sift.fromStart()
+                    .exactly(1).digits()
+                    .andNothingElse();
+
+            assertDoesNotThrow(() -> pattern.preventExternalImplementation(validToken),
+                    "Calling preventExternalImplementation() with a valid token should bypass the if-statement and execute silently");
         }
     }
 

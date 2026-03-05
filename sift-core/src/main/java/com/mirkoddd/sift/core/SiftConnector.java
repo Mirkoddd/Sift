@@ -125,6 +125,13 @@ class SiftConnector implements ConnectorStep, CharacterClassConnectorStep {
     }
 
     @Override
+    public void preventExternalImplementation(InternalToken token) {
+        if (token == null) {
+            throw new SecurityException("External implementation of SiftPattern is not allowed.");
+        }
+    }
+
+    @Override
     public String toString() {
         return shake();
     }

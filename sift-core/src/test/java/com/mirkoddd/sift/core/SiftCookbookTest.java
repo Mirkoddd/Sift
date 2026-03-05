@@ -11,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.mirkoddd.sift.core.dsl.SiftPattern;
+
 /**
  * Validates the real-world examples provided in the COOKBOOK.md file.
  * This ensures that the documentation is always in sync with the actual API

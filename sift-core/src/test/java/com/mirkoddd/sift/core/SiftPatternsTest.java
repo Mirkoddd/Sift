@@ -26,6 +26,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -238,13 +239,25 @@ class SiftPatternsTest {
     @Test
     @DisplayName("SiftPattern default sieve() should compile the result of shake()")
     void testDefaultSieveImplementation() {
-        com.mirkoddd.sift.core.dsl.SiftPattern anonymousPattern = () -> "[a-z]+";
+        // We can no longer use a lambda due to the security sealing of the interface.
+        // We use an anonymous class that explicitly fulfills the internal contract.
+        com.mirkoddd.sift.core.dsl.SiftPattern anonymousPattern = new com.mirkoddd.sift.core.dsl.SiftPattern() {
+            @Override
+            public String shake() {
+                return "[a-z]+";
+            }
+
+            @Override
+            public void preventExternalImplementation(com.mirkoddd.sift.core.InternalToken token) {
+                // Intentionally left blank for testing purposes
+            }
+        };
 
         java.util.regex.Pattern compiled = anonymousPattern.sieve();
 
         assertNotNull(compiled, "The default sieve() should return a valid Pattern");
         assertEquals("[a-z]+", compiled.pattern(), "The compiled pattern should match the shake() output");
-        assertTrue(compiled.matcher("abc").matches(), "The Pattern should correctly match valid strings");
+        assertTrue(anonymousPattern.matches("abc"), "The default matches() should correctly match valid strings");
     }
 
     @Test
@@ -265,6 +278,59 @@ class SiftPatternsTest {
 
         assertEquals("cache-test", firstSieve.pattern());
         assertSame(firstSieve, secondSieve, "sieve() should return the exact same Pattern instance from cache.");
+    }
+
+    @Test
+    @DisplayName("preventExternalImplementation() should throw SecurityException when passed a null token")
+    void testPreventExternalImplementationThrowsSecurityExceptionOnNull() {
+        com.mirkoddd.sift.core.dsl.SiftPattern pattern = com.mirkoddd.sift.core.Sift.fromStart()
+                .exactly(1).digits()
+                .andNothingElse();
+
+        SecurityException exception = assertThrows(SecurityException.class, () -> pattern.preventExternalImplementation(null),
+                "Calling preventExternalImplementation() with a null token must throw a SecurityException");
+
+        assertTrue(exception.getMessage().contains("External implementation of SiftPattern is not allowed."),
+                "The exception message should clearly state the security restriction");
+    }
+
+    @Test
+    @DisplayName("preventExternalImplementation() should execute silently when passed a valid token (Branch Coverage)")
+    void testPreventExternalImplementationExecutesSilentlyOnValidToken() throws Exception {
+        // Using Reflection to instantiate the package-private token and cover the 'if (token != null)' branch
+        java.lang.reflect.Constructor<com.mirkoddd.sift.core.InternalToken> constructor =
+                com.mirkoddd.sift.core.InternalToken.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        com.mirkoddd.sift.core.InternalToken validToken = constructor.newInstance();
+
+        com.mirkoddd.sift.core.dsl.SiftPattern pattern = com.mirkoddd.sift.core.Sift.fromStart()
+                .exactly(1).digits()
+                .andNothingElse();
+
+        assertDoesNotThrow(() -> pattern.preventExternalImplementation(validToken),
+                "Calling preventExternalImplementation() with a valid token should bypass the if-statement and execute silently");
+    }
+
+    @Test
+    @DisplayName("preventExternalImplementation() inside memoize() anonymous class should execute silently")
+    void testMemoizePreventExternalImplementationImplementation() {
+        com.mirkoddd.sift.core.dsl.SiftPattern memoizedPattern = com.mirkoddd.sift.core.SiftPatterns.literal("coverage-test");
+
+        assertDoesNotThrow(() -> memoizedPattern.preventExternalImplementation(null),
+                "Calling preventExternalImplementation() on a memoized pattern should not throw any exceptions");
+    }
+
+    @Test
+    @DisplayName("preventExternalImplementation() inside preventBacktracking() anonymous class should execute silently")
+    void testPreventBacktrackingPreventExternalImplementationImplementation() {
+        com.mirkoddd.sift.core.dsl.SiftPattern basePattern = com.mirkoddd.sift.core.Sift.fromStart()
+                .exactly(1).digits()
+                .andNothingElse();
+
+        com.mirkoddd.sift.core.dsl.SiftPattern atomicPattern = basePattern.preventBacktracking();
+
+        assertDoesNotThrow(() -> atomicPattern.preventExternalImplementation(null),
+                "Calling preventExternalImplementation() on an atomic group pattern should not throw any exceptions");
     }
 
     @Test

@@ -18,6 +18,7 @@ package com.mirkoddd.sift.core;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 /**
@@ -330,13 +331,13 @@ public final class SiftPatterns {
     }
 
     /**
-     * Internal helper to memoize the result of a pattern.
+     * Internal helper to memoize the result of a generated string.
      * Guarantees that shake() and sieve() are computed only once in a thread-safe manner.
      *
-     * @param generator The underlying SiftPattern generation logic.
+     * @param generator The Supplier that generates the regex string.
      * @return A thread-safe, caching SiftPattern instance.
      */
-    private static SiftPattern memoize(SiftPattern generator) {
+    private static SiftPattern memoize(Supplier<String> generator) {
         return new SiftPattern() {
             private volatile String cachedRegex = null;
             private volatile Pattern cachedPattern = null;
@@ -346,7 +347,7 @@ public final class SiftPatterns {
                 if (cachedRegex == null) {
                     synchronized (this) {
                         if (cachedRegex == null) {
-                            cachedRegex = generator.shake();
+                            cachedRegex = generator.get();
                         }
                     }
                 }
@@ -363,6 +364,11 @@ public final class SiftPatterns {
                     }
                 }
                 return cachedPattern;
+            }
+
+            @Override
+            public void preventExternalImplementation(InternalToken unused) {
+                // unused intentionally to prevent external implementations
             }
         };
     }

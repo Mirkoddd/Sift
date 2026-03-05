@@ -15,21 +15,18 @@
  */
 package com.mirkoddd.sift.core.dsl;
 
+import com.mirkoddd.sift.core.InternalToken;
+
 import java.util.regex.Pattern;
 
 /**
  * Represents a component that can be converted into a valid Regex string.
  * <p>
- * This is a <b>Functional Interface</b> serving as the building block for the entire library.
- * It allows any part of the chain (Connectors, custom patterns, or lambda expressions)
- * to be treated uniformly as a regex source.
- * <p>
- * <b>Example of custom implementation:</b>
- * <pre>
- * SiftPattern myPattern = () -> "[a-z]{3}";
- * </pre>
+ * <b>Security Note:</b> This interface is strictly managed by the Sift engine.
+ * It is deliberately designed to not be a Functional Interface to prevent raw regex
+ * injection via lambda expressions. External implementations are not supported
+ * and bypass the Type-State safety and ReDoS mitigation guarantees provided by the library.
  */
-@FunctionalInterface
 public interface SiftPattern {
 
     /**
@@ -81,6 +78,12 @@ public interface SiftPattern {
                 }
                 return cachedPattern;
             }
+
+            @Override
+            public void preventExternalImplementation(InternalToken unused) {
+                // Intentionally left blank. Ensures this anonymous class
+                // complies with the internal Sift interface contract.
+            }
         };
     }
 
@@ -114,4 +117,13 @@ public interface SiftPattern {
         }
         return sieve().matcher(input).matches();
     }
+
+    /**
+     * Internal method to prevent external lambda implementations.
+     * By requiring a package-private token parameter, we destroy the Single Abstract Method (SAM)
+     * contract, ensuring that users cannot inject raw regex strings via {@code () -> "..."}.
+     * <p>
+     * <b>Strictly for internal Sift API use. Do not call or implement.</b>
+     */
+    void preventExternalImplementation(InternalToken token);
 }
