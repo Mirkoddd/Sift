@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.3](https://github.com/Mirkoddd/Sift/compare/sift-v2.4.2...sift-v2.4.3) (2026-03-05)
+
+
+### Bug Fixes
+
+* **core:** prevent raw regex injection by sealing SiftPattern ([23fdd06](https://github.com/Mirkoddd/Sift/commit/23fdd06789f5ab635d1258ee28c747347fa79ab4))
+
 ## [2.4.2](https://github.com/Mirkoddd/Sift/compare/sift-v2.4.1...sift-v2.4.2) (2026-03-04)
 
 
