@@ -45,10 +45,11 @@ class SiftCookbookTest {
         // Define the basic building blocks using fromAnywhere().
         // This ensures these blocks don't carry a '^' anchor, allowing them
         // to be safely placed in the middle or end of our final chain.
-        var hex8 = Sift.fromAnywhere().exactly(8).hexDigits();
-        var hex4 = Sift.fromAnywhere().exactly(4).hexDigits();
-        var hex12 = Sift.fromAnywhere().exactly(12).hexDigits();
-        var separator = Sift.fromAnywhere().character('-');
+        var anywhere = Sift.fromAnywhere();
+        var hex8 = anywhere.exactly(8).hexDigits();
+        var hex4 = anywhere.exactly(4).hexDigits();
+        var hex12 = anywhere.exactly(12).hexDigits();
+        var separator = anywhere.character('-');
 
         // Compose reusable intermediate blocks
         var hex4andSeparator = hex4.followedBy(separator);
@@ -63,6 +64,7 @@ class SiftCookbookTest {
                         hex12)
                 .shake();
 
+        System.out.println(actualUuidRegex);
         // Valid UUID
         assertMatches(actualUuidRegex, "123e4567-e89b-12d3-a456-426614174000");
         assertMatches(actualUuidRegex, "550e8400-e29b-41d4-a716-446655440000");

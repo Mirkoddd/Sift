@@ -95,19 +95,32 @@ String regex = Sift.fromStart()
 Break down complex patterns into highly readable, reusable semantic variables.
 
 ```Java
-// Define reusable unanchored blocks
-var hex4 = Sift.fromAnywhere().exactly(4).hexDigits();
-var separator = Sift.fromAnywhere().character('-');
+// Define the basic building blocks using fromAnywhere().
+// This ensures these blocks don't carry a '^' anchor, allowing them
+// to be safely placed in the middle or end of our final chain.
+var anywhere = Sift.fromAnywhere();
+var hex8 = anywhere.exactly(8).hexDigits();
+var hex4 = anywhere.exactly(4).hexDigits();
+var hex12 = anywhere.exactly(12).hexDigits();
+var separator = anywhere.character('-');
 
-var block = hex4.followedBy(separator);
+// Compose reusable intermediate blocks
+var hex4andSeparator = hex4.followedBy(separator);
 
-// Compose them safely into a strict anchor
-String strictRegex = Sift.fromStart()
-    .pattern(block)
-    .pattern(block)
-    .exactly(12).hexDigits()
-    .andNothingElse()
-    .shake();
+// Let's define the actual regex:
+String actualUuidRegex = hex8
+        .followedBy(
+                separator,
+                hex4andSeparator,
+                hex4andSeparator,
+                hex4andSeparator,
+                hex12)
+        .shake();
+
+
+// Result: [0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}
+// Matches: 123e4567-e89b-12d3-a456-426614174000
+// From UUID Validator test in SiftCookbookTest.java
 ```
 
 ### 3. Seamless Jakarta Validation
