@@ -62,7 +62,10 @@ public interface TypeStep<T extends ConnectorStep, C extends CharacterClassConne
      *
      * @param pattern The sub-pattern to apply the quantifier to.
      * @return The standard connector step to continue building.
-     */
+     * @throws IllegalStateException if the provided pattern contains absolute boundaries
+     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
+     * Reusable blocks must be unanchored.
+     * */
     T pattern(SiftPattern pattern);
 
     /**

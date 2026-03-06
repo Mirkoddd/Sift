@@ -132,6 +132,11 @@ class SiftConnector implements ConnectorStep, CharacterClassConnectorStep {
     }
 
     @Override
+    public boolean hasAbsoluteBoundaries() {
+        return assembler.isContainsAbsoluteAnchor();
+    }
+
+    @Override
     public String toString() {
         return shake();
     }

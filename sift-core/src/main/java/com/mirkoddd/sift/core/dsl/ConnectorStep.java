@@ -59,6 +59,9 @@ public interface ConnectorStep extends SiftPattern {
      * @param pattern            The first mandatory sub-pattern to append.
      * @param additionalPatterns Any further sub-patterns to append in the specified order.
      * @return The current connector step, allowing immediate chaining.
+     * @throws IllegalStateException if the provided pattern contains absolute boundaries
+     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
+     * Reusable blocks must be unanchored.
      */
     ConnectorStep followedBy(SiftPattern pattern, SiftPattern... additionalPatterns);
 

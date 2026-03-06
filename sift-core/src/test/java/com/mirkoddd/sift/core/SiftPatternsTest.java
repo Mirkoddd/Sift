@@ -393,4 +393,19 @@ class SiftPatternsTest {
         assertTrue(pattern.matches(sbInput),
                 "Should natively support other CharSequence implementations like StringBuilder without allocations");
     }
+
+    @Test
+    @DisplayName("Should throw exception when passing anchored pattern to SiftPatterns factories")
+    void shouldThrowWhenPassingAnchoredPatternToFactories() {
+        SiftPattern radioActivePattern = Sift.fromStart().exactly(3).digits();
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                SiftPatterns.positiveLookahead(radioActivePattern));
+
+        assertTrue(exception.getMessage().contains("absolute boundaries"),
+                "Exception message should indicate the boundary violation.");
+
+        assertThrows(IllegalStateException.class, () ->
+                SiftPatterns.capture("invalidGroup", radioActivePattern));
+    }
 }

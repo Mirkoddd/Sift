@@ -1332,14 +1332,14 @@ class SiftTest {
     @DisplayName("Should detect group name collisions when injecting nested patterns")
     void nestedPatternGroupCollision() {
         SiftPattern nestedModule = Sift.fromAnywhere()
-                .namedCapture(SiftPatterns.capture("id", literal("foo")))
-                .andNothingElse();
+                .namedCapture(SiftPatterns.capture("id", literal("foo")));
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
                 Sift.fromAnywhere()
                         .namedCapture(SiftPatterns.capture("id", literal("bar")))
                         .then()
                         .pattern(nestedModule) // FAIL!
+                        .andNothingElse()
                         .shake()
         );
 
@@ -1351,13 +1351,13 @@ class SiftTest {
     @DisplayName("Should successfully merge nested patterns with non-colliding groups")
     void nestedPatternGroupMergeSuccess() {
         SiftPattern nestedModule = Sift.fromAnywhere()
-                .namedCapture(SiftPatterns.capture("nestedId", fromAnywhere().oneOrMore().digits()))
-                .andNothingElse();
+                .namedCapture(SiftPatterns.capture("nestedId", fromAnywhere().oneOrMore().digits()));
 
         String regex = Sift.fromAnywhere()
                 .namedCapture(SiftPatterns.capture("mainId", fromAnywhere().oneOrMore().letters()))
                 .then()
                 .pattern(nestedModule)
+                .andNothingElse()
                 .shake();
 
         assertEquals("(?<mainId>[a-zA-Z]+)(?<nestedId>[0-9]+)$", regex);
@@ -1367,8 +1367,7 @@ class SiftTest {
     @DisplayName("Should detect collisions when a NamedCapture contains nested groups")
     void namedCaptureNestedGroupCollision() {
         SiftPattern innerPattern = Sift.fromAnywhere()
-                .namedCapture(SiftPatterns.capture("sharedId", Sift.fromAnywhere().oneOrMore().digits()))
-                .andNothingElse();
+                .namedCapture(SiftPatterns.capture("sharedId", Sift.fromAnywhere().oneOrMore().digits()));
 
         NamedCapture wrapperGroup = SiftPatterns.capture("wrapper", innerPattern);
 
@@ -1377,6 +1376,7 @@ class SiftTest {
                         .namedCapture(SiftPatterns.capture("sharedId", Sift.fromAnywhere().oneOrMore().letters()))
                         .then()
                         .namedCapture(wrapperGroup) // FAIL!
+                        .andNothingElse()
                         .shake()
         );
 
@@ -1389,8 +1389,7 @@ class SiftTest {
     @DisplayName("Should successfully merge NamedCapture containing non-colliding nested groups")
     void namedCaptureNestedGroupMergeSuccess() {
         SiftPattern innerPattern = Sift.fromAnywhere()
-                .namedCapture(SiftPatterns.capture("innerId", Sift.fromAnywhere().oneOrMore().digits()))
-                .andNothingElse();
+                .namedCapture(SiftPatterns.capture("innerId", Sift.fromAnywhere().oneOrMore().digits()));
 
         NamedCapture wrapperGroup = SiftPatterns.capture("wrapper", innerPattern);
 
@@ -1398,9 +1397,10 @@ class SiftTest {
                 .namedCapture(SiftPatterns.capture("mainId", Sift.fromAnywhere().oneOrMore().letters()))
                 .then()
                 .namedCapture(wrapperGroup)
+                .andNothingElse()
                 .shake();
 
-        assertEquals("(?<mainId>[a-zA-Z]+)(?<wrapper>(?<innerId>[0-9]+)$)", regex);
+        assertEquals("(?<mainId>[a-zA-Z]+)(?<wrapper>(?<innerId>[0-9]+))$", regex);
     }
 
     @Nested
@@ -1451,6 +1451,66 @@ class SiftTest {
             assertThrows(IllegalArgumentException.class, () -> {
                 Sift.fromStart().range('z', 'a');
             }, "An inverted range (z to a) should throw an IllegalArgumentException");
+        }
+    }
+
+    @Nested
+    @DisplayName("Chain Nested Patterns Test")
+    class ChainNestedPatternsTest {
+
+        @Test
+        @DisplayName("Should throw exception when nesting a pattern with Start Anchor")
+        void shouldThrowWhenNestingStartAnchoredPattern() {
+            var startAnchoredBlock = Sift.fromStart().exactly(3).digits();
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                    Sift.fromAnywhere()
+                            .letters()
+                            .then().pattern(startAnchoredBlock) // Must fail
+                            .shake());
+
+            assertTrue(exception.getMessage().contains("absolute boundaries"),
+                    "Exception message should explain the boundary violation.");
+        }
+
+        @Test
+        @DisplayName("Should throw exception when nesting a pattern with End Anchor")
+        void shouldThrowWhenNestingEndAnchoredPattern() {
+            var endAnchoredBlock = Sift.fromAnywhere().letters().andNothingElse();
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                    Sift.fromAnywhere()
+                            .pattern(endAnchoredBlock) // Also must fail here
+                            .then().digits()
+                            .shake());
+
+            assertTrue(exception.getMessage().contains("absolute boundaries"),
+                    "Exception message should explain the boundary violation.");
+        }
+
+        @Test
+        @DisplayName("Should allow nesting pure unanchored patterns seamlessly")
+        void shouldAllowNestingUnanchoredPatterns() {
+            var safeBlock = Sift.fromAnywhere().exactly(3).digits();
+
+            String regex = Sift.fromStart()
+                    .pattern(safeBlock)
+                    .andNothingElse()
+                    .shake();
+
+            assertEquals("^[0-9]{3}$", regex);
+        }
+
+        @Test
+        @DisplayName("Should evaluate false branch of absolute anchor check")
+        void shouldCoverFalseBranchInAddAnchor() {
+            PatternAssembler assembler = new PatternAssembler();
+
+            // Test with an anchor that is neither ^ nor $ (eg. a Word Boundary)
+            assembler.addAnchor("\\b");
+
+            assertFalse(assembler.isContainsAbsoluteAnchor(),
+                    "A non-absolute anchor should not trigger the boundary flag");
         }
     }
 }

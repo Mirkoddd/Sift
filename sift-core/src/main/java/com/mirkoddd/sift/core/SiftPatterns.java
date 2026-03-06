@@ -46,14 +46,21 @@ public final class SiftPatterns {
      * @param option2           The second mandatory alternative.
      * @param additionalOptions Any further alternative patterns.
      * @return A composable {@link SiftPattern} representing the logical OR.
+     * @throws IllegalStateException if the provided pattern contains absolute boundaries
+     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
+     * Reusable blocks must be unanchored.
      */
     public static SiftPattern anyOf(SiftPattern option1, SiftPattern option2, SiftPattern... additionalOptions) {
         Objects.requireNonNull(option1, "First option cannot be null");
         Objects.requireNonNull(option2, "Second option cannot be null");
         Objects.requireNonNull(additionalOptions, "Additional options array cannot be null");
 
+        requireUnanchored(option1);
+        requireUnanchored(option2);
+
         for (SiftPattern opt : additionalOptions) {
             Objects.requireNonNull(opt, "Additional option cannot be null");
+            requireUnanchored(opt);
         }
 
         return memoize(() -> {
@@ -80,6 +87,9 @@ public final class SiftPatterns {
      * @param patterns A list of SiftPatterns.
      * @return A SiftPattern combining the provided options.
      * @throws IllegalArgumentException if the list is null or empty.
+     * @throws IllegalStateException if the provided pattern contains absolute boundaries
+     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
+     * Reusable blocks must be unanchored.
      */
     public static SiftPattern anyOf(java.util.List<? extends SiftPattern> patterns) {
         if (patterns == null || patterns.isEmpty()) {
@@ -87,6 +97,10 @@ public final class SiftPatterns {
         }
         if (patterns.size() == 1) {
             return patterns.get(0); // QoL Optimization: no need to wrap a single element
+        }
+
+        for (SiftPattern pattern: patterns) {
+            requireUnanchored(pattern);
         }
 
         return memoize(() -> {
@@ -117,9 +131,13 @@ public final class SiftPatterns {
      *
      * @param pattern The pattern to capture.
      * @return A SiftPattern wrapped in parentheses.
+     * @throws IllegalStateException if the provided pattern contains absolute boundaries
+     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
+     * Reusable blocks must be unanchored.
      */
     public static SiftPattern capture(SiftPattern pattern) {
         Objects.requireNonNull(pattern, "Pattern to capture cannot be null");
+        requireUnanchored(pattern);
         return memoize(() -> RegexSyntax.GROUP_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
@@ -140,9 +158,13 @@ public final class SiftPatterns {
      *
      * @param pattern The pattern that must follow.
      * @return A SiftPattern representing the positive lookahead.
+     * @throws IllegalStateException if the provided pattern contains absolute boundaries
+     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
+     * Reusable blocks must be unanchored.
      */
     public static SiftPattern positiveLookahead(SiftPattern pattern) {
         Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
+        requireUnanchored(pattern);
         return memoize(() -> RegexSyntax.POSITIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
@@ -163,9 +185,13 @@ public final class SiftPatterns {
      *
      * @param pattern The pattern that must not follow.
      * @return A SiftPattern representing the negative lookahead.
+     * @throws IllegalStateException if the provided pattern contains absolute boundaries
+     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
+     * Reusable blocks must be unanchored.
      */
     public static SiftPattern negativeLookahead(SiftPattern pattern) {
         Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
+        requireUnanchored(pattern);
         return memoize(() -> RegexSyntax.NEGATIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
@@ -186,9 +212,13 @@ public final class SiftPatterns {
      *
      * @param pattern The pattern that must precede.
      * @return A SiftPattern representing the positive lookbehind.
+     * @throws IllegalStateException if the provided pattern contains absolute boundaries
+     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
+     * Reusable blocks must be unanchored.
      */
     public static SiftPattern positiveLookbehind(SiftPattern pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
+        requireUnanchored(pattern);
         return memoize(() -> RegexSyntax.POSITIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
@@ -209,9 +239,13 @@ public final class SiftPatterns {
      *
      * @param pattern The pattern that must not precede.
      * @return A SiftPattern representing the negative lookbehind.
+     * @throws IllegalStateException if the provided pattern contains absolute boundaries
+     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
+     * Reusable blocks must be unanchored.
      */
     public static SiftPattern negativeLookbehind(SiftPattern pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
+        requireUnanchored(pattern);
         return memoize(() -> RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
@@ -225,9 +259,13 @@ public final class SiftPatterns {
      * @param pattern   The pattern to capture within this group.
      * @return A NamedCapture definition.
      * @throws IllegalArgumentException if {@code groupName} is null, empty, starts with a digit, or contains non-alphanumeric characters (e.g., spaces, underscores, or symbols).
+     * @throws IllegalStateException if the provided pattern contains absolute boundaries
+     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
+     * Reusable blocks must be unanchored.
      */
     public static NamedCapture capture(String groupName, SiftPattern pattern) {
         Objects.requireNonNull(pattern, "Pattern to capture cannot be null");
+        requireUnanchored(pattern);
         GroupName validatedName = GroupName.of(groupName);
         return new NamedCapture(validatedName, pattern);
     }
@@ -241,13 +279,19 @@ public final class SiftPatterns {
      * @param first The first required pattern.
      * @param then  Optional additional patterns to include in the same group.
      * @return A SiftPattern representing the concatenated non-capturing group.
+     * @throws IllegalStateException if the provided pattern contains absolute boundaries
+     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
+     * Reusable blocks must be unanchored.
      */
     public static SiftPattern group(SiftPattern first, SiftPattern... then) {
         Objects.requireNonNull(first, "First pattern in group cannot be null");
         Objects.requireNonNull(then, "Additional patterns array cannot be null");
 
+        requireUnanchored(first);
+
         for (SiftPattern opt : then) {
             Objects.requireNonNull(opt, "Additional option cannot be null");
+            requireUnanchored(opt);
         }
 
         return memoize(() -> {
@@ -370,6 +414,25 @@ public final class SiftPatterns {
             public void preventExternalImplementation(InternalToken unused) {
                 // unused intentionally to prevent external implementations
             }
+
+            @Override
+            public boolean hasAbsoluteBoundaries() {
+                // SiftPatterns components are explicitly validated to be unanchored
+                // before this memoized instance is created.
+                return false;
+            }
         };
+    }
+
+    /**
+     * Internal security check to prevent nesting of anchored patterns.
+     */
+    private static void requireUnanchored(SiftPattern pattern) {
+        if (pattern.hasAbsoluteBoundaries()) {
+            throw new IllegalStateException(
+                    "Composition Error: Cannot embed a pattern that contains absolute boundaries " +
+                            "(like fromStart() or andNothingElse()). Reusable blocks must be unanchored."
+            );
+        }
     }
 }

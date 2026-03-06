@@ -84,6 +84,11 @@ public interface SiftPattern {
                 // Intentionally left blank. Ensures this anonymous class
                 // complies with the internal Sift interface contract.
             }
+
+            @Override
+            public boolean hasAbsoluteBoundaries() {
+                return SiftPattern.this.hasAbsoluteBoundaries();
+            }
         };
     }
 
@@ -126,4 +131,12 @@ public interface SiftPattern {
      * <b>Strictly for internal Sift API use. Do not call or implement.</b>
      */
     void preventExternalImplementation(InternalToken token);
+
+    /**
+     * Indicates whether this pattern contains absolute boundaries (^ or $).
+     * Patterns with absolute boundaries cannot be embedded inside other patterns.
+     */
+    default boolean hasAbsoluteBoundaries() {
+        return false;
+    }
 }

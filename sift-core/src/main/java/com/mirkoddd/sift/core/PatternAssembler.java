@@ -43,7 +43,7 @@ class PatternAssembler {
     private boolean canModifyMain = false;
     private final Set<String> registeredGroups = new HashSet<>();
     private final Set<String> requiredBackreferences = new HashSet<>();
-
+    private boolean containsAbsoluteAnchor = false;
     PatternAssembler() {
     }
 
@@ -63,12 +63,21 @@ class PatternAssembler {
         return requiredBackreferences;
     }
 
+    public boolean isContainsAbsoluteAnchor() {
+        return containsAbsoluteAnchor;
+    }
+
     void setQuantifier(String quantifier) {
         this.currentQuantifier = quantifier;
     }
 
     void addAnchor(String anchor) {
         flush();
+
+        if (RegexSyntax.START_OF_LINE.equals(anchor) || RegexSyntax.END_OF_LINE.equals(anchor)){
+            containsAbsoluteAnchor = true;
+        }
+
         mainPattern.append(anchor);
     }
 
@@ -145,6 +154,12 @@ class PatternAssembler {
     }
 
     void addPattern(SiftPattern pattern) {
+        if (pattern.hasAbsoluteBoundaries()) {
+            throw new IllegalStateException(
+                    "Composition Error: Cannot embed a pattern that contains absolute boundaries (like fromStart() or andNothingElse()). " +
+                            "Reusable blocks must be created using fromAnywhere()."
+            );
+        }
         flush();
         extractAndCheckGroupsAndRequirements(pattern, null);
 
@@ -277,6 +292,7 @@ class PatternAssembler {
         clone.canModifyMain = this.canModifyMain;
         clone.registeredGroups.addAll(this.registeredGroups);
         clone.requiredBackreferences.addAll(this.requiredBackreferences);
+        clone.containsAbsoluteAnchor = this.containsAbsoluteAnchor;
         return clone;
     }
 
