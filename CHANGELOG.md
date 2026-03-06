@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.4](https://github.com/Mirkoddd/Sift/compare/sift-v2.4.3...sift-v2.4.4) (2026-03-06)
+
+
+### Bug Fixes
+
+* **core:** enforce absolute boundary validation in factories ([1558848](https://github.com/Mirkoddd/Sift/commit/155884849882cfb2253b01a59e8e65bb4ddeead8))
+
 ## [2.4.3](https://github.com/Mirkoddd/Sift/compare/sift-v2.4.2...sift-v2.4.3) (2026-03-05)
 
 
