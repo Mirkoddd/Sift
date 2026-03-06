@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.0](https://github.com/Mirkoddd/Sift/compare/sift-v2.4.4...sift-v3.0.0) (2026-03-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* SiftPattern now requires a generic context <Ctx>. Invalid regex compositions (like applying modifiers to fixed quantifiers or nesting roots) will now fail at compile-time instead of runtime.
+
+### Code Refactoring
+
+* implement Type-Driven Design and Phantom Types for compile-time safety ([dae1784](https://github.com/Mirkoddd/Sift/commit/dae17843ec156aeb4f378cc27e63495eefccee1c))
+
 ## [2.4.4](https://github.com/Mirkoddd/Sift/compare/sift-v2.4.3...sift-v2.4.4) (2026-03-06)
 
 
