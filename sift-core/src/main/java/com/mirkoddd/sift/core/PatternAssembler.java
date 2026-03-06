@@ -15,6 +15,7 @@
  */
 package com.mirkoddd.sift.core;
 
+import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.HashSet;
@@ -44,6 +45,7 @@ class PatternAssembler {
     private final Set<String> registeredGroups = new HashSet<>();
     private final Set<String> requiredBackreferences = new HashSet<>();
     private boolean containsAbsoluteAnchor = false;
+
     PatternAssembler() {
     }
 
@@ -153,13 +155,7 @@ class PatternAssembler {
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
-    void addPattern(SiftPattern pattern) {
-        if (pattern.hasAbsoluteBoundaries()) {
-            throw new IllegalStateException(
-                    "Composition Error: Cannot embed a pattern that contains absolute boundaries (like fromStart() or andNothingElse()). " +
-                            "Reusable blocks must be created using fromAnywhere()."
-            );
-        }
+    void addPattern(SiftPattern<SiftContext.Fragment> pattern) {
         flush();
         extractAndCheckGroupsAndRequirements(pattern, null);
 
@@ -178,7 +174,7 @@ class PatternAssembler {
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
-    private void extractAndCheckGroupsAndRequirements(SiftPattern pattern, String wrapperGroupName) {
+    private void extractAndCheckGroupsAndRequirements(SiftPattern<?> pattern, String wrapperGroupName) {
         Set<String> incomingGroups = getIncomingGroups(pattern);
         if (incomingGroups != null) {
             for (String incomingGroup : incomingGroups) {
@@ -201,16 +197,16 @@ class PatternAssembler {
         }
     }
 
-    private static Set<String> getIncomingGroups(SiftPattern pattern) {
+    private static Set<String> getIncomingGroups(SiftPattern<?> pattern) {
         if (pattern instanceof SiftConnector) {
-            return ((SiftConnector) pattern).assembler.getRegisteredGroups();
+            return ((SiftConnector<?>) pattern).assembler.getRegisteredGroups();
         }
         return null;
     }
 
-    private static Set<String> getIncomingBackreferences(SiftPattern pattern) {
+    private static Set<String> getIncomingBackreferences(SiftPattern<?> pattern) {
         if (pattern instanceof SiftConnector) {
-            return ((SiftConnector) pattern).assembler.getRequiredBackreferences();
+            return ((SiftConnector<?>) pattern).assembler.getRequiredBackreferences();
         }
         return null;
     }
@@ -296,9 +292,9 @@ class PatternAssembler {
         return clone;
     }
 
-    private static String extractRawString(SiftPattern pattern) {
+    private static String extractRawString(SiftPattern<?> pattern) {
         if (pattern instanceof SiftConnector) {
-            return ((SiftConnector) pattern).assembler.copy().build();
+            return ((SiftConnector<?>) pattern).assembler.copy().build();
         }
         return pattern.shake();
     }

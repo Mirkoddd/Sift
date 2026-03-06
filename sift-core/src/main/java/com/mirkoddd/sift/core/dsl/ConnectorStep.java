@@ -16,72 +16,92 @@
 package com.mirkoddd.sift.core.dsl;
 
 /**
- * The link between steps in the chain.
+ * The continuation node in the Sift State-Machine DSL.
  * <p>
- * This interface represents a state where a token has just been defined (e.g., a literal, group, or class).
- * From here, you can:
- * <ul>
- * <li>Append a new literal or pattern (using {@code followedBy(...)}).</li>
- * <li>Transition back to a quantifier for a new token (using {@code then()}).</li>
- * <li>Assert a word boundary (using {@code wordBoundary()}).</li>
- * <li>Finalize the regex structure (using {@code andNothingElse()}).</li>
- * </ul>
+ * This interface represents the point in the fluent chain where a pattern component
+ * has been successfully defined. From here, the developer can either chain a new
+ * component, append a specific pattern, or terminate the regex sequence.
+ *
+ * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-public interface ConnectorStep extends SiftPattern {
+public interface ConnectorStep<Ctx extends SiftContext> extends SiftPattern<Ctx> {
 
     /**
-     * Transitions back to the {@link QuantifierStep} to begin defining a <b>NEW</b> token.
+     * Transitions the builder state to define the quantifier for the <b>next</b> sequence element.
      * <p>
-     * Use this method when you want to stop defining the current element and start
-     * defining the quantity of the <i>next</i> element.
+     * <b>Example:</b>
+     * <pre>
+     * .exactly(3).digits()
+     * .then() // Moves to the next component setup
+     * .oneOrMore().letters()
+     * </pre>
      *
-     * @return The quantifier step for the next element in the chain.
+     * @return A {@link QuantifierStep} to configure the repetition of the upcoming token.
      */
-    QuantifierStep then();
+    QuantifierStep<Ctx> then();
 
     /**
-     * Appends a single literal character to the regex.
-     * <p>
-     * Special regex characters (like {@code .}, {@code *}, {@code ?}) are automatically escaped.
+     * Safely appends a single literal character to the current sequence.
+     * The character is automatically escaped to prevent regex injection.
      *
-     * @param c The character to match exactly.
-     * @return The current connector step, allowing immediate chaining.
+     * @param c The literal character to append.
+     * @return The current connector step for further chaining.
      */
-    ConnectorStep followedBy(char c);
+    ConnectorStep<Ctx> followedBy(char c);
 
     /**
-     * Appends one or more complex {@link SiftPattern} instances in sequence.
+     * Appends an existing, pre-compiled SiftPattern to the current sequence.
      * <p>
-     * This is a convenient shortcut to chain multiple sub-patterns (e.g., capture groups,
-     * 'anyOf' blocks, or other Sift chains) without repeating the method call.
-     * The patterns are appended in the exact order they are provided.
+     * <b>Type Safety:</b> This method strictly requires a {@code SiftContext.Fragment}.
+     * Attempting to append an anchored {@code Root} pattern here will cause a compile-time
+     * error, preventing logical impossibilities (like placing a start-of-line anchor
+     * in the middle of a string).
      *
-     * @param pattern            The first mandatory sub-pattern to append.
-     * @param additionalPatterns Any further sub-patterns to append in the specified order.
-     * @return The current connector step, allowing immediate chaining.
-     * @throws IllegalStateException if the provided pattern contains absolute boundaries
-     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
-     * Reusable blocks must be unanchored.
+     * @param p1 The fragment pattern to append.
+     * @return The current connector step for further chaining.
      */
-    ConnectorStep followedBy(SiftPattern pattern, SiftPattern... additionalPatterns);
+    ConnectorStep<Ctx> followedBy(SiftPattern<SiftContext.Fragment> p1);
 
     /**
-     * Asserts a <b>Word Boundary</b> {@code \b} at the current position.
-     * <p>
-     * This checks that the current position is a boundary between a word character ({@code \w})
-     * and a non-word character ({@code \W}). It does not consume any characters.
+     * Convenience overload for composing two patterns sequentially.
      *
-     * @return The current connector step.
+     * @param p1 The first fragment pattern to append.
+     * @param p2 The second fragment pattern to append.
+     * @return The current connector step for further chaining.
      */
-    ConnectorStep wordBoundary();
+    ConnectorStep<Ctx> followedBy(SiftPattern<SiftContext.Fragment> p1, SiftPattern<SiftContext.Fragment> p2);
 
     /**
-     * Anchors the regex to the <b>End of the String</b> using {@code $}.
+     * Appends a collection of patterns sequentially.
      * <p>
-     * This ensures that no other characters can follow the matched pattern.
-     * This is typically the last step before calling {@code shake()}.
+     * This method provides a clean way to compose dynamically generated lists of patterns.
+     * It completely bypasses Java's generic varargs array creation warnings (Heap Pollution)
+     * while maintaining full type safety.
      *
-     * @return A pattern ready to be finalized.
+     * @param patterns An iterable of fragment patterns to be appended in order.
+     * @return The current connector step for further chaining.
      */
-    SiftPattern andNothingElse();
+    ConnectorStep<Ctx> followedBy(Iterable<? extends SiftPattern<SiftContext.Fragment>> patterns);
+
+    /**
+     * Appends a Word Boundary {@code \b} to the sequence.
+     * <p>
+     * A word boundary matches the position where a word character is not followed or
+     * preceded by another word-character, ensuring exact word matches.
+     *
+     * @return The current connector step for further chaining.
+     */
+    ConnectorStep<Ctx> wordBoundary();
+
+    /**
+     * Finalizes the regex chain by appending an end-of-line anchor {@code $}.
+     * <p>
+     * <b>State Mutation:</b> Calling this method fundamentally changes the structural
+     * context of the pattern. It forces the return type to {@code SiftPattern<SiftContext.Root>},
+     * effectively sealing the regex and making it illegal to embed this pattern inside
+     * any other Sift sequence.
+     *
+     * @return A sealed, anchored Root pattern ready for compilation.
+     */
+    SiftPattern<SiftContext.Root> andNothingElse();
 }

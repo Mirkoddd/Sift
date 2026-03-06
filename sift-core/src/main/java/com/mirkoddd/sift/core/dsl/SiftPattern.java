@@ -15,128 +15,65 @@
  */
 package com.mirkoddd.sift.core.dsl;
 
-import com.mirkoddd.sift.core.InternalToken;
-
 import java.util.regex.Pattern;
 
 /**
- * Represents a component that can be converted into a valid Regex string.
+ * Represents a compiled regex component within a specific structural context.
  * <p>
- * <b>Security Note:</b> This interface is strictly managed by the Sift engine.
- * It is deliberately designed to not be a Functional Interface to prevent raw regex
- * injection via lambda expressions. External implementations are not supported
- * and bypass the Type-State safety and ReDoS mitigation guarantees provided by the library.
+ * <b>Type Safety:</b> The {@code Ctx} parameter enforces Type-Driven Design, ensuring
+ * that fragments cannot be used where absolute roots (anchored patterns) are required,
+ * and vice-versa.
+ * <p>
+ * <b>Thread Safety:</b> All implementations are guaranteed to be immutable and thread-safe.
+ *
+ * @param <Ctx> The {@link SiftContext} (Fragment or Root) that defines where this
+ * pattern can be legally composed.
  */
-public interface SiftPattern {
+public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer {
 
     /**
-     * Finalizes the construction and returns the raw Regular Expression string.
+     * Finalizes the builder chain and returns the raw Regular Expression string.
      * <p>
-     * This method "shakes" the builder components together to produce the final output.
-     * It is typically the last method called in the chain.
+     * This is an idempotent operation. Subsequent calls return the cached result.
      *
-     * @return The compiled regex string (e.g., {@code "^[0-9]+$"}).
+     * @return The generated regex string (e.g., {@code "[0-9]{3}"}).
+     * @throws IllegalStateException if the internal state produces an invalid regex syntax.
      */
     String shake();
 
     /**
-     * Wraps this pattern in an Atomic Group to prevent Catastrophic Backtracking (ReDoS).
+     * Compiles this pattern into a standard {@link java.util.regex.Pattern}.
      * <p>
-     * Once the regex engine finds a match inside an atomic group, it will lock it
-     * and never backtrack into it to try different alternatives, significantly
-     * boosting performance on complex sub-patterns.
+     * Use this for high-performance matching. Implementations use internal caching
+     * to ensure the compilation happens only once.
      *
-     * @return A new SiftPattern wrapped in an atomic group {@code (?>...)}.
+     * @return A compiled and ready-to-use Regex Pattern.
      */
-    default SiftPattern preventBacktracking() {
-        final String atomicOpen = "(?>";
-        final String atomicClose = ")";
-        return new SiftPattern() {
-            private volatile String cachedRegex = null;
-            private volatile Pattern cachedPattern = null;
-
-            @Override
-            public String shake() {
-                if (cachedRegex == null) {
-                    synchronized (this) {
-                        if (cachedRegex == null) {
-                            cachedRegex = atomicOpen + SiftPattern.this.shake() + atomicClose;
-                        }
-                    }
-                }
-                return cachedRegex;
-            }
-
-            @Override
-            public Pattern sieve() {
-                if (cachedPattern == null) {
-                    synchronized (this) {
-                        if (cachedPattern == null) {
-                            cachedPattern = Pattern.compile(shake());
-                        }
-                    }
-                }
-                return cachedPattern;
-            }
-
-            @Override
-            public void preventExternalImplementation(InternalToken unused) {
-                // Intentionally left blank. Ensures this anonymous class
-                // complies with the internal Sift interface contract.
-            }
-
-            @Override
-            public boolean hasAbsoluteBoundaries() {
-                return SiftPattern.this.hasAbsoluteBoundaries();
-            }
-        };
-    }
+    Pattern sieve();
 
     /**
-     * Compiles this pattern into a {@link java.util.regex.Pattern}.
+     * Wraps this pattern in an <b>Atomic Group</b> {@code (?>...)}.
      * <p>
-     * This is the natural completion of the builder chain: <b>Sift</b> → <b>shake</b> → <b>sieve</b>.
-     * Use this when you need a compiled {@link java.util.regex.Pattern} directly,
-     * rather than the raw regex string.
-     * <p>
-     * The default implementation compiles the result of {@link #shake()} on every call.
-     * {@code SiftBuilder} overrides this method to reuse the {@link java.util.regex.Pattern}
-     * already compiled internally by {@link #shake()}, avoiding any redundant compilation.
+     * This is a critical tool for ReDoS (Regular Expression Denial of Service) mitigation.
+     * It prevents the regex engine from backtracking into this sub-pattern once matched,
+     * significantly improving performance on complex or ambiguous strings.
      *
-     * @return A compiled {@link java.util.regex.Pattern} ready for matching.
+     * @return A decorated pattern protected against catastrophic backtracking.
      */
-    default Pattern sieve() {
-        return Pattern.compile(this.shake());
-    }
+    SiftPattern<Ctx> preventBacktracking();
 
     /**
-     * Convenience method to quickly test if a given input matches this pattern completely.
-     * Under the hood, this compiles the regex (or uses the cached one) and evaluates it.
+     * Performs a substring search (grep-style) on the provided input.
+     * <p>
+     * <b>Note:</b> Under the hood, this uses {@code Matcher.find()} rather than
+     * {@code Matcher.matches()}. It will return true if the pattern is found <i>anywhere</i>
+     * within the input sequence, not necessarily spanning the entire string.
      *
-     * @param input The text to evaluate.
-     * @return true if the entire input matches the pattern, false otherwise or if input is null.
+     * @param input The character sequence to search within.
+     * @return {@code true} if any part of the input matches this pattern.
      */
     default boolean matches(CharSequence input) {
-        if (input == null) {
-            return false;
-        }
-        return sieve().matcher(input).matches();
-    }
-
-    /**
-     * Internal method to prevent external lambda implementations.
-     * By requiring a package-private token parameter, we destroy the Single Abstract Method (SAM)
-     * contract, ensuring that users cannot inject raw regex strings via {@code () -> "..."}.
-     * <p>
-     * <b>Strictly for internal Sift API use. Do not call or implement.</b>
-     */
-    void preventExternalImplementation(InternalToken token);
-
-    /**
-     * Indicates whether this pattern contains absolute boundaries (^ or $).
-     * Patterns with absolute boundaries cannot be embedded inside other patterns.
-     */
-    default boolean hasAbsoluteBoundaries() {
-        return false;
+        if (input == null) return false;
+        return sieve().matcher(input).find();
     }
 }

@@ -15,6 +15,7 @@
  */
 package com.mirkoddd.sift.core;
 
+import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 /**
@@ -29,9 +30,9 @@ import com.mirkoddd.sift.core.dsl.SiftPattern;
  */
 public final class NamedCapture {
     private final GroupName name;
-    private final SiftPattern pattern;
+    private final SiftPattern<SiftContext.Fragment> pattern;
 
-    NamedCapture(GroupName name, SiftPattern pattern) {
+    NamedCapture(GroupName name, SiftPattern<SiftContext.Fragment> pattern) {
         this.name = name;
         this.pattern = pattern;
     }
@@ -48,7 +49,7 @@ public final class NamedCapture {
      * Retrieves the underlying pattern encapsulated by this capturing group.
      * @return The pattern to be captured.
      */
-    public SiftPattern getPattern() {
+    public SiftPattern<SiftContext.Fragment> getPattern() {
         return pattern;
     }
 }

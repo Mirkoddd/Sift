@@ -18,6 +18,7 @@ package com.mirkoddd.sift.core;
 import static com.mirkoddd.sift.core.SiftPatterns.literal;
 
 import com.mirkoddd.sift.core.dsl.ConnectorStep;
+import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +41,7 @@ class SiftThreadSafetyTest {
     @DisplayName("Concurrent execution from a shared builder base should not corrupt state")
     void shouldBeThreadSafeWhenBranchingFromSharedBase() throws InterruptedException {
         // 1. Create a SINGLE base instance to be shared across threads
-        ConnectorStep sharedBase = Sift.fromStart().digits();
+        ConnectorStep<SiftContext.Root> sharedBase = Sift.fromStart().digits();
 
         int threadCount = 1000; // is that even enough?
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -106,9 +107,9 @@ class SiftThreadSafetyTest {
 
             // Create NEW, uninitialized instances on each iteration.
             // They must be effectively final to be used inside the lambda.
-            SiftPattern builder = Sift.fromAnywhere().digits();
-            SiftPattern memoized = SiftPatterns.literal("race");
-            SiftPattern atomic = SiftPatterns.literal("race").preventBacktracking();
+            SiftPattern<SiftContext.Fragment> builder = Sift.fromAnywhere().digits();
+            SiftPattern<SiftContext.Fragment> memoized = SiftPatterns.literal("race");
+            SiftPattern<SiftContext.Fragment> atomic = SiftPatterns.literal("race").preventBacktracking();
 
             for (int i = 0; i < threads; i++) {
                 executor.submit(() -> {

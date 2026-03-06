@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Mirko Dimartino
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.mirkoddd.sift.core;
 
 import static com.mirkoddd.sift.core.SiftPatterns.literal;
@@ -5,13 +20,12 @@ import static com.mirkoddd.sift.core.SiftPatterns.literal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 /**
  * Validates the real-world examples provided in the COOKBOOK.md file.
@@ -56,12 +70,14 @@ class SiftCookbookTest {
 
         // Let's define the actual regex:
         String actualUuidRegex = hex8
-                .followedBy(
-                        separator,
-                        hex4andSeparator,
-                        hex4andSeparator,
-                        hex4andSeparator,
-                        hex12)
+                .followedBy(List.of(
+                                separator,
+                                hex4andSeparator,
+                                hex4andSeparator,
+                                hex4andSeparator,
+                                hex12
+                        )
+                )
                 .shake();
 
         System.out.println(actualUuidRegex);
@@ -83,7 +99,7 @@ class SiftCookbookTest {
         var day = Sift.fromAnywhere().exactly(2).digits(); // same as month, but more readable
         var dash = Sift.fromAnywhere().character('-'); // you could also use literal("-"), less verbose
 
-        var dateBlock = year.followedBy(dash, month, dash, day);
+        var dateBlock = year.followedBy(List.of(dash, month, dash, day));
 
         // Define structural components
         var tab = Sift.fromAnywhere().tab();
@@ -104,7 +120,7 @@ class SiftCookbookTest {
 
         // you can also be more concise:
         String altLogParserRegex = dateBlock
-                .followedBy(tab, logLevel, tab, message, newline)
+                .followedBy(List.of(tab, logLevel, tab, message, newline))
                 .shake();
 
         // or be more verbose

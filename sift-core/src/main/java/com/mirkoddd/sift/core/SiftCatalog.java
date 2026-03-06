@@ -15,6 +15,7 @@
  */
 package com.mirkoddd.sift.core;
 
+import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 /**
@@ -41,7 +42,7 @@ public final class SiftCatalog {
      *
      * @return A SiftPattern representing a UUID.
      */
-    public static SiftPattern uuid() {
+    public static SiftPattern<SiftContext.Fragment> uuid() {
         return Sift.fromAnywhere()
                 .exactly(8).hexDigits()
                 .followedBy('-')
@@ -63,9 +64,9 @@ public final class SiftCatalog {
      *
      * @return A SiftPattern representing an IPv4 address.
      */
-    public static SiftPattern ipv4() {
+    public static SiftPattern<SiftContext.Fragment> ipv4() {
         // Octet logic: 25[0-5] OR 2[0-4][0-9] OR [01]?[0-9][0-9]?
-        SiftPattern octet = SiftPatterns.anyOf(
+        SiftPattern<SiftContext.Fragment> octet = SiftPatterns.anyOf(
                 // 250-255
                 Sift.fromAnywhere().character('2').followedBy('5').then().exactly(1).range('0', '5'),
                 // 200-249
@@ -93,18 +94,18 @@ public final class SiftCatalog {
      *
      * @return A SiftPattern representing a MAC address.
      */
-    public static SiftPattern macAddress() {
-        SiftPattern hexPair = Sift.fromAnywhere()
+    public static SiftPattern<SiftContext.Fragment> macAddress() {
+        SiftPattern<SiftContext.Fragment> hexPair = Sift.fromAnywhere()
                 .exactly(2).hexDigits();
 
-        SiftPattern colonGroup = SiftPatterns.group(SiftPatterns.literal(":"), hexPair);
-        SiftPattern hyphenGroup = SiftPatterns.group(SiftPatterns.literal("-"), hexPair);
+        SiftPattern<SiftContext.Fragment> colonGroup = SiftPatterns.group(SiftPatterns.literal(":"), hexPair);
+        SiftPattern<SiftContext.Fragment> hyphenGroup = SiftPatterns.group(SiftPatterns.literal("-"), hexPair);
 
-        SiftPattern colonSeparated = Sift.fromAnywhere()
+        SiftPattern<SiftContext.Fragment> colonSeparated = Sift.fromAnywhere()
                 .pattern(hexPair)
                 .then().exactly(5).pattern(colonGroup);
 
-        SiftPattern hyphenSeparated = Sift.fromAnywhere()
+        SiftPattern<SiftContext.Fragment> hyphenSeparated = Sift.fromAnywhere()
                 .pattern(hexPair)
                 .then().exactly(5).pattern(hyphenGroup);
 
@@ -128,14 +129,14 @@ public final class SiftCatalog {
      *
      * @return A SiftPattern representing a practical, ReDoS-safe Email format.
      */
-    public static SiftPattern email() {
-        SiftPattern localPart = Sift.fromAnywhere()
+    public static SiftPattern<SiftContext.Fragment> email() {
+        SiftPattern<SiftContext.Fragment> localPart = Sift.fromAnywhere()
                 .oneOrMore().alphanumeric().including('.', '_', '%', '+', '-');
 
-        SiftPattern domainPart = Sift.fromAnywhere()
+        SiftPattern<SiftContext.Fragment> domainPart = Sift.fromAnywhere()
                 .oneOrMore().alphanumeric().including('.', '-');
 
-        SiftPattern tld = Sift.fromAnywhere()
+        SiftPattern<SiftContext.Fragment> tld = Sift.fromAnywhere()
                 .between(2, 63).letters();
 
         return Sift.fromAnywhere()
@@ -154,20 +155,20 @@ public final class SiftCatalog {
      *
      * @return A SiftPattern representing a Web URL.
      */
-    public static SiftPattern webUrl() {
-        SiftPattern protocol = SiftPatterns.anyOf(
+    public static SiftPattern<SiftContext.Fragment> webUrl() {
+        SiftPattern<SiftContext.Fragment> protocol = SiftPatterns.anyOf(
                 SiftPatterns.literal("http://"),
                 SiftPatterns.literal("https://")
         );
 
-        SiftPattern domain = Sift.fromAnywhere()
+        SiftPattern<SiftContext.Fragment> domain = Sift.fromAnywhere()
                 .oneOrMore().alphanumeric().including('.', '-');
 
-        SiftPattern tld = Sift.fromAnywhere()
+        SiftPattern<SiftContext.Fragment> tld = Sift.fromAnywhere()
                 .between(2, 63).letters();
 
         // Optional path allowing anything except whitespace and angle brackets/quotes
-        SiftPattern pathChar = SiftPatterns.anythingBut(" \t\n\r<>\"'");
+        SiftPattern<SiftContext.Fragment> pathChar = SiftPatterns.anythingBut(" \t\n\r<>\"'");
 
         return Sift.fromAnywhere()
                 .pattern(protocol)
@@ -189,15 +190,15 @@ public final class SiftCatalog {
      *
      * @return A SiftPattern representing the structural format of an ISO Date.
      */
-    public static SiftPattern isoDate() {
-        SiftPattern year = Sift.fromAnywhere().exactly(4).digits();
+    public static SiftPattern<SiftContext.Fragment> isoDate() {
+        SiftPattern<SiftContext.Fragment> year = Sift.fromAnywhere().exactly(4).digits();
 
-        SiftPattern month = SiftPatterns.anyOf(
+        SiftPattern<SiftContext.Fragment> month = SiftPatterns.anyOf(
                 Sift.fromAnywhere().character('0').then().exactly(1).range('1', '9'),
                 Sift.fromAnywhere().character('1').then().exactly(1).range('0', '2')
         );
 
-        SiftPattern day = SiftPatterns.anyOf(
+        SiftPattern<SiftContext.Fragment> day = SiftPatterns.anyOf(
                 Sift.fromAnywhere().character('0').then().exactly(1).range('1', '9'),
                 Sift.fromAnywhere().range('1', '2').then().exactly(1).digits(),
                 Sift.fromAnywhere().character('3').then().exactly(1).range('0', '1')

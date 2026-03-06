@@ -17,6 +17,7 @@ package com.mirkoddd.sift.core;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.ArrayList;
@@ -56,7 +57,7 @@ class SiftStructuredParsingTest {
          * Matches the log header structure: [LEVEL] [TIMESTAMP]
          * Encapsulates the brackets and spacing.
          */
-        static SiftPattern header(String level, SiftPattern timestampPattern) {
+        static SiftPattern<SiftContext.Fragment> header(String level, SiftPattern<SiftContext.Fragment> timestampPattern) {
             return fromAnywhere()
                     .pattern(literal("[" + level + "]"))
                     .followedBy(literal(" ["))
@@ -68,7 +69,7 @@ class SiftStructuredParsingTest {
          * Matches the user field: User: 'NAME'
          * Encapsulates the label, spacing and quotes.
          */
-        static SiftPattern userField(SiftPattern namePattern) {
+        static SiftPattern<SiftContext.Fragment> userField(SiftPattern<SiftContext.Fragment> namePattern) {
             return fromAnywhere()
                     .pattern(literal(" User: '"))
                     .followedBy(namePattern)
@@ -79,7 +80,7 @@ class SiftStructuredParsingTest {
          * Matches the action field: -> {Action: ACTION}
          * Encapsulates the arrow, braces and label.
          */
-        static SiftPattern actionField(SiftPattern actionPattern) {
+        static SiftPattern<SiftContext.Fragment> actionField(SiftPattern<SiftContext.Fragment> actionPattern) {
             return fromAnywhere()
                     .pattern(literal(" -> {Action: "))
                     .followedBy(actionPattern)
@@ -90,7 +91,7 @@ class SiftStructuredParsingTest {
     // =================================================================================
     // 3. PARSING ENGINE
     // =================================================================================
-    private List<LogEntry> parse(String text, SiftPattern pattern) {
+    private List<LogEntry> parse(String text, SiftPattern<SiftContext.Fragment> pattern) {
         List<LogEntry> list = new ArrayList<>();
         Pattern regex = Pattern.compile(pattern.shake());
         Matcher matcher = regex.matcher(text);
@@ -111,29 +112,29 @@ class SiftStructuredParsingTest {
 
         // --- DEFINITION OF CORE PATTERNS ---
 
-        SiftPattern datePattern = fromAnywhere()
+        SiftPattern<SiftContext.Fragment> datePattern = fromAnywhere()
                 .exactly(4).digits().followedBy('-')
                 .then().exactly(2).digits().followedBy('-')
                 .then().exactly(2).digits();
 
-        SiftPattern wordPattern = fromAnywhere().oneOrMore().letters();
+        SiftPattern<SiftContext.Fragment> wordPattern = fromAnywhere().oneOrMore().letters();
 
         // --- SEMANTIC COMPOSITION ---
         // We compose the log structure using our Grammar methods.
         // No more ugly literals floating around in the main logic.
 
         // 1. Header: [INFO] [DATE] -> Capture Date
-        SiftPattern headerPart = LogGrammar.header("INFO", capture(datePattern));
+        SiftPattern<SiftContext.Fragment> headerPart = LogGrammar.header("INFO", capture(datePattern));
 
         // 2. User: User: 'NAME' -> Capture Name
-        SiftPattern userPart = LogGrammar.userField(capture(wordPattern));
+        SiftPattern<SiftContext.Fragment> userPart = LogGrammar.userField(capture(wordPattern));
 
         // 3. Action: -> {Action: ACTION} -> Capture Action
-        SiftPattern actionPart = LogGrammar.actionField(capture(wordPattern));
+        SiftPattern<SiftContext.Fragment> actionPart = LogGrammar.actionField(capture(wordPattern));
 
         // --- FINAL ASSEMBLY ---
 
-        SiftPattern logParser = fromAnywhere()
+        SiftPattern<SiftContext.Fragment> logParser = fromAnywhere()
                 .pattern(headerPart)
                 .followedBy(userPart)
                 .followedBy(actionPart);

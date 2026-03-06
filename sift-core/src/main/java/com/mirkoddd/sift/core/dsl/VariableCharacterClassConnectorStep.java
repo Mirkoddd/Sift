@@ -23,13 +23,19 @@ package com.mirkoddd.sift.core.dsl;
  * (like {@code withoutBacktracking()}) on the exact same node, preventing the loss
  * of either capability.
  */
-public interface VariableCharacterClassConnectorStep extends VariableConnectorStep, CharacterClassConnectorStep {
+public interface VariableCharacterClassConnectorStep<Ctx extends SiftContext> extends VariableConnectorStep<Ctx>, CharacterClassConnectorStep<Ctx> {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    VariableCharacterClassConnectorStep including(char extra, char... additionalExtras);
+    VariableCharacterClassConnectorStep<Ctx> including(char extra, char... additionalExtras);
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    VariableCharacterClassConnectorStep excluding(char excluded, char... additionalExcluded);
+    VariableCharacterClassConnectorStep<Ctx> excluding(char excluded, char... additionalExcluded);
 
     /**
      * Anchors the pattern to the end of the input string using {@code $}.
@@ -37,9 +43,11 @@ public interface VariableCharacterClassConnectorStep extends VariableConnectorSt
      * Use this terminal operation when you want to ensure that there are no trailing
      * characters after the matched sequence. Calling this method immediately concludes
      * the fluent chain and returns the final executable pattern.
+     * <p>
+     * <b>State Mutation:</b> This effectively seals the fragment, returning a {@code Root} context.
      *
      * @return The final {@link SiftPattern} ready for evaluation.
      */
     @Override
-    SiftPattern andNothingElse();
+    SiftPattern<SiftContext.Root> andNothingElse();
 }

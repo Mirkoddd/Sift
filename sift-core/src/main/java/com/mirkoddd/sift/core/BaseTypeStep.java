@@ -17,6 +17,7 @@ package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.CharacterClassConnectorStep;
 import com.mirkoddd.sift.core.dsl.ConnectorStep;
+import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 import com.mirkoddd.sift.core.dsl.TypeStep;
 
@@ -25,28 +26,49 @@ import java.util.Objects;
 /**
  * Base template class for evaluating type definitions in the Sift DSL.
  * <p>
- * This abstract class implements the Template Method pattern to centralize the
+ * This abstract class implements the <b>Template Method pattern</b> to centralize the
  * interaction with the regex engine. In the immutable architecture of Sift,
  * this class acts as a secure bridge: every time a type is selected, it forces
- * the PatternAssembler to clone its state before applying the new mutation.
+ * the {@link PatternAssembler} to clone its state before applying the new mutation.
  * This ensures absolute Thread-Safety and prevents state poisoning when
  * reusing intermediate builder variables.
  *
- * @param <T> The specific {@link ConnectorStep} returned for standard type definitions.
- * @param <C> The specific {@link CharacterClassConnectorStep} returned for character classes.
+ * @param <Ctx> The Context (Fragment or Root) enforcing Type-Driven Design.
+ * @param <T>   The specific {@link ConnectorStep} returned for standard type definitions.
+ * @param <C>   The specific {@link CharacterClassConnectorStep} returned for character classes.
  */
-abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassConnectorStep> implements TypeStep<T, C> {
+abstract class BaseTypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx>, C extends CharacterClassConnectorStep<Ctx>> implements TypeStep<Ctx, T, C> {
 
     protected final PatternAssembler assembler;
 
+    /**
+     * Instantiates the base step with the current state of the pattern assembler.
+     *
+     * @param assembler The current internal state machine builder.
+     */
     protected BaseTypeStep(PatternAssembler assembler) {
         this.assembler = assembler;
     }
 
+    /**
+     * Factory method delegated to subclasses to instantiate the correct concrete step
+     * for standard, non-character-class types.
+     *
+     * @param nextAssembler The newly cloned and mutated assembler state.
+     * @return The specific connector step defined by the subclass (Fixed or Variable).
+     */
     protected abstract T getNormalConnector(PatternAssembler nextAssembler);
 
+    /**
+     * Factory method delegated to subclasses to instantiate the correct concrete step
+     * for character classes (enabling modifiers like {@code including()}).
+     *
+     * @param nextAssembler The newly cloned and mutated assembler state.
+     * @return The specific character class connector step defined by the subclass.
+     */
     protected abstract C getCharacterClassConnector(PatternAssembler nextAssembler);
 
+    /** {@inheritDoc} */
     @Override
     public T anyCharacter() {
         PatternAssembler next = assembler.copy();
@@ -54,6 +76,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getNormalConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public T character(char literal) {
         PatternAssembler next = assembler.copy();
@@ -61,14 +84,16 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getNormalConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
-    public T pattern(SiftPattern pattern) {
+    public T pattern(SiftPattern<SiftContext.Fragment> pattern) {
         Objects.requireNonNull(pattern, "SiftPattern cannot be null");
         PatternAssembler next = assembler.copy();
         next.addPattern(pattern);
         return getNormalConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C digits() {
         PatternAssembler next = assembler.copy();
@@ -76,6 +101,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C nonDigits() {
         PatternAssembler next = assembler.copy();
@@ -83,6 +109,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C digitsUnicode() {
         PatternAssembler next = assembler.copy();
@@ -90,6 +117,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C nonDigitsUnicode() {
         PatternAssembler next = assembler.copy();
@@ -97,6 +125,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C letters() {
         PatternAssembler next = assembler.copy();
@@ -104,6 +133,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C nonLetters() {
         PatternAssembler next = assembler.copy();
@@ -111,6 +141,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C uppercaseLetters() {
         PatternAssembler next = assembler.copy();
@@ -118,6 +149,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C lowercaseLetters() {
         PatternAssembler next = assembler.copy();
@@ -125,6 +157,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C lettersUnicode() {
         PatternAssembler next = assembler.copy();
@@ -132,6 +165,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C nonLettersUnicode() {
         PatternAssembler next = assembler.copy();
@@ -139,6 +173,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C uppercaseLettersUnicode() {
         PatternAssembler next = assembler.copy();
@@ -146,6 +181,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C lowercaseLettersUnicode() {
         PatternAssembler next = assembler.copy();
@@ -153,6 +189,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C alphanumeric() {
         PatternAssembler next = assembler.copy();
@@ -160,6 +197,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C nonAlphanumeric() {
         PatternAssembler next = assembler.copy();
@@ -167,6 +205,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C alphanumericUnicode() {
         PatternAssembler next = assembler.copy();
@@ -174,6 +213,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C nonAlphanumericUnicode() {
         PatternAssembler next = assembler.copy();
@@ -181,6 +221,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C wordCharacters() {
         PatternAssembler next = assembler.copy();
@@ -188,6 +229,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C nonWordCharacters() {
         PatternAssembler next = assembler.copy();
@@ -195,6 +237,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C wordCharactersUnicode() {
         PatternAssembler next = assembler.copy();
@@ -202,6 +245,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C nonWordCharactersUnicode() {
         PatternAssembler next = assembler.copy();
@@ -209,6 +253,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C whitespace() {
         PatternAssembler next = assembler.copy();
@@ -216,6 +261,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C nonWhitespace() {
         PatternAssembler next = assembler.copy();
@@ -223,6 +269,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C whitespaceUnicode() {
         PatternAssembler next = assembler.copy();
@@ -230,6 +277,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C nonWhitespaceUnicode() {
         PatternAssembler next = assembler.copy();
@@ -237,6 +285,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C range(char start, char end) {
         PatternAssembler next = assembler.copy();
@@ -244,6 +293,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public T newline() {
         PatternAssembler next = assembler.copy();
@@ -251,6 +301,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getNormalConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public T carriageReturn() {
         PatternAssembler next = assembler.copy();
@@ -258,6 +309,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getNormalConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public T tab() {
         PatternAssembler next = assembler.copy();
@@ -265,6 +317,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getNormalConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C hexDigits() {
         PatternAssembler next = assembler.copy();
@@ -272,6 +325,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C punctuation() {
         PatternAssembler next = assembler.copy();
@@ -279,6 +333,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C punctuationUnicode() {
         PatternAssembler next = assembler.copy();
@@ -286,6 +341,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C blank() {
         PatternAssembler next = assembler.copy();
@@ -293,6 +349,7 @@ abstract class BaseTypeStep<T extends ConnectorStep, C extends CharacterClassCon
         return getCharacterClassConnector(next);
     }
 
+    /** {@inheritDoc} */
     @Override
     public C blankUnicode() {
         PatternAssembler next = assembler.copy();

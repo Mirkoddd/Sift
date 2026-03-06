@@ -15,10 +15,9 @@
  */
 package com.mirkoddd.sift.core;
 
-import com.mirkoddd.sift.core.dsl.* ;
+import com.mirkoddd.sift.core.dsl.*;
 
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 /**
  * Node responsible for connecting steps and terminating the DSL chain.
@@ -31,126 +30,99 @@ import java.util.regex.Pattern;
  * <p>
  * Strict type-safety is guaranteed at compile-time because this class is not public.
  * External consumers interact exclusively with the narrowly-scoped public interfaces returned by the engine.
+ *
+ * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-class SiftConnector implements ConnectorStep, CharacterClassConnectorStep {
+class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implements ConnectorStep<Ctx>, CharacterClassConnectorStep<Ctx> {
 
     protected final PatternAssembler assembler;
-    private volatile String cachedRegex = null;
-    private volatile Pattern cachedPattern = null;
 
+    /**
+     * Instantiates the connector with the current state of the pattern assembler.
+     *
+     * @param assembler The internal state machine builder containing the accumulated pattern.
+     */
     SiftConnector(PatternAssembler assembler) {
         this.assembler = assembler;
     }
 
+    /** {@inheritDoc} */
     @Override
-    public QuantifierStep then() {
+    public QuantifierStep<Ctx> then() {
         PatternAssembler next = assembler.copy();
         next.flush();
-        return new SiftQuantifier(next);
+        return new SiftQuantifier<>(next);
     }
 
+    /** {@inheritDoc} */
     @Override
-    public ConnectorStep followedBy(char c) {
+    public ConnectorStep<Ctx> followedBy(char c) {
         return this.then().exactly(1).character(c);
     }
 
+    /** {@inheritDoc} */
     @Override
-    public ConnectorStep followedBy(SiftPattern pattern, SiftPattern... additionalPatterns) {
-        Objects.requireNonNull(pattern, "First SiftPattern cannot be null");
-        Objects.requireNonNull(additionalPatterns, "Additional SiftPatterns array cannot be null");
+    public ConnectorStep<Ctx> followedBy(SiftPattern<SiftContext.Fragment> p1) {
+        Objects.requireNonNull(p1, "Pattern cannot be null");
+        return this.then().exactly(1).pattern(p1);
+    }
 
-        for (int i = 0; i < additionalPatterns.length; i++) {
-            Objects.requireNonNull(additionalPatterns[i], "SiftPattern at index " + i + " cannot be null");
-        }
+    /** {@inheritDoc} */
+    @Override
+    public ConnectorStep<Ctx> followedBy(SiftPattern<SiftContext.Fragment> p1, SiftPattern<SiftContext.Fragment> p2) {
+        return followedBy(p1).followedBy(p2);
+    }
 
-        ConnectorStep current = this.then().exactly(1).pattern(pattern);
-        for (SiftPattern p : additionalPatterns) {
-            current = current.then().exactly(1).pattern(p);
+    /** {@inheritDoc} */
+    @Override
+    public ConnectorStep<Ctx> followedBy(Iterable<? extends SiftPattern<SiftContext.Fragment>> patterns) {
+        Objects.requireNonNull(patterns, "Patterns iterable cannot be null");
+
+        ConnectorStep<Ctx> current = this;
+        for (SiftPattern<SiftContext.Fragment> p : patterns) {
+            Objects.requireNonNull(p, "SiftPattern in iterable cannot be null");
+            current = current.followedBy(p);
         }
         return current;
     }
 
+    /** {@inheritDoc} */
     @Override
-    public CharacterClassConnectorStep including(char extra, char... additionalExtras) {
+    public CharacterClassConnectorStep<Ctx> including(char extra, char... additionalExtras) {
         PatternAssembler next = assembler.copy();
         next.addClassInclusion(extra, additionalExtras);
-        return new SiftConnector(next);
+        return new SiftConnector<>(next);
     }
 
+    /** {@inheritDoc} */
     @Override
-    public CharacterClassConnectorStep excluding(char excluded, char... additionalExcluded) {
+    public CharacterClassConnectorStep<Ctx> excluding(char excluded, char... additionalExcluded) {
         PatternAssembler next = assembler.copy();
         next.addClassExclusion(excluded, additionalExcluded);
-        return new SiftConnector(next);
+        return new SiftConnector<>(next);
     }
 
+    /** {@inheritDoc} */
     @Override
-    public ConnectorStep wordBoundary() {
+    public ConnectorStep<Ctx> wordBoundary() {
         PatternAssembler next = assembler.copy();
         next.addWordBoundary();
-        return new SiftConnector(next);
+        return new SiftConnector<>(next);
     }
 
+    /** {@inheritDoc} */
     @Override
-    public SiftPattern andNothingElse() {
+    public SiftPattern<SiftContext.Root> andNothingElse() {
         PatternAssembler next = assembler.copy();
         next.addAnchor(RegexSyntax.END_OF_LINE);
-        return new SiftConnector(next);
+        return new SiftConnector<>(next);
     }
 
+    /** {@inheritDoc} */
     @Override
-    public String shake() {
-        if (cachedRegex == null) {
-            synchronized (this) {
-                if (cachedRegex == null) {
-                    PatternAssembler tempAssembler = assembler.copy();
-                    tempAssembler.validateFinalAssembly();
-                    String generatedRegex = tempAssembler.build();
-                    try {
-                        cachedPattern = Pattern.compile(generatedRegex);
-                        cachedRegex = generatedRegex;
-                    } catch (java.util.regex.PatternSyntaxException e) {
-                        throw new IllegalStateException("Sift generated an invalid regex pattern...", e);
-                    }
-                }
-            }
-        }
-        return cachedRegex;
-    }
-
-    @Override
-    public Pattern sieve() {
-        shake();
-        return cachedPattern;
-    }
-
-    @Override
-    public void preventExternalImplementation(InternalToken token) {
-        if (token == null) {
-            throw new SecurityException("External implementation of SiftPattern is not allowed.");
-        }
-    }
-
-    @Override
-    public boolean hasAbsoluteBoundaries() {
-        return assembler.isContainsAbsoluteAnchor();
-    }
-
-    @Override
-    public String toString() {
-        return shake();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SiftConnector that = (SiftConnector) o;
-        return this.shake().equals(that.shake());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(shake());
+    protected String buildRegex() {
+        PatternAssembler temp = assembler.copy();
+        temp.validateFinalAssembly();
+        return temp.build();
     }
 }

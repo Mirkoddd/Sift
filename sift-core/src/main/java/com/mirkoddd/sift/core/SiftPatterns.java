@@ -15,11 +15,11 @@
  */
 package com.mirkoddd.sift.core;
 
+import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.Objects;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
 /**
  * <h2>SiftPatterns - Component Factory</h2>
@@ -34,33 +34,32 @@ import java.util.regex.Pattern;
 public final class SiftPatterns {
 
     private SiftPatterns() {
+        // Prevents instantiation
     }
 
     /**
-     * Creates a pattern that matches ANY ONE of the provided options (Logical OR).
+     * Creates an alternation (OR) logic between multiple pattern options.
      * <p>
-     * This generates a non-capturing group: {@code (?:pattern1|pattern2|...)}.
-     * Requires at least two options to form a valid logical OR expression.
+     * Internally, this wraps the options in a <b>non-capturing group</b> to preserve
+     * logical boundaries: {@code (?:Option1|Option2|OptionN)}.
      *
-     * @param option1           The first mandatory alternative.
-     * @param option2           The second mandatory alternative.
-     * @param additionalOptions Any further alternative patterns.
-     * @return A composable {@link SiftPattern} representing the logical OR.
-     * @throws IllegalStateException if the provided pattern contains absolute boundaries
-     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
-     * Reusable blocks must be unanchored.
+     * @param option1           The first mandatory option.
+     * @param option2           The second mandatory option.
+     * @param additionalOptions Any extra options to include in the alternation.
+     * @return A fragment representing the OR logic.
      */
-    public static SiftPattern anyOf(SiftPattern option1, SiftPattern option2, SiftPattern... additionalOptions) {
+    @SafeVarargs
+    public static SiftPattern<SiftContext.Fragment> anyOf(
+            SiftPattern<SiftContext.Fragment> option1,
+            SiftPattern<SiftContext.Fragment> option2,
+            SiftPattern<SiftContext.Fragment>... additionalOptions) {
+
         Objects.requireNonNull(option1, "First option cannot be null");
         Objects.requireNonNull(option2, "Second option cannot be null");
         Objects.requireNonNull(additionalOptions, "Additional options array cannot be null");
 
-        requireUnanchored(option1);
-        requireUnanchored(option2);
-
-        for (SiftPattern opt : additionalOptions) {
+        for (SiftPattern<SiftContext.Fragment> opt : additionalOptions) {
             Objects.requireNonNull(opt, "Additional option cannot be null");
-            requireUnanchored(opt);
         }
 
         return memoize(() -> {
@@ -71,7 +70,7 @@ public final class SiftPatterns {
             sb.append(RegexSyntax.OR);
             sb.append(option2.shake());
 
-            for (SiftPattern opt : additionalOptions) {
+            for (SiftPattern<SiftContext.Fragment> opt : additionalOptions) {
                 sb.append(RegexSyntax.OR);
                 sb.append(opt.shake());
             }
@@ -82,25 +81,21 @@ public final class SiftPatterns {
     }
 
     /**
-     * Creates a non-capturing group matching any of the provided patterns dynamically.
+     * Creates an alternation (OR) logic from a dynamic list of pattern options.
+     * <p>
+     * Internally wraps the elements in a non-capturing group {@code (?:...|...)}.
+     * If the list contains only one element, it returns the element directly without grouping.
      *
-     * @param patterns A list of SiftPatterns.
-     * @return A SiftPattern combining the provided options.
+     * @param patterns A list of fragment patterns to alternate between.
+     * @return A fragment representing the OR logic.
      * @throws IllegalArgumentException if the list is null or empty.
-     * @throws IllegalStateException if the provided pattern contains absolute boundaries
-     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
-     * Reusable blocks must be unanchored.
      */
-    public static SiftPattern anyOf(java.util.List<? extends SiftPattern> patterns) {
+    public static SiftPattern<SiftContext.Fragment> anyOf(java.util.List<? extends SiftPattern<SiftContext.Fragment>> patterns) {
         if (patterns == null || patterns.isEmpty()) {
             throw new IllegalArgumentException("anyOf() requires at least one pattern in the list.");
         }
         if (patterns.size() == 1) {
-            return patterns.get(0); // QoL Optimization: no need to wrap a single element
-        }
-
-        for (SiftPattern pattern: patterns) {
-            requireUnanchored(pattern);
+            return patterns.get(0);
         }
 
         return memoize(() -> {
@@ -118,180 +113,113 @@ public final class SiftPatterns {
     }
 
     /**
-     * Wraps a pattern in an <b>Anonymous Capturing Group</b> {@code (...)}.
+     * Wraps a pattern in a standard capturing group: {@code (pattern)}.
      * <p>
-     * Capturing groups allow you to extract specific parts of the matched string
-     * using the standard Java {@code Matcher.group(int)} after evaluation.
-     * <p>
-     * <b>Limitation Note:</b> Because this creates an anonymous (numbered) group,
-     * it is <b>not</b> tracked by Sift's internal group registry. This means you cannot
-     * reference it using Sift's DSL backreference methods, and it bypasses group collision detection.
-     * If you need to use backreferences within your Sift builder chain, or want strict
-     * collision safety, use {@link #capture(String, SiftPattern)} to create a {@link NamedCapture} instead.
+     * This allows you to extract the matched text after the regex executes
+     * using standard {@code Matcher.group(int)} methods.
      *
-     * @param pattern The pattern to capture.
-     * @return A SiftPattern wrapped in parentheses.
-     * @throws IllegalStateException if the provided pattern contains absolute boundaries
-     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
-     * Reusable blocks must be unanchored.
+     * @param pattern The pattern to isolate and capture.
+     * @return A capturing group fragment.
      */
-    public static SiftPattern capture(SiftPattern pattern) {
+    public static SiftPattern<SiftContext.Fragment> capture(SiftPattern<SiftContext.Fragment> pattern) {
         Objects.requireNonNull(pattern, "Pattern to capture cannot be null");
-        requireUnanchored(pattern);
         return memoize(() -> RegexSyntax.GROUP_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
+    //
+
     /**
-     * Creates a <b>Positive Lookahead</b> {@code (?=...)}.
+     * Creates a <b>Positive Lookahead</b> assertion: {@code (?=pattern)}.
      * <p>
-     * Asserts that the given pattern CAN be matched next, but does not consume any characters.
-     * <br><b>Example:</b>
-     * <pre>{@code
-     * // Match "test" only if followed by "123", without consuming "123"
-     * String regex = Sift.fromAnywhere()
-     *         .pattern(literal("test"))
-     *         .followedBy(positiveLookahead(literal("123")))
-     *         .shake();
-     * // Result: test(?=123)
-     * // "test123" matches "test" at position 0-4 (doesn't consume "123")
-     * }</pre>
+     * This is a zero-width assertion. It checks that the given pattern <i>immediately follows</i>
+     * the current position, but does <b>not</b> consume any characters.
      *
-     * @param pattern The pattern that must follow.
-     * @return A SiftPattern representing the positive lookahead.
-     * @throws IllegalStateException if the provided pattern contains absolute boundaries
-     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
-     * Reusable blocks must be unanchored.
+     * @param pattern The condition that must be met ahead.
+     * @return A lookahead fragment.
      */
-    public static SiftPattern positiveLookahead(SiftPattern pattern) {
+    public static SiftPattern<SiftContext.Fragment> positiveLookahead(SiftPattern<SiftContext.Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
-        requireUnanchored(pattern);
         return memoize(() -> RegexSyntax.POSITIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
     /**
-     * Creates a <b>Negative Lookahead</b> {@code (?!...)}.
+     * Creates a <b>Negative Lookahead</b> assertion: {@code (?!pattern)}.
      * <p>
-     * Asserts that the given pattern CANNOT be matched next, and does not consume any characters.
-     * <br><b>Example:</b>
-     * <pre>{@code
-     * // Match "test" only if NOT followed by "123"
-     * String regex = Sift.fromAnywhere()
-     *         .pattern(literal("test"))
-     *         .followedBy(negativeLookahead(literal("123")))
-     *         .shake();
-     * // Result: test(?!123)
-     * // "test999" matches "test", but "test123" fails entirely
-     * }</pre>
+     * This is a zero-width assertion. It checks that the given pattern <i>does not follow</i>
+     * the current position.
      *
-     * @param pattern The pattern that must not follow.
-     * @return A SiftPattern representing the negative lookahead.
-     * @throws IllegalStateException if the provided pattern contains absolute boundaries
-     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
-     * Reusable blocks must be unanchored.
+     * @param pattern The condition that must NOT be met ahead.
+     * @return A negative lookahead fragment.
      */
-    public static SiftPattern negativeLookahead(SiftPattern pattern) {
+    public static SiftPattern<SiftContext.Fragment> negativeLookahead(SiftPattern<SiftContext.Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
-        requireUnanchored(pattern);
         return memoize(() -> RegexSyntax.NEGATIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
     /**
-     * Creates a <b>Positive Lookbehind</b> {@code (?<=...)}.
+     * Creates a <b>Positive Lookbehind</b> assertion: {@code (?<=pattern)}.
      * <p>
-     * Asserts that the given pattern CAN be matched immediately before the current position.
-     * <br><b>Example:</b>
-     * <pre>{@code
-     * // Match "123" only if immediately preceded by "EUR"
-     * String regex = Sift.fromAnywhere()
-     *         .pattern(positiveLookbehind(literal("EUR")))
-     *         .followedBy(literal("123"))
-     *         .shake();
-     * // Result: (?<=EUR)123
-     * // Matches "123" in "EUR123", but fails in "USD123"
-     * }</pre>
+     * This is a zero-width assertion. It checks that the given pattern <i>immediately precedes</i>
+     * the current position.
      *
-     * @param pattern The pattern that must precede.
-     * @return A SiftPattern representing the positive lookbehind.
-     * @throws IllegalStateException if the provided pattern contains absolute boundaries
-     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
-     * Reusable blocks must be unanchored.
+     * @param pattern The condition that must be met behind.
+     * @return A lookbehind fragment.
      */
-    public static SiftPattern positiveLookbehind(SiftPattern pattern) {
+    public static SiftPattern<SiftContext.Fragment> positiveLookbehind(SiftPattern<SiftContext.Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
-        requireUnanchored(pattern);
         return memoize(() -> RegexSyntax.POSITIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
     /**
-     * Creates a <b>Negative Lookbehind</b> {@code (?<!...)}.
+     * Creates a <b>Negative Lookbehind</b> assertion: {@code (?<!pattern)}.
      * <p>
-     * Asserts that the given pattern CANNOT be matched immediately before the current position.
-     * <br><b>Example:</b>
-     * <pre>{@code
-     * // Match "123" only if NOT preceded by "EUR"
-     * String regex = Sift.fromAnywhere()
-     *         .pattern(negativeLookbehind(literal("EUR")))
-     *         .followedBy(literal("123"))
-     *         .shake();
-     * // Result: (?<!EUR)123
-     * // Matches "123" in "USD123", but fails in "EUR123"
-     * }</pre>
+     * This is a zero-width assertion. It checks that the given pattern <i>does not precede</i>
+     * the current position.
      *
-     * @param pattern The pattern that must not precede.
-     * @return A SiftPattern representing the negative lookbehind.
-     * @throws IllegalStateException if the provided pattern contains absolute boundaries
-     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
-     * Reusable blocks must be unanchored.
+     * @param pattern The condition that must NOT be met behind.
+     * @return A negative lookbehind fragment.
      */
-    public static SiftPattern negativeLookbehind(SiftPattern pattern) {
+    public static SiftPattern<SiftContext.Fragment> negativeLookbehind(SiftPattern<SiftContext.Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
-        requireUnanchored(pattern);
         return memoize(() -> RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
     /**
-     * Defines a <b>Named Capturing Group</b> {@code (?<name>...)}.
+     * Creates a <b>Named Capturing Group</b>: {@code (?<name>pattern)}.
      * <p>
-     * This method returns a definition that must be passed to
-     * {@code .namedCapture(NamedCapture)} in the builder.
+     * Returns a special {@link NamedCapture} object that can be safely used
+     * to refer back to this group without hardcoding string names, eliminating typos.
      *
-     * @param groupName The unique name for this group. Must start with a letter and contain only alphanumeric characters.
-     * @param pattern   The pattern to capture within this group.
-     * @return A NamedCapture definition.
-     * @throws IllegalArgumentException if {@code groupName} is null, empty, starts with a digit, or contains non-alphanumeric characters (e.g., spaces, underscores, or symbols).
-     * @throws IllegalStateException if the provided pattern contains absolute boundaries
-     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
-     * Reusable blocks must be unanchored.
+     * @param groupName The alphanumeric name for the group.
+     * @param pattern   The pattern to capture.
+     * @return A strongly-typed NamedCapture object.
      */
-    public static NamedCapture capture(String groupName, SiftPattern pattern) {
+    public static NamedCapture capture(String groupName, SiftPattern<SiftContext.Fragment> pattern) {
         Objects.requireNonNull(pattern, "Pattern to capture cannot be null");
-        requireUnanchored(pattern);
         GroupName validatedName = GroupName.of(groupName);
         return new NamedCapture(validatedName, pattern);
     }
 
     /**
-     * Combines multiple patterns into a single Non-Capturing Group {@code (?:...)}.
+     * Sequentially groups multiple patterns together <b>without capturing</b> them: {@code (?:P1P2P3)}.
      * <p>
-     * By requiring at least one mandatory pattern, this method prevents the creation
-     * of empty groups at compile-time.
+     * Useful when you need to apply a quantifier to an entire sequence of components
+     * without cluttering the extraction result with unwanted groups.
      *
-     * @param first The first required pattern.
-     * @param then  Optional additional patterns to include in the same group.
-     * @return A SiftPattern representing the concatenated non-capturing group.
-     * @throws IllegalStateException if the provided pattern contains absolute boundaries
-     * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
-     * Reusable blocks must be unanchored.
+     * @param first The first pattern in the sequence.
+     * @param then  Additional patterns to append sequentially inside the group.
+     * @return A non-capturing group fragment.
      */
-    public static SiftPattern group(SiftPattern first, SiftPattern... then) {
+    @SafeVarargs
+    public static SiftPattern<SiftContext.Fragment> group(
+            SiftPattern<SiftContext.Fragment> first,
+            SiftPattern<SiftContext.Fragment>... then) {
+
         Objects.requireNonNull(first, "First pattern in group cannot be null");
         Objects.requireNonNull(then, "Additional patterns array cannot be null");
 
-        requireUnanchored(first);
-
-        for (SiftPattern opt : then) {
+        for (SiftPattern<SiftContext.Fragment> opt : then) {
             Objects.requireNonNull(opt, "Additional option cannot be null");
-            requireUnanchored(opt);
         }
 
         return memoize(() -> {
@@ -300,7 +228,7 @@ public final class SiftPatterns {
 
             sb.append(first.shake());
 
-            for (SiftPattern p : then) {
+            for (SiftPattern<SiftContext.Fragment> p : then) {
                 sb.append(p.shake());
             }
 
@@ -310,25 +238,16 @@ public final class SiftPatterns {
     }
 
     /**
-     * Creates a literal pattern, automatically escaping special regex characters.
+     * Matches exact literal text safely.
      * <p>
-     * This ensures that characters like {@code .}, {@code *}, {@code +}, or {@code ?} are treated
-     * as text, not as regex operators.
-     * <p>
-     * <b>Bug Prevention Note:</b>
-     * Avoid manual string concatenation before calling this method. Concatenating variables
-     * can lead to silent logic bugs because Java converts nulls to the string "null".
-     * <ul>
-     * <li><b>Anti-Pattern (Silent Bug):</b> {@code literal("user_" + userInput)}<br>
-     * If userInput is null, this silently generates a valid regex searching for "user_null".</li>
-     * <li><b>Best Practice (Fail-Fast):</b> {@code group(literal("user_"), literal(userInput))}<br>
-     * Throws an immediate NullPointerException if userInput is null, protecting your logic.</li>
-     * </ul>
+     * This method automatically escapes any regex metacharacters (like {@code *}, {@code +}, {@code .})
+     * present in the text, preventing regex injection attacks or structural breakage.
      *
-     * @param text The literal text to match (e.g., "12.50").
-     * @return A safe literal pattern (e.g., "12\.50").
+     * @param text The exact literal string to match.
+     * @return A safely escaped pattern fragment.
+     * @throws IllegalArgumentException if the text is empty.
      */
-    public static SiftPattern literal(String text) {
+    public static SiftPattern<SiftContext.Fragment> literal(String text) {
         Objects.requireNonNull(text, "Literal text cannot be null");
 
         if (text.isEmpty()) {
@@ -343,17 +262,16 @@ public final class SiftPatterns {
     }
 
     /**
-     * Creates a pattern that matches any single character EXCEPT those provided in the given string.
+     * Matches any single character that is <b>NOT</b> in the provided string.
      * <p>
-     * This translates to a negated character class in standard regex syntax (e.g., {@code [^abc]}).
-     * All characters within the provided string are automatically and safely escaped.
+     * Creates a negated character class: {@code [^...]}. Metacharacters inside the
+     * brackets are automatically and safely escaped.
      *
-     * @param chars A string containing the literal characters to be excluded.
-     * @return A {@link SiftPattern} representing the negated character class.
-     * @throws NullPointerException if the {@code chars} string is null.
-     * @throws IllegalArgumentException if the {@code chars} string is empty.
+     * @param chars A string of characters to exclude.
+     * @return A negated character class fragment.
+     * @throws IllegalArgumentException if the characters string is empty.
      */
-    public static SiftPattern anythingBut(String chars) {
+    public static SiftPattern<SiftContext.Fragment> anythingBut(String chars) {
         Objects.requireNonNull(chars, "Excluded characters string cannot be null");
 
         if (chars.isEmpty()) {
@@ -375,64 +293,23 @@ public final class SiftPatterns {
     }
 
     /**
-     * Internal helper to memoize the result of a generated string.
-     * Guarantees that shake() and sieve() are computed only once in a thread-safe manner.
-     *
-     * @param generator The Supplier that generates the regex string.
-     * @return A thread-safe, caching SiftPattern instance.
+     * Wraps a string generator in a memoized pattern to ensure the string building
+     * logic is executed only once, optimizing performance.
      */
-    private static SiftPattern memoize(Supplier<String> generator) {
-        return new SiftPattern() {
-            private volatile String cachedRegex = null;
-            private volatile Pattern cachedPattern = null;
-
-            @Override
-            public String shake() {
-                if (cachedRegex == null) {
-                    synchronized (this) {
-                        if (cachedRegex == null) {
-                            cachedRegex = generator.get();
-                        }
-                    }
-                }
-                return cachedRegex;
-            }
-
-            @Override
-            public Pattern sieve() {
-                if (cachedPattern == null) {
-                    synchronized (this) {
-                        if (cachedPattern == null) {
-                            cachedPattern = Pattern.compile(shake());
-                        }
-                    }
-                }
-                return cachedPattern;
-            }
-
-            @Override
-            public void preventExternalImplementation(InternalToken unused) {
-                // unused intentionally to prevent external implementations
-            }
-
-            @Override
-            public boolean hasAbsoluteBoundaries() {
-                // SiftPatterns components are explicitly validated to be unanchored
-                // before this memoized instance is created.
-                return false;
-            }
-        };
+    private static SiftPattern<SiftContext.Fragment> memoize(Supplier<String> generator) {
+        return new MemoizedPattern(generator);
     }
 
-    /**
-     * Internal security check to prevent nesting of anchored patterns.
-     */
-    private static void requireUnanchored(SiftPattern pattern) {
-        if (pattern.hasAbsoluteBoundaries()) {
-            throw new IllegalStateException(
-                    "Composition Error: Cannot embed a pattern that contains absolute boundaries " +
-                            "(like fromStart() or andNothingElse()). Reusable blocks must be unanchored."
-            );
+    private static final class MemoizedPattern extends BaseSiftPattern<SiftContext.Fragment> {
+        private final Supplier<String> generator;
+
+        private MemoizedPattern(Supplier<String> generator) {
+            this.generator = generator;
+        }
+
+        @Override
+        protected String buildRegex() {
+            return generator.get();
         }
     }
 }

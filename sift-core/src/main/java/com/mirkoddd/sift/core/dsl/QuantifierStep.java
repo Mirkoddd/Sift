@@ -23,6 +23,11 @@ import com.mirkoddd.sift.core.NamedCapture;
  * This interface extends {@link TypeStep}, which allows for a concise syntax:
  * if no quantifier is explicitly chosen, it defaults to matching <b>exactly once</b>.
  * <p>
+ * <b>Type-Safe Modifiers:</b><br>
+ * Notice the different return types. Methods producing a fixed repetition (like {@code exactly()})
+ * return a standard {@code ConnectorStep}. Methods producing a variable repetition (like {@code oneOrMore()})
+ * return a {@code VariableConnectorStep}, which safely unlocks greedy/reluctant/possessive modifiers.
+ * <p>
  * <b>Flow Examples:</b>
  * <ul>
  * <li>Explicit Quantity: {@code .exactly(3).digits()}</li>
@@ -30,8 +35,10 @@ import com.mirkoddd.sift.core.NamedCapture;
  * <li>Named Capture: {@code .namedCapture(groupDefinition)} (injects a named group)</li>
  * <li>Backreference: {@code .backreference(groupDefinition)} (references a previous group)</li>
  * </ul>
+ *
+ * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-public interface QuantifierStep extends TypeStep<ConnectorStep, CharacterClassConnectorStep> {
+public interface QuantifierStep<Ctx extends SiftContext> extends TypeStep<Ctx, ConnectorStep<Ctx>, CharacterClassConnectorStep<Ctx>> {
 
     /**
      * Matches exactly {@code n} times. Generates {@code {n}}.
@@ -40,37 +47,37 @@ public interface QuantifierStep extends TypeStep<ConnectorStep, CharacterClassCo
      * @return The next step to define WHAT to repeat (fixed length).
      * @throws IllegalArgumentException if n is negative.
      */
-    TypeStep<ConnectorStep, CharacterClassConnectorStep> exactly(int n);
+    TypeStep<Ctx, ConnectorStep<Ctx>, CharacterClassConnectorStep<Ctx>> exactly(int n);
 
     /**
      * Matches at least {@code n} times. Generates {@code {n,}}.
      * <p>
-     * Note: While {@code atLeast(0)} is valid, it is semantically equivalent to {@code zeroOrMore()}.
+     * <b>Note:</b> While {@code atLeast(0)} is valid, it is semantically equivalent to {@code zeroOrMore()}.
      * Use this for explicit numeric bounds (e.g., at least 3).
      *
      * @param n The minimum number of repetitions (must be >= 0).
-     * @return The next step to define WHAT to repeat (variable length).
+     * @return The next step to define WHAT to repeat (variable length, allowing relational modifiers).
      * @throws IllegalArgumentException if n is negative.
      */
-    TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> atLeast(int n);
+    TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> atLeast(int n);
 
     /**
      * Matches one or more times. Generates {@code +}.
      * <p>
      * Equivalent to {@code atLeast(1)}.
      *
-     * @return The next step to define WHAT to repeat (variable length).
+     * @return The next step to define WHAT to repeat (variable length, allowing relational modifiers).
      */
-    TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> oneOrMore();
+    TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> oneOrMore();
 
     /**
-     * Matches zero or more times (Greedy). Generates {@code *}.
+     * Matches zero or more times (Greedy by default). Generates {@code *}.
      * <p>
      * This matches as many occurrences as possible.
      *
-     * @return The next step to define WHAT to repeat (variable length).
+     * @return The next step to define WHAT to repeat (variable length, allowing relational modifiers).
      */
-    TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> zeroOrMore();
+    TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> zeroOrMore();
 
     /**
      * Matches zero or one time. Generates {@code ?}.
@@ -78,41 +85,43 @@ public interface QuantifierStep extends TypeStep<ConnectorStep, CharacterClassCo
      * Marks the <b>next</b> type definition as optional.
      * <br>Example: {@code .optional().digits()} matches a digit or nothing.
      *
-     * @return The next step to define WHAT is optional (variable length).
+     * @return The next step to define WHAT is optional (variable length, allowing relational modifiers).
      */
-    TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> optional();
+    TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> optional();
 
     /**
      * Matches at most {@code max} times. Generates {@code {0,max}}.
      *
      * @param max The maximum number of repetitions (must be strictly positive, i.e., > 0).
-     * @return The next step to define WHAT to repeat (variable length).
+     * @return The next step to define WHAT to repeat (variable length, allowing relational modifiers).
      * @throws IllegalArgumentException if max is zero or negative.
      */
-    TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> atMost(int max);
+    TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> atMost(int max);
 
     /**
      * Matches between {@code min} and {@code max} times inclusive. Generates {@code {min,max}}.
      *
      * @param min The minimum number of repetitions (must be >= 0).
      * @param max The maximum number of repetitions (must be strictly positive, i.e., > 0, and >= min).
-     * @return The next step to define WHAT to repeat (variable length).
+     * @return The next step to define WHAT to repeat (variable length, allowing relational modifiers).
      * @throws IllegalArgumentException if min is negative, max is zero or negative, or if min is greater than max.
      */
-    TypeStep<VariableConnectorStep, VariableCharacterClassConnectorStep> between(int min, int max);
+    TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> between(int min, int max);
 
     /**
      * Starts a named capturing group using the provided definition.
-     * @param group The named capture definition (name + pattern).
+     *
+     * @param group The named capture definition containing the name and the pattern.
      * @return A connector step to continue the chain.
      */
-    ConnectorStep namedCapture(NamedCapture group);
+    ConnectorStep<Ctx> namedCapture(NamedCapture group);
 
     /**
      * References a previously captured group by its name.
+     *
      * @param group The named capture definition to refer back to.
      * @return A connector step to continue the chain.
-     * @throws IllegalStateException if the group has not been captured yet in this builder.
+     * @throws IllegalStateException if the group has not been captured yet in this builder sequence.
      */
-    ConnectorStep backreference(NamedCapture group);
+    ConnectorStep<Ctx> backreference(NamedCapture group);
 }

@@ -20,11 +20,13 @@ package com.mirkoddd.sift.core.dsl;
  * <p>
  * This interface exposes modifiers that are only mathematically or logically valid
  * when the preceding element has a variable width (e.g., {@code +}, {@code *}, or {@code {min,max}}).
+ * By restricting these modifiers to this specific interface, the DSL prevents nonsensical
+ * operations like making an exact quantifier (e.g., {@code .exactly(3)}) lazy or possessive.
  *
  * @author Mirko Dimartino
  * @since 1.5.0
  */
-public interface VariableConnectorStep extends ConnectorStep {
+public interface VariableConnectorStep<Ctx extends SiftContext> extends ConnectorStep<Ctx> {
 
     /**
      * Makes the preceding quantifier "possessive" (e.g., {@code *+} or {@code ++}),
@@ -38,7 +40,7 @@ public interface VariableConnectorStep extends ConnectorStep {
      *
      * @return A standard {@link ConnectorStep}, as possessive modifiers cannot be stacked.
      */
-    ConnectorStep withoutBacktracking();
+    ConnectorStep<Ctx> withoutBacktracking();
 
     /**
      * Makes the preceding quantifier "lazy" (or reluctant) (e.g., {@code *?} or {@code +?}).
@@ -46,11 +48,11 @@ public interface VariableConnectorStep extends ConnectorStep {
      * A lazy quantifier will match as few characters as possible to make the pattern succeed.
      * <p>
      * <b>Performance Note:</b> Use this when you want to stop matching at the first occurrence
-     * of the subsequent pattern, rather than the last.
+     * of the subsequent pattern, rather than the last (which is the default greedy behavior).
      *
      * @return A standard {@link ConnectorStep}, as lazy modifiers cannot be stacked.
      */
-    ConnectorStep asFewAsPossible();
+    ConnectorStep<Ctx> asFewAsPossible();
 
     /**
      * Anchors the pattern to the end of the input string using {@code $}.
@@ -58,9 +60,11 @@ public interface VariableConnectorStep extends ConnectorStep {
      * Use this terminal operation when you want to ensure that there are no trailing
      * characters after the matched sequence. Calling this method immediately concludes
      * the fluent chain and returns the final executable pattern.
+     * <p>
+     * <b>State Mutation:</b> This effectively seals the fragment, returning a {@code Root} context.
      *
      * @return The final {@link SiftPattern} ready for evaluation.
      */
     @Override
-    SiftPattern andNothingElse();
+    SiftPattern<SiftContext.Root> andNothingElse();
 }

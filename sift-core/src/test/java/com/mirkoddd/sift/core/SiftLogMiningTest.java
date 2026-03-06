@@ -17,6 +17,7 @@ package com.mirkoddd.sift.core;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.ArrayList;
@@ -64,12 +65,12 @@ class SiftLogMiningTest {
     static class LogGrammar {
 
         // Matches content enclosed in single quotes: '...'
-        static SiftPattern quoted(SiftPattern inner) {
+        static SiftPattern<SiftContext.Fragment> quoted(SiftPattern<SiftContext.Fragment> inner) {
             return fromAnywhere().character('\'').followedBy(inner).followedBy('\'');
         }
 
         // Matches content enclosed in curly braces: { ... }
-        static SiftPattern braced(SiftPattern inner) {
+        static SiftPattern<SiftContext.Fragment> braced(SiftPattern<SiftContext.Fragment> inner) {
             return fromAnywhere().character('{').followedBy(inner).followedBy('}');
         }
     }
@@ -86,7 +87,7 @@ class SiftLogMiningTest {
      * @param siftPattern The pattern defining the "needle" we are looking for.
      * @return A list of all matching substrings found.
      */
-    private List<String> grep(String text, SiftPattern siftPattern) {
+    private List<String> grep(String text, SiftPattern<?> siftPattern) {
         List<String> results = new ArrayList<>();
 
         // We do not enforce anchors (^ or $) because we are searching INSIDE the text.
@@ -110,16 +111,16 @@ class SiftLogMiningTest {
         System.out.println("--- Mining User Actions ---");
 
         // Define the structural literals of our log lines
-        SiftPattern userLabel = literal("User: ");
-        SiftPattern arrow     = literal(" -> ");
-        SiftPattern action    = literal("Action: ");
+        SiftPattern<SiftContext.Fragment> userLabel = literal("User: ");
+        SiftPattern<SiftContext.Fragment> arrow     = literal(" -> ");
+        SiftPattern<SiftContext.Fragment> action    = literal("Action: ");
 
         // Define complex domain objects using our Grammar
-        SiftPattern validUsername = LogGrammar.quoted(fromAnywhere().oneOrMore().letters());
-        SiftPattern validAction   = LogGrammar.braced(fromAnywhere().pattern(action).then().oneOrMore().letters());
+        SiftPattern<SiftContext.Fragment> validUsername = LogGrammar.quoted(fromAnywhere().oneOrMore().letters());
+        SiftPattern<SiftContext.Fragment> validAction   = LogGrammar.braced(fromAnywhere().pattern(action).then().oneOrMore().letters());
 
         // Build the extraction query: "Find a User... followed by an arrow... followed by an Action"
-        SiftPattern userActionQuery = fromAnywhere()
+        SiftPattern<SiftContext.Fragment> userActionQuery = fromAnywhere()
                 .pattern(userLabel)
                 .followedBy(validUsername)
                 .followedBy(arrow)
@@ -140,15 +141,15 @@ class SiftLogMiningTest {
     void mineSpecificLogins() {
         System.out.println("\n--- Mining Only Logins ---");
 
-        SiftPattern userLabel   = literal("User: ");
-        SiftPattern arrow       = literal(" -> ");
-        SiftPattern actionLogin = literal("Action: Login"); // We are looking for this specific literal
+        SiftPattern<SiftContext.Fragment> userLabel   = literal("User: ");
+        SiftPattern<SiftContext.Fragment> arrow       = literal(" -> ");
+        SiftPattern<SiftContext.Fragment> actionLogin = literal("Action: Login"); // We are looking for this specific literal
 
         // Define the specific target action
-        SiftPattern loginAction = LogGrammar.braced(fromAnywhere().pattern(actionLogin));
+        SiftPattern<SiftContext.Fragment> loginAction = LogGrammar.braced(fromAnywhere().pattern(actionLogin));
 
         // Build the specific query
-        SiftPattern loginQuery = fromAnywhere()
+        SiftPattern<SiftContext.Fragment> loginQuery = fromAnywhere()
                 .pattern(userLabel)
                 .followedBy(LogGrammar.quoted(fromAnywhere().oneOrMore().letters()))
                 .followedBy(arrow)

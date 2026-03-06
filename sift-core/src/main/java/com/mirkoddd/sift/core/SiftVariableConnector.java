@@ -15,6 +15,7 @@
  */
 package com.mirkoddd.sift.core;
 
+import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.VariableCharacterClassConnectorStep;
 import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
 
@@ -30,38 +31,60 @@ import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
  * <p>
  * Compile-time type-safety is strictly enforced because this class is not public, and
  * external consumers only interact with the narrowly-scoped public interfaces.
+ *
+ * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-class SiftVariableConnector extends SiftConnector implements VariableConnectorStep, VariableCharacterClassConnectorStep {
+class SiftVariableConnector<Ctx extends SiftContext> extends SiftConnector<Ctx> implements VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx> {
 
+    /**
+     * Instantiates the variable-length connector with the current state of the pattern assembler.
+     *
+     * @param assembler The internal state machine builder.
+     */
     SiftVariableConnector(PatternAssembler assembler) {
         super(assembler);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * <b>Note on Covariant Return Types:</b> This overrides the parent implementation to return a
+     * narrower type ({@link VariableCharacterClassConnectorStep}). This ensures that variable-length
+     * modifiers (like possessive or lazy behaviors) are not lost from the fluent chain after
+     * modifying the character class.
+     */
     @Override
-    public VariableCharacterClassConnectorStep including(char extra, char... additionalExtras) {
+    public VariableCharacterClassConnectorStep<Ctx> including(char extra, char... additionalExtras) {
         PatternAssembler next = assembler.copy();
         next.addClassInclusion(extra, additionalExtras);
-        return new SiftVariableConnector(next);
+        return new SiftVariableConnector<>(next);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * <b>Note on Covariant Return Types:</b> Overridden to return a narrower, variable-length specific type.
+     */
     @Override
-    public VariableCharacterClassConnectorStep excluding(char excluded, char... additionalExcluded) {
+    public VariableCharacterClassConnectorStep<Ctx> excluding(char excluded, char... additionalExcluded) {
         PatternAssembler next = assembler.copy();
         next.addClassExclusion(excluded, additionalExcluded);
-        return new SiftVariableConnector(next);
+        return new SiftVariableConnector<>(next);
     }
 
+    /** {@inheritDoc} */
     @Override
-    public VariableConnectorStep withoutBacktracking() {
+    public VariableConnectorStep<Ctx> withoutBacktracking() {
         PatternAssembler next = assembler.copy();
         next.applyPossessiveModifier();
-        return new SiftVariableConnector(next);
+        return new SiftVariableConnector<>(next);
     }
 
+    /** {@inheritDoc} */
     @Override
-    public VariableConnectorStep asFewAsPossible() {
+    public VariableConnectorStep<Ctx> asFewAsPossible() {
         PatternAssembler next = assembler.copy();
         next.applyLazyModifier();
-        return new SiftVariableConnector(next);
+        return new SiftVariableConnector<>(next);
     }
 }

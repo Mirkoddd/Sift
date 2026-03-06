@@ -15,8 +15,7 @@
  */
 package com.mirkoddd.sift.core;
 
-import com.mirkoddd.sift.core.dsl.ConnectorStep;
-import com.mirkoddd.sift.core.dsl.QuantifierStep;
+import com.mirkoddd.sift.core.dsl.*;
 
 import java.util.Objects;
 
@@ -33,31 +32,24 @@ import java.util.Objects;
  * You can safely assign intermediate steps to variables, reuse them to branch off
  * into different regex patterns without poisoning the state, and share them safely
  * across multiple threads (e.g., in Spring Boot controllers or Kotlin Coroutines).
- * <p>
- * <b>Usage Example:</b>
- * <pre>
- * {@code
- * String regex = Sift.fromStart()
- *     .exactly(3).digits()
- *     .then()
- *     .oneOrMore().letters()
- *     .shake();
- * }
- * </pre>
- *
- * @author Mirko Dimartino
- * @version {@value BuildInfo#VERSION}
  */
 public final class Sift {
+
     private Sift() {
+        // Prevents instantiation
     }
 
     /**
-     * Configures the Sift builder with global inline flags (e.g., Case Insensitive, Multiline).
+     * Initializes the Sift builder with global inline flags (e.g., CASE_INSENSITIVE).
+     * <p>
+     * <b>Note:</b> Applying global flags permanently alters the engine's behavior. Therefore,
+     * patterns generated after calling this method are strictly forced to be {@code Root}
+     * contexts and cannot be embedded into other fragments to prevent side-effects.
      *
-     * @param flag  The primary, mandatory flag to apply to the entire regular expression.
-     * @param flags Additional optional flags to apply.
-     * @return An intermediate step to define the starting position or search strategy for the pattern.
+     * @param flag  The primary global flag to apply.
+     * @param flags Optional additional global flags.
+     * @return A starter step ensuring the context remains securely anchored as a Root.
+     * @throws NullPointerException if the primary flag or any element in the flags array is null.
      */
     public static SiftStarter filteringWith(SiftGlobalFlag flag, SiftGlobalFlag... flags) {
         Objects.requireNonNull(flag, "Primary flag cannot be null");
@@ -75,48 +67,104 @@ public final class Sift {
 
     /**
      * Starts building a Regex anchored at the beginning of the string using {@code ^}.
-     * <p>
-     * Use this for <b>strict validation</b> (e.g., passwords, emails, codes) where the entire string must match
-     * the pattern from the very first character.
+     * Returns a <b>Root</b> context, meaning it cannot be embedded inside other patterns.
      *
-     * @return A builder configured in the initial state, anchored to the start.
+     * @return The initial quantifier step to start the definition.
      */
-    public static QuantifierStep fromStart() {
+    public static QuantifierStep<SiftContext.Root> fromStart() {
         PatternAssembler assembler = new PatternAssembler();
         assembler.addAnchor(RegexSyntax.START_OF_LINE);
-        return new SiftQuantifier(assembler);
+        return new SiftQuantifier<>(assembler);
     }
 
     /**
      * Starts building a Regex that can match anywhere within a text.
-     * <p>
-     * Use this for <b>search operations</b> ({@code Matcher.find()}) or data extraction where the pattern
-     * does not need to start at the beginning of the string.
+     * Returns a <b>Fragment</b> context, making it safe to embed into other patterns.
      *
-     * @return A builder configured for free-floating search (no anchors).
+     * @return The initial quantifier step to start the definition.
      */
-    public static QuantifierStep fromAnywhere() {
+    public static QuantifierStep<SiftContext.Fragment> fromAnywhere() {
         PatternAssembler assembler = new PatternAssembler();
-        return new SiftQuantifier(assembler);
+        return new SiftQuantifier<>(assembler);
     }
 
     /**
      * Starts building a Regex beginning with a <b>Word Boundary</b> {@code \b}.
-     * <p>
-     * A word boundary asserts that the position is between a word character ({@code \w})
-     * and a non-word character ({@code \W}), or the start/end of the string.
-     * Use this to find whole words (e.g., matching "cat" but not "catalog").
+     * Returns a <b>Fragment</b> context.
      *
-     * @return A connector step ready to append the word to match.
+     * @return The standard connector step, bypassing the initial quantifier.
      */
-    public static ConnectorStep fromWordBoundary() {
+    public static ConnectorStep<SiftContext.Fragment> fromWordBoundary() {
         PatternAssembler assembler = new PatternAssembler();
         assembler.addWordBoundary();
-        return new SiftConnector(assembler);
+        return new SiftConnector<>(assembler);
+    }
+
+    /**
+     * Convenience shortcut to start an unanchored Fragment matching exactly the specified number of times.
+     *
+     * @param count The exact number of repetitions.
+     * @return The type step to define what to repeat.
+     */
+    public static TypeStep<SiftContext.Fragment, ConnectorStep<SiftContext.Fragment>, CharacterClassConnectorStep<SiftContext.Fragment>> exactly(int count) {
+        return fromAnywhere().exactly(count);
+    }
+
+    /**
+     * Convenience shortcut to start an unanchored Fragment matching at least the specified number of times.
+     *
+     * @param count The minimum number of repetitions.
+     * @return The type step to define what to repeat.
+     */
+    public static TypeStep<SiftContext.Fragment, VariableConnectorStep<SiftContext.Fragment>, VariableCharacterClassConnectorStep<SiftContext.Fragment>> atLeast(int count) {
+        return fromAnywhere().atLeast(count);
+    }
+
+    /**
+     * Convenience shortcut to start an unanchored Fragment matching between a minimum and maximum number of times.
+     *
+     * @param min The minimum number of repetitions.
+     * @param max The maximum number of repetitions.
+     * @return The type step to define what to repeat.
+     */
+    public static TypeStep<SiftContext.Fragment, VariableConnectorStep<SiftContext.Fragment>, VariableCharacterClassConnectorStep<SiftContext.Fragment>> between(int min, int max) {
+        return fromAnywhere().between(min, max);
+    }
+
+    /**
+     * Convenience shortcut to start an unanchored Fragment matching one or more times.
+     *
+     * @return The type step to define what to repeat.
+     */
+    public static TypeStep<SiftContext.Fragment, VariableConnectorStep<SiftContext.Fragment>, VariableCharacterClassConnectorStep<SiftContext.Fragment>> oneOrMore() {
+        return fromAnywhere().oneOrMore();
+    }
+
+    /**
+     * Convenience shortcut to start an unanchored Fragment matching zero or more times.
+     *
+     * @return The type step to define what to repeat.
+     */
+    public static TypeStep<SiftContext.Fragment, VariableConnectorStep<SiftContext.Fragment>, VariableCharacterClassConnectorStep<SiftContext.Fragment>> zeroOrMore() {
+        return fromAnywhere().zeroOrMore();
+    }
+
+    /**
+     * Convenience shortcut to start an unanchored Fragment marking the next element as optional.
+     *
+     * @return The type step to define what is optional.
+     */
+    public static TypeStep<SiftContext.Fragment, VariableConnectorStep<SiftContext.Fragment>, VariableCharacterClassConnectorStep<SiftContext.Fragment>> optional() {
+        return fromAnywhere().optional();
     }
 
     /**
      * Intermediate configuration class to maintain the fluent API flow after setting flags.
+     * <p>
+     * <b>Context Safety:</b> All methods in this starter strictly return a {@code Root} context.
+     * Global flags (like {@code (?i)}) apply to the entire regex engine. Preventing these
+     * patterns from being embedded as fragments avoids cross-contamination of flags
+     * across composed patterns.
      */
     public static final class SiftStarter {
         private final SiftGlobalFlag[] flags;
@@ -126,48 +174,93 @@ public final class Sift {
         }
 
         /**
-         * Starts building a Regex anchored at the beginning of the string using {@code ^},
-         * applying the previously configured global flags.
-         * <p>
-         * Use this for <b>strict validation</b> (e.g., passwords, emails, codes) where the entire string must match
-         * the pattern from the very first character.
+         * Starts building a flagged Regex anchored at the beginning of the string using {@code ^}.
          *
-         * @return A builder configured in the initial state, anchored to the start.
+         * @return The initial quantifier step.
          */
-        public QuantifierStep fromStart() {
+        public QuantifierStep<SiftContext.Root> fromStart() {
             PatternAssembler assembler = new PatternAssembler(flags);
             assembler.addAnchor(RegexSyntax.START_OF_LINE);
-            return new SiftQuantifier(assembler);
+            return new SiftQuantifier<>(assembler);
         }
 
         /**
-         * Starts building a Regex that can match anywhere within a text,
-         * applying the previously configured global flags.
-         * <p>
-         * Use this for <b>search operations</b> ({@code Matcher.find()}) or data extraction where the pattern
-         * does not need to start at the beginning of the string.
+         * Starts building a flagged Regex that can match anywhere within a text.
          *
-         * @return A builder configured for free-floating search (no anchors).
+         * @return The initial quantifier step.
          */
-        public QuantifierStep fromAnywhere() {
+        public QuantifierStep<SiftContext.Root> fromAnywhere() {
             PatternAssembler assembler = new PatternAssembler(flags);
-            return new SiftQuantifier(assembler);
+            return new SiftQuantifier<>(assembler);
         }
 
         /**
-         * Starts building a Regex beginning with a <b>Word Boundary</b> {@code \b},
-         * applying the previously configured global flags.
-         * <p>
-         * A word boundary asserts that the position is between a word character ({@code \w})
-         * and a non-word character ({@code \W}), or the start/end of the string.
-         * Use this to find whole words (e.g., matching "cat" but not "catalog").
+         * Starts building a flagged Regex beginning with a Word Boundary {@code \b}.
          *
-         * @return A connector step ready to append the word to match.
+         * @return The standard connector step.
          */
-        public ConnectorStep fromWordBoundary() {
+        public ConnectorStep<SiftContext.Root> fromWordBoundary() {
             PatternAssembler assembler = new PatternAssembler(flags);
             assembler.addWordBoundary();
-            return new SiftConnector(assembler);
+            return new SiftConnector<>(assembler);
+        }
+
+        /**
+         * Shortcut to start a flagged Root pattern matching exactly the specified number of times.
+         *
+         * @param count The exact number of repetitions.
+         * @return The type step to define what to repeat.
+         */
+        public TypeStep<SiftContext.Root, ConnectorStep<SiftContext.Root>, CharacterClassConnectorStep<SiftContext.Root>> exactly(int count) {
+            return fromAnywhere().exactly(count);
+        }
+
+        /**
+         * Shortcut to start a flagged Root pattern matching at least the specified number of times.
+         *
+         * @param count The minimum number of repetitions.
+         * @return The type step to define what to repeat.
+         */
+        public TypeStep<SiftContext.Root, VariableConnectorStep<SiftContext.Root>, VariableCharacterClassConnectorStep<SiftContext.Root>> atLeast(int count) {
+            return fromAnywhere().atLeast(count);
+        }
+
+        /**
+         * Shortcut to start a flagged Root pattern matching between a minimum and maximum number of times.
+         *
+         * @param min The minimum number of repetitions.
+         * @param max The maximum number of repetitions.
+         * @return The type step to define what to repeat.
+         */
+        public TypeStep<SiftContext.Root, VariableConnectorStep<SiftContext.Root>, VariableCharacterClassConnectorStep<SiftContext.Root>> between(int min, int max) {
+            return fromAnywhere().between(min, max);
+        }
+
+        /**
+         * Shortcut to start a flagged Root pattern matching one or more times.
+         *
+         * @return The type step to define what to repeat.
+         */
+        public TypeStep<SiftContext.Root, VariableConnectorStep<SiftContext.Root>, VariableCharacterClassConnectorStep<SiftContext.Root>> oneOrMore() {
+            return fromAnywhere().oneOrMore();
+        }
+
+        /**
+         * Shortcut to start a flagged Root pattern matching zero or more times.
+         *
+         * @return The type step to define what to repeat.
+         */
+        public TypeStep<SiftContext.Root, VariableConnectorStep<SiftContext.Root>, VariableCharacterClassConnectorStep<SiftContext.Root>> zeroOrMore() {
+            return fromAnywhere().zeroOrMore();
+        }
+
+        /**
+         * Shortcut to start a flagged Root pattern marking the next element as optional.
+         *
+         * @return The type step to define what is optional.
+         */
+        public TypeStep<SiftContext.Root, VariableConnectorStep<SiftContext.Root>, VariableCharacterClassConnectorStep<SiftContext.Root>> optional() {
+            return fromAnywhere().optional();
         }
     }
 }
