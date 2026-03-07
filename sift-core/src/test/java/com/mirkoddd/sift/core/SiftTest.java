@@ -128,7 +128,7 @@ class SiftTest {
         void excluding() {
             // Target: Consonants only (letters minus vowels)
             String regex = fromAnywhere()
-                    .oneOrMore().lowercaseLetters()
+                    .oneOrMore().lowerCaseLetters()
                     .excluding('a', 'e', 'i', 'o', 'u')
                     .andNothingElse()
                     .shake();
@@ -151,7 +151,7 @@ class SiftTest {
         @Test
         @DisplayName("Should match uppercase letters only")
         void uppercaseOnly() {
-            String regex = fromAnywhere().oneOrMore().uppercaseLetters().andNothingElse().shake();
+            String regex = fromAnywhere().oneOrMore().upperCaseLetters().andNothingElse().shake();
 
             assertEquals("[A-Z]+$", regex);
             assertRegexMatches(regex, "HELLO");
@@ -894,14 +894,14 @@ class SiftTest {
             assertRegexMatches(nonUniLetters, "123 !!");
             assertRegexDoesNotMatch(nonUniLetters, "è");
 
-            String uniUpper = fromStart().oneOrMore().uppercaseLettersUnicode().andNothingElse().shake();
+            String uniUpper = fromStart().oneOrMore().upperCaseLettersUnicode().andNothingElse().shake();
             assertEquals("^[\\p{Lu}]+$", uniUpper);
             assertRegexMatches(uniUpper, "È");
             assertRegexMatches(uniUpper, "Ñ");
             assertRegexDoesNotMatch(uniUpper, "è");
             assertRegexDoesNotMatch(uniUpper, "A1");
 
-            String uniLower = fromStart().oneOrMore().lowercaseLettersUnicode().andNothingElse().shake();
+            String uniLower = fromStart().oneOrMore().lowerCaseLettersUnicode().andNothingElse().shake();
             assertEquals("^[\\p{Ll}]+$", uniLower);
             assertRegexMatches(uniLower, "è");
             assertRegexMatches(uniLower, "ñ");
@@ -975,7 +975,7 @@ class SiftTest {
         void singleFlag() {
             String regex = filteringWith(CASE_INSENSITIVE)
                     .fromStart()
-                    .exactly(5).uppercaseLetters()
+                    .exactly(5).upperCaseLetters()
                     .andNothingElse()
                     .shake();
 
@@ -1028,7 +1028,7 @@ class SiftTest {
         void flagsFromAnywhere() {
             String regex = filteringWith(CASE_INSENSITIVE)
                     .fromAnywhere()
-                    .exactly(4).uppercaseLetters()
+                    .exactly(4).upperCaseLetters()
                     .shake();
 
             assertEquals("(?i)[A-Z]{4}", regex);

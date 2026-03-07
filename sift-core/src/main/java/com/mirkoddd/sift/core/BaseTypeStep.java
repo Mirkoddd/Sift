@@ -143,7 +143,7 @@ abstract class BaseTypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx
 
     /** {@inheritDoc} */
     @Override
-    public C uppercaseLetters() {
+    public C upperCaseLetters() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.RANGE_LETTERS_UPPERCASE_ONLY);
         return getCharacterClassConnector(next);
@@ -151,7 +151,7 @@ abstract class BaseTypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx
 
     /** {@inheritDoc} */
     @Override
-    public C lowercaseLetters() {
+    public C lowerCaseLetters() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.RANGE_LETTERS_LOWERCASE_ONLY);
         return getCharacterClassConnector(next);
@@ -175,7 +175,7 @@ abstract class BaseTypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx
 
     /** {@inheritDoc} */
     @Override
-    public C uppercaseLettersUnicode() {
+    public C upperCaseLettersUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.UNICODE_LETTERS_UPPERCASE_ONLY);
         return getCharacterClassConnector(next);
@@ -183,7 +183,7 @@ abstract class BaseTypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx
 
     /** {@inheritDoc} */
     @Override
-    public C lowercaseLettersUnicode() {
+    public C lowerCaseLettersUnicode() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.UNICODE_LETTERS_LOWERCASE_ONLY);
         return getCharacterClassConnector(next);

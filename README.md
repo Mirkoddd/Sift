@@ -79,7 +79,7 @@ Forget about counting backslashes or memorizing obscure symbols. Sift guides you
 ```Java    
 // Goal: Match an international username securely
 String regex = Sift.fromStart()
-    .exactly(1).uppercaseLettersUnicode() // Must start with an uppercase letter
+    .exactly(1).upperCaseLettersUnicode() // Must start with an uppercase letter
     .then()
     .between(3, 15).wordCharactersUnicode().withoutBacktracking() // Secure against ReDoS
     .then()

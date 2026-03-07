@@ -15,6 +15,7 @@
  */
 package com.mirkoddd.sift.core;
 
+import static com.mirkoddd.sift.core.Sift.exactly;
 import static com.mirkoddd.sift.core.SiftPatterns.literal;
 
 import org.junit.jupiter.api.DisplayName;
@@ -26,6 +27,9 @@ import java.util.regex.Pattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.mirkoddd.sift.core.dsl.ConnectorStep;
+import com.mirkoddd.sift.core.dsl.SiftContext;
 
 /**
  * Validates the real-world examples provided in the COOKBOOK.md file.
@@ -56,28 +60,29 @@ class SiftCookbookTest {
     @Test
     @DisplayName("Recipe 1: UUID Validator (Using modular blocks)")
     void testUuidValidatorRecipe() {
-        // Define the basic building blocks using fromAnywhere().
+        // Define the basic building blocks using fromAnywhere() (in this case is the static Fragment shortcut exactly())
         // This ensures these blocks don't carry a '^' anchor, allowing them
         // to be safely placed in the middle or end of our final chain.
-        var anywhere = Sift.fromAnywhere();
-        var hex8 = anywhere.exactly(8).hexDigits();
-        var hex4 = anywhere.exactly(4).hexDigits();
-        var hex12 = anywhere.exactly(12).hexDigits();
-        var separator = anywhere.character('-');
+        var hex8 = exactly(8).hexDigits();
+        var hex4 = exactly(4).hexDigits();
+        var hex12 = exactly(12).hexDigits();
+        var separator = exactly(1).character('-');
 
         // Compose reusable intermediate blocks
         var hex4andSeparator = hex4.followedBy(separator);
 
+        // define the list of steps to follow in the final pattern
+        List<ConnectorStep<SiftContext.Fragment>> steps = List.of(
+                separator,
+                hex4andSeparator,
+                hex4andSeparator,
+                hex4andSeparator,
+                hex12
+        );
+
         // Let's define the actual regex:
         String actualUuidRegex = hex8
-                .followedBy(List.of(
-                                separator,
-                                hex4andSeparator,
-                                hex4andSeparator,
-                                hex4andSeparator,
-                                hex12
-                        )
-                )
+                .followedBy(steps)
                 .shake();
 
         System.out.println(actualUuidRegex);
@@ -106,7 +111,7 @@ class SiftCookbookTest {
         var newline = Sift.fromAnywhere().newline();
 
         // Define payload components
-        var logLevel = Sift.fromAnywhere().oneOrMore().uppercaseLetters();
+        var logLevel = Sift.fromAnywhere().oneOrMore().upperCaseLetters();
         var message = Sift.fromAnywhere().oneOrMore().anyCharacter();
 
         // Assemble the final pattern like a natural language sentence
@@ -151,7 +156,7 @@ class SiftCookbookTest {
         // Notice the use of fromStart() here.
         // We enforce that the token MUST begin with this exact prefix,
         // anchoring the entire evaluation to the start of the string.
-        var prefix = Sift.fromStart().exactly(2).uppercaseLetters();
+        var prefix = Sift.fromStart().exactly(2).upperCaseLetters();
 
         // The rest of the blocks use fromAnywhere() for composition
         var body = Sift.fromAnywhere().between(4, 6).alphanumeric();
@@ -274,7 +279,7 @@ class SiftCookbookTest {
 
         var requiresUppercase = Sift.fromAnywhere()
                 .pattern(SiftPatterns.positiveLookahead(
-                        Sift.fromAnywhere().zeroOrMore().anyCharacter().then().exactly(1).uppercaseLetters()
+                        Sift.fromAnywhere().zeroOrMore().anyCharacter().then().exactly(1).upperCaseLetters()
                 ));
 
         var requiresDigit = Sift.fromAnywhere()

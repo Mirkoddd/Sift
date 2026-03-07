@@ -131,7 +131,7 @@ public interface TypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx>,
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C uppercaseLetters();
+    C upperCaseLetters();
 
     /**
      * Matches only lowercase ASCII letters.
@@ -140,7 +140,7 @@ public interface TypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx>,
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C lowercaseLetters();
+    C lowerCaseLetters();
 
     /**
      * Matches any Unicode letter from any language or script.
@@ -166,23 +166,23 @@ public interface TypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx>,
      * Matches any uppercase Unicode letter from any language.
      * <p>
      * Equivalent to the regex {@code \p{Lu}}.
-     * Unlike {@link #uppercaseLetters()} which is strictly ASCII {@code [A-Z]},
+     * Unlike {@link #upperCaseLetters()} which is strictly ASCII {@code [A-Z]},
      * this correctly matches uppercase international characters like 'È' or 'Ñ'.
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C uppercaseLettersUnicode();
+    C upperCaseLettersUnicode();
 
     /**
      * Matches any lowercase Unicode letter from any language.
      * <p>
      * Equivalent to the regex {@code \p{Ll}}.
-     * Unlike {@link #lowercaseLetters()} which is strictly ASCII {@code [a-z]},
+     * Unlike {@link #lowerCaseLetters()} which is strictly ASCII {@code [a-z]},
      * this correctly matches lowercase international characters like 'è' or 'ñ'.
      *
      * @return The specialized character class step to allow further class modifications.
      */
-    C lowercaseLettersUnicode();
+    C lowerCaseLettersUnicode();
 
     /**
      * Matches any ASCII alphanumeric character (letters and digits).

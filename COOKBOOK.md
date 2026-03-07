@@ -31,15 +31,24 @@ Break down a complex pattern into small, reusable components. Notice how `fromAn
 ```java
 var hex8 = Sift.fromAnywhere().exactly(8).hexDigits();
 var hex4 = Sift.fromAnywhere().exactly(4).hexDigits();
-var hex12 = Sift.fromAnywhere().exactly(12).hexDigits();
+var hex12 = exactly(12).hexDigits(); // Shorthand method, same as calling `Sift.fromAnywhere().exactly(12)`
 var separator = Sift.fromAnywhere().character('-');
 
 // Compose reusable intermediate blocks
 var hex4andSeparator = hex4.followedBy(separator);
 
+// define the list of steps to follow in the final pattern
+List<ConnectorStep<SiftContext.Fragment>> steps = List.of(
+        separator,
+        hex4andSeparator,
+        hex4andSeparator,
+        hex4andSeparator,
+        hex12
+);
+
 // Final assembly
 String uuidRegex = hex8
-        .followedBy(separator, hex4andSeparator, hex4andSeparator, hex4andSeparator, hex12)
+        .followedBy(steps)
         .shake();
 
 // Matches: "123e4567-e89b-12d3-a456-426614174000"
@@ -57,11 +66,16 @@ var dash = Sift.fromAnywhere().character('-');
 var dateBlock = year.followedBy(dash, month, dash, day);
 var tab = Sift.fromAnywhere().tab();
 var newline = Sift.fromAnywhere().newline();
-var logLevel = Sift.fromAnywhere().oneOrMore().uppercaseLetters();
+var logLevel = Sift.fromAnywhere().oneOrMore().upperCaseLetters();
 var message = Sift.fromAnywhere().oneOrMore().anyCharacter();
 
+// you can also chain followedBy() calls:
 String logParserRegex = dateBlock
-        .followedBy(tab, logLevel, tab, message, newline)
+        .followedBy(tab)
+        .followedBy(logLevel)
+        .followedBy(tab)
+        .followedBy(message)
+        .followedBy(newline)
         .shake();
 ```
 
@@ -84,7 +98,7 @@ String verboseLogParserRegex = dateBlock
 We enforce that the token MUST begin with an exact prefix by anchoring the entire evaluation to the start of the string using `fromStart()`.
 
 ```java
-var prefix = Sift.fromStart().exactly(2).uppercaseLetters();
+var prefix = Sift.fromStart().exactly(2).upperCaseLetters();
 var body = Sift.fromAnywhere().between(4, 6).alphanumeric();
 var suffix = Sift.fromAnywhere().oneOrMore().punctuation();
 var underscore = Sift.fromAnywhere().character('_');
@@ -166,7 +180,7 @@ Lookarounds are notoriously difficult to read in raw Regex. Sift makes them decl
 ```java
 var requiresUppercase = Sift.fromAnywhere()
         .pattern(SiftPatterns.positiveLookahead(
-                Sift.fromAnywhere().zeroOrMore().anyCharacter().then().exactly(1).uppercaseLetters()
+                Sift.fromAnywhere().zeroOrMore().anyCharacter().then().exactly(1).upperCaseLetters()
         ));
 
 var requiresDigit = Sift.fromAnywhere()

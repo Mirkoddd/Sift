@@ -139,12 +139,12 @@ class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
     @Override public CharacterClassConnectorStep<Ctx> nonDigitsUnicode() { return exactly(1).nonDigitsUnicode(); }
     @Override public CharacterClassConnectorStep<Ctx> letters() { return exactly(1).letters(); }
     @Override public CharacterClassConnectorStep<Ctx> nonLetters() { return exactly(1).nonLetters(); }
-    @Override public CharacterClassConnectorStep<Ctx> uppercaseLetters() { return exactly(1).uppercaseLetters(); }
-    @Override public CharacterClassConnectorStep<Ctx> lowercaseLetters() { return exactly(1).lowercaseLetters(); }
+    @Override public CharacterClassConnectorStep<Ctx> upperCaseLetters() { return exactly(1).upperCaseLetters(); }
+    @Override public CharacterClassConnectorStep<Ctx> lowerCaseLetters() { return exactly(1).lowerCaseLetters(); }
     @Override public CharacterClassConnectorStep<Ctx> lettersUnicode() { return exactly(1).lettersUnicode(); }
     @Override public CharacterClassConnectorStep<Ctx> nonLettersUnicode() { return exactly(1).nonLettersUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> uppercaseLettersUnicode() { return exactly(1).uppercaseLettersUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> lowercaseLettersUnicode() { return exactly(1).lowercaseLettersUnicode(); }
+    @Override public CharacterClassConnectorStep<Ctx> upperCaseLettersUnicode() { return exactly(1).upperCaseLettersUnicode(); }
+    @Override public CharacterClassConnectorStep<Ctx> lowerCaseLettersUnicode() { return exactly(1).lowerCaseLettersUnicode(); }
     @Override public CharacterClassConnectorStep<Ctx> alphanumeric() { return exactly(1).alphanumeric(); }
     @Override public CharacterClassConnectorStep<Ctx> nonAlphanumeric() { return exactly(1).nonAlphanumeric(); }
     @Override public CharacterClassConnectorStep<Ctx> alphanumericUnicode() { return exactly(1).alphanumericUnicode(); }
