@@ -18,6 +18,7 @@ package com.mirkoddd.sift.core;
 import com.mirkoddd.sift.core.dsl.*;
 
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Node responsible for connecting steps and terminating the DSL chain.
@@ -33,7 +34,7 @@ import java.util.Objects;
  *
  * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implements ConnectorStep<Ctx>, CharacterClassConnectorStep<Ctx> {
+class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implements ConnectorStep<Ctx>, CharacterClassConnectorStep<Ctx>, PatternMetadata {
 
     protected final PatternAssembler assembler;
 
@@ -124,5 +125,15 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
         PatternAssembler temp = assembler.copy();
         temp.validateFinalAssembly();
         return temp.build();
+    }
+
+    @Override
+    public Set<String> getInternalRegisteredGroups() {
+        return assembler.getRegisteredGroups();
+    }
+
+    @Override
+    public Set<String> getInternalRequiredBackreferences() {
+        return assembler.getRequiredBackreferences();
     }
 }

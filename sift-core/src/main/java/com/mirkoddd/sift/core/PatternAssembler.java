@@ -18,6 +18,7 @@ package com.mirkoddd.sift.core;
 import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -176,39 +177,34 @@ class PatternAssembler {
 
     private void extractAndCheckGroupsAndRequirements(SiftPattern<?> pattern, String wrapperGroupName) {
         Set<String> incomingGroups = getIncomingGroups(pattern);
-        if (incomingGroups != null) {
-            for (String incomingGroup : incomingGroups) {
-                if (!registeredGroups.add(incomingGroup)) {
-                    if (wrapperGroupName != null) {
-                        throw new IllegalStateException("Collision detected: The pattern inside capturing group '" +
-                                wrapperGroupName + "' contains a nested group named '" + incomingGroup +
-                                "' which has already been defined in the current builder.");
-                    } else {
-                        throw new IllegalStateException("Collision detected: The sub-pattern contains a capturing group named '" +
-                                incomingGroup + "' which has already been defined in the current pattern.");
-                    }
+        for (String incomingGroup : incomingGroups) {
+            if (!registeredGroups.add(incomingGroup)) {
+                if (wrapperGroupName != null) {
+                    throw new IllegalStateException("Collision detected: The pattern inside capturing group '" +
+                            wrapperGroupName + "' contains a nested group named '" + incomingGroup +
+                            "' which has already been defined in the current builder.");
+                } else {
+                    throw new IllegalStateException("Collision detected: The sub-pattern contains a capturing group named '" +
+                            incomingGroup + "' which has already been defined in the current pattern.");
                 }
             }
         }
 
-        Set<String> incomingBackreferences = getIncomingBackreferences(pattern);
-        if (incomingBackreferences != null) {
-            requiredBackreferences.addAll(incomingBackreferences);
-        }
+        requiredBackreferences.addAll(getIncomingBackreferences(pattern));
     }
 
     private static Set<String> getIncomingGroups(SiftPattern<?> pattern) {
-        if (pattern instanceof SiftConnector) {
-            return ((SiftConnector<?>) pattern).assembler.getRegisteredGroups();
+        if (pattern instanceof PatternMetadata) {
+            return ((PatternMetadata) pattern).getInternalRegisteredGroups();
         }
-        return null;
+        return Collections.emptySet();
     }
 
     private static Set<String> getIncomingBackreferences(SiftPattern<?> pattern) {
-        if (pattern instanceof SiftConnector) {
-            return ((SiftConnector<?>) pattern).assembler.getRequiredBackreferences();
+        if (pattern instanceof PatternMetadata) {
+            return ((PatternMetadata) pattern).getInternalRequiredBackreferences();
         }
-        return null;
+        return Collections.emptySet();
     }
 
     void addWordBoundary() {
