@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.1](https://github.com/Mirkoddd/Sift/compare/sift-v3.0.0...sift-v3.0.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* rename casing methods to align with Java conventions ([1b98c0d](https://github.com/Mirkoddd/Sift/commit/1b98c0df12c3820c4328f417d0c1027aacc0422b)), closes [#17](https://github.com/Mirkoddd/Sift/issues/17)
+
 ## [3.0.0](https://github.com/Mirkoddd/Sift/compare/sift-v2.4.4...sift-v3.0.0) (2026-03-06)
 
 
