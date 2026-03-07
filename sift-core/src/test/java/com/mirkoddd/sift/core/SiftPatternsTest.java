@@ -235,8 +235,9 @@ class SiftPatternsTest {
         assertNotNull(compiled, "The sieve() should return a valid Pattern");
         assertEquals("[a-z]+", compiled.pattern(), "The compiled pattern should match the shake() output");
 
-        assertTrue(fakePattern.matches("abc"), "matches() should correctly match valid strings");
-        assertFalse(fakePattern.matches("123"), "matches() should correctly reject invalid strings");
+        assertTrue(fakePattern.matchesEntire("abc"), "matchesEntire() should correctly match valid strings");
+        assertTrue(fakePattern.containsMatchIn("123abc456"), "containsMatchIn() should correctly find valid substrings");
+        assertFalse(fakePattern.matchesEntire("123"), "matchesEntire() should correctly reject invalid strings");
 
         assertEquals(InternalToken.INSTANCE, fakePattern.___internal_lock___(),
                 "Internal lock must return the Singleton Enum instance");
@@ -296,23 +297,38 @@ class SiftPatternsTest {
     }
 
     @Test
-    @DisplayName("matches(CharSequence) should correctly evaluate inputs, handle nulls, and support StringBuilders")
-    void testPatternMatchesConvenienceMethod() {
+    @DisplayName("Semantic matching methods should correctly evaluate inputs, handle nulls, and support StringBuilders")
+    @SuppressWarnings("deprecation")
+    void testPatternMatchingConvenienceMethods() {
         SiftPattern<SiftContext.Root> pattern = Sift.fromStart().exactly(3).digits().andNothingElse();
 
-        assertFalse(pattern.matches(null),
+        // matchesEntire tests
+        assertFalse(pattern.matchesEntire(null),
                 "Should gracefully return false when the input is null, avoiding NullPointerException");
-
-        assertTrue(pattern.matches("123"),
+        assertTrue(pattern.matchesEntire("123"),
                 "Should return true for a string that perfectly matches the pattern");
-
-        assertFalse(pattern.matches("12a"),
+        assertFalse(pattern.matchesEntire("12a"),
                 "Should return false for a string with invalid characters");
-        assertFalse(pattern.matches("1234"),
+        assertFalse(pattern.matchesEntire("1234"),
                 "Should return false for a string that exceeds the exact length bounds");
 
         StringBuilder sbInput = new StringBuilder("987");
-        assertTrue(pattern.matches(sbInput),
+        assertTrue(pattern.matchesEntire(sbInput),
                 "Should natively support other CharSequence implementations like StringBuilder without allocations");
+
+        // containsMatchIn tests
+        SiftPattern<SiftContext.Fragment> partialPattern = Sift.fromAnywhere().exactly(3).digits();
+        assertTrue(partialPattern.containsMatchIn("abc123def"),
+                "Should return true when the exact sequence is contained within a larger string");
+        assertFalse(partialPattern.containsMatchIn("ab12cd"),
+                "Should return false when the sequence is broken");
+
+        // Deprecated matches() compatibility tests
+        assertEquals(partialPattern.containsMatchIn("abc123def"), partialPattern.matches("abc123def"),
+                "Deprecated matches() must behave identically to containsMatchIn() for valid matching inputs");
+        assertEquals(partialPattern.containsMatchIn("ab12cd"), partialPattern.matches("ab12cd"),
+                "Deprecated matches() must behave identically to containsMatchIn() for failing inputs");
+        assertEquals(partialPattern.containsMatchIn(null), partialPattern.matches(null),
+                "Deprecated matches() must behave identically to containsMatchIn() for null inputs");
     }
 }

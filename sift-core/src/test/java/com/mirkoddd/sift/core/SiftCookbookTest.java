@@ -255,7 +255,7 @@ class SiftCookbookTest {
         String input = "<TITLE>My Awesome Cookbook</title>";
 
         // 4. Using Sift's built-in utility for a quick boolean match check
-        assertTrue(htmlTagPattern.matches(input));
+        assertTrue(htmlTagPattern.matchesEntire(input));
 
         // 5. Using .sieve() to retrieve the fully compiled java.util.regex.Pattern.
         // This automatically applies the SiftGlobalFlag under the hood.

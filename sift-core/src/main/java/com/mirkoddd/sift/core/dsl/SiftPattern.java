@@ -63,17 +63,49 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
     SiftPattern<Ctx> preventBacktracking();
 
     /**
-     * Performs a substring search (grep-style) on the provided input.
+     * Checks if the pattern can be found anywhere within the input sequence.
      * <p>
-     * <b>Note:</b> Under the hood, this uses {@code Matcher.find()} rather than
-     * {@code Matcher.matches()}. It will return true if the pattern is found <i>anywhere</i>
-     * within the input sequence, not necessarily spanning the entire string.
+     * <b>Semantics:</b> This strictly delegates to {@link java.util.regex.Matcher#find()}.
+     * It returns {@code true} if the input contains at least one subsequence that matches the pattern.
      *
      * @param input The character sequence to search within.
      * @return {@code true} if any part of the input matches this pattern.
      */
-    default boolean matches(CharSequence input) {
+    default boolean containsMatchIn(CharSequence input) {
         if (input == null) return false;
         return sieve().matcher(input).find();
+    }
+
+    /**
+     * Checks if the entire input sequence matches the pattern exactly.
+     * <p>
+     * <b>Semantics:</b> This strictly delegates to {@link java.util.regex.Matcher#matches()}.
+     * It returns {@code true} only if the pattern matches the sequence from start to finish.
+     *
+     * @param input The character sequence to validate.
+     * @return {@code true} if the entire sequence matches this pattern.
+     */
+    default boolean matchesEntire(CharSequence input) {
+        if (input == null) return false;
+        return sieve().matcher(input).matches();
+    }
+
+    /**
+     * Performs a substring search (grep-style) on the provided input.
+     *
+     * @param input The character sequence to search within.
+     * @return {@code true} if any part of the input matches this pattern.
+     * @deprecated The name {@code matches} is semantically misleading in Java as it implies
+     * strict full-string validation (like {@link String#matches(String)}).
+     * <p>
+     * <b>Migration guide:</b>
+     * <ul>
+     * <li>Use {@link #containsMatchIn(CharSequence)} for partial matching (Matcher.find).</li>
+     * <li>Use {@link #matchesEntire(CharSequence)} for strict validation (Matcher.matches).</li>
+     * </ul>
+     */
+    @Deprecated
+    default boolean matches(CharSequence input) {
+        return containsMatchIn(input);
     }
 }
