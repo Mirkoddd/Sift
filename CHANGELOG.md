@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.2](https://github.com/Mirkoddd/Sift/compare/sift-v3.0.1...sift-v3.0.2) (2026-03-07)
+
+
+### Bug Fixes
+
+* resolve silent metadata loss in wrapped patterns ([716ef68](https://github.com/Mirkoddd/Sift/commit/716ef68b253cf11c69ff94c7e6ab191bde778c68))
+
 ## [3.0.1](https://github.com/Mirkoddd/Sift/compare/sift-v3.0.0...sift-v3.0.1) (2026-03-07)
 
 
