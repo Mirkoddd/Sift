@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.0.0](https://github.com/Mirkoddd/Sift/compare/sift-v3.0.2...sift-v4.0.0) (2026-03-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* resolve semantic mismatch in SiftPattern matching
+
+### Features
+
+* resolve semantic mismatch in SiftPattern matching ([7726030](https://github.com/Mirkoddd/Sift/commit/7726030df478a870f3952bd436135c88906083c2))
+
 ## [3.0.2](https://github.com/Mirkoddd/Sift/compare/sift-v3.0.1...sift-v3.0.2) (2026-03-07)
 
 
