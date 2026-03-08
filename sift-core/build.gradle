@@ -23,6 +23,11 @@ dependencies {
 
 test {
     useJUnitPlatform()
+
+    javaLauncher = javaToolchains.launcherFor {
+        def ciVersion = System.getenv("MATRIX_JAVA_VERSION")
+        languageVersion = JavaLanguageVersion.of(ciVersion ? ciVersion.toInteger() : 17)
+    }
 }
 
 publishing {
