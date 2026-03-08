@@ -2,12 +2,10 @@
 
 ## Supported Versions
 
-We currently provide security updates for the latest major version of Sift.
-
 | Version | Supported          |
 | ------- | ------------------ |
-| 2.x.x   | ✅                 |
-| < 2.0.0 | ❌                 |
+| 4.x.x   | :white_check_mark: |
+| < 4.0.0 | :x:                |
 
 ## Reporting a Vulnerability
 
