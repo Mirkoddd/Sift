@@ -25,6 +25,7 @@ import static com.mirkoddd.sift.core.Sift.*;
 import static com.mirkoddd.sift.core.SiftPatterns.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.List;
 
 @DisplayName("Open/Closed Principle Showcase")
@@ -95,7 +96,7 @@ class SiftOcpTest {
                 .then().optional().character(' ')
                 .followedBy(timestamp)
                 .then().optional().character(' ')
-                .followedBy(List.of(user, username, arrow, actionData))
+                .followedBy(Arrays.asList(user, username, arrow, actionData))
                 .andNothingElse()
                 .shake();
 

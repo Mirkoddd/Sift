@@ -34,6 +34,7 @@ import static com.mirkoddd.sift.core.SiftGlobalFlag.CASE_INSENSITIVE;
 import static com.mirkoddd.sift.core.SiftPatterns.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.mirkoddd.sift.core.dsl.CharacterClassConnectorStep;
 import com.mirkoddd.sift.core.dsl.ConnectorStep;
 import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
@@ -420,7 +421,7 @@ class SiftTest {
         @Test
         @DisplayName("shake() should perform fail-fast validation the moment a malformed pattern is injected")
         void testShakeFailFastValidation() {
-            BaseSiftPattern<SiftContext.Fragment> malformedPattern = new BaseSiftPattern<>() {
+            BaseSiftPattern<SiftContext.Fragment> malformedPattern = new BaseSiftPattern<SiftContext.Fragment>() {
                 @Override
                 protected String buildRegex() {
                     return "(?unclosedGroup";
@@ -585,7 +586,7 @@ class SiftTest {
             String nestedInput = "<div>first</div><div>second</div>";
             assertTrue(Pattern.compile(regex).matcher(nestedInput).find());
 
-            var matcher = Pattern.compile(regex).matcher(nestedInput);
+            Matcher matcher = Pattern.compile(regex).matcher(nestedInput);
             if (matcher.find()) {
                 assertEquals("<div>first</div>", matcher.group(),
                         "Possessive + Negated Set should stop at the first closing tag");
@@ -1287,7 +1288,7 @@ class SiftTest {
         @Test
         @DisplayName("Should allow nesting pure unanchored patterns seamlessly")
         void shouldAllowNestingUnanchoredPatterns() {
-            var safeBlock = Sift.fromAnywhere().exactly(3).digits();
+            CharacterClassConnectorStep<SiftContext.Fragment> safeBlock = fromAnywhere().exactly(3).digits();
 
             String regex = Sift.fromStart()
                     .pattern(safeBlock)

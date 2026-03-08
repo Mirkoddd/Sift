@@ -12,7 +12,7 @@ java {
     withSourcesJar()
 }
 
-tasks.named('compileJava') {
+tasks.withType(JavaCompile).configureEach {
     options.release.set(8)
 }
 

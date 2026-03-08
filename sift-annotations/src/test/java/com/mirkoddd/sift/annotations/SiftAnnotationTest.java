@@ -75,14 +75,23 @@ class SiftAnnotationTest {
 
     /**
      * A mock DTO simulating a real-world usage of the annotation.
+     * Converted from Record to Java 8 Class.
      */
-    public record MockRegistrationDto(
-            @SiftMatch(
-                    value = NumericOnlyRule.class,
-                    message = "The provided value must contain only numeric characters."
-            )
-            String pinCode
-    ) {}
+    public static class MockRegistrationDto {
+        @SiftMatch(
+                value = NumericOnlyRule.class,
+                message = "The provided value must contain only numeric characters."
+        )
+        private final String pinCode;
+
+        public MockRegistrationDto(String pinCode) {
+            this.pinCode = pinCode;
+        }
+
+        public String pinCode() {
+            return pinCode;
+        }
+    }
 
     // ===================================================================================
     // TEST CASES (Standard Validation)
@@ -146,15 +155,33 @@ class SiftAnnotationTest {
         }
     }
 
-    public record DtoWithoutFlags(
-            @SiftMatch(value = StrictHelloRule.class)
-            String greeting
-    ) {}
+    // Converted from Record to Java 8 Class
+    public static class DtoWithoutFlags {
+        @SiftMatch(value = StrictHelloRule.class)
+        private final String greeting;
 
-    public record DtoWithInsensitiveFlag(
-            @SiftMatch(value = StrictHelloRule.class, flags = {SiftMatchFlag.CASE_INSENSITIVE})
-            String greeting
-    ) {}
+        public DtoWithoutFlags(String greeting) {
+            this.greeting = greeting;
+        }
+
+        public String greeting() {
+            return greeting;
+        }
+    }
+
+    // Converted from Record to Java 8 Class
+    public static class DtoWithInsensitiveFlag {
+        @SiftMatch(value = StrictHelloRule.class, flags = {SiftMatchFlag.CASE_INSENSITIVE})
+        private final String greeting;
+
+        public DtoWithInsensitiveFlag(String greeting) {
+            this.greeting = greeting;
+        }
+
+        public String greeting() {
+            return greeting;
+        }
+    }
 
     @Test
     @DisplayName("Should enforce case sensitivity when no flags are provided")
@@ -193,15 +220,24 @@ class SiftAnnotationTest {
 
     /**
      * A mock DTO testing Jakarta's advanced groups and payload features.
+     * Converted from Record to Java 8 Class.
      */
-    public record AdvancedDto(
-            @SiftMatch(
-                    value = NumericOnlyRule.class,
-                    groups = RegistrationPhase.class,
-                    payload = CriticalError.class
-            )
-            String value
-    ) {}
+    public static class AdvancedDto {
+        @SiftMatch(
+                value = NumericOnlyRule.class,
+                groups = RegistrationPhase.class,
+                payload = CriticalError.class
+        )
+        private final String value;
+
+        public AdvancedDto(String value) {
+            this.value = value;
+        }
+
+        public String value() {
+            return value;
+        }
+    }
 
     @Test
     @DisplayName("Should correctly handle Jakarta Validation groups and payloads")
@@ -241,11 +277,20 @@ class SiftAnnotationTest {
 
     /**
      * A mock DTO testing the error handling when a rule is invalid.
+     * Converted from Record to Java 8 Class.
      */
-    public record BrokenDto(
-            @SiftMatch(BrokenRule.class)
-            String value
-    ) {}
+    public static class BrokenDto {
+        @SiftMatch(BrokenRule.class)
+        private final String value;
+
+        public BrokenDto(String value) {
+            this.value = value;
+        }
+
+        public String value() {
+            return value;
+        }
+    }
 
     @Test
     @DisplayName("Should throw an exception when the Rule class cannot be instantiated")
@@ -262,5 +307,4 @@ class SiftAnnotationTest {
         assertTrue(exception.getCause().getMessage().contains("Failed to initialize SiftRegexProvider"),
                 "The exception message should match the one thrown in the catch block");
     }
-
 }

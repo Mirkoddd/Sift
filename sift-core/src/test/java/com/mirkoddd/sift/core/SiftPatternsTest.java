@@ -26,7 +26,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -223,7 +222,7 @@ class SiftPatternsTest {
     @Test
     @DisplayName("SiftPattern default sieve() should compile the result of shake()")
     void testDefaultSieveImplementation() {
-        BaseSiftPattern<SiftContext.Fragment> fakePattern = new BaseSiftPattern<>() {
+        BaseSiftPattern<SiftContext.Fragment> fakePattern = new BaseSiftPattern<SiftContext.Fragment>() {
             @Override
             protected String buildRegex() {
                 return "[a-z]+";

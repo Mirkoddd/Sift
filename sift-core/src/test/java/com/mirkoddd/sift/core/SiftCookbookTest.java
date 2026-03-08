@@ -21,6 +21,7 @@ import static com.mirkoddd.sift.core.SiftPatterns.literal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -28,8 +29,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.mirkoddd.sift.core.dsl.CharacterClassConnectorStep;
 import com.mirkoddd.sift.core.dsl.ConnectorStep;
 import com.mirkoddd.sift.core.dsl.SiftContext;
+import com.mirkoddd.sift.core.dsl.SiftPattern;
+import com.mirkoddd.sift.core.dsl.VariableCharacterClassConnectorStep;
+import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
 
 /**
  * Validates the real-world examples provided in the COOKBOOK.md file.
@@ -63,16 +68,16 @@ class SiftCookbookTest {
         // Define the basic building blocks using fromAnywhere() (in this case is the static Fragment shortcut exactly())
         // This ensures these blocks don't carry a '^' anchor, allowing them
         // to be safely placed in the middle or end of our final chain.
-        var hex8 = exactly(8).hexDigits();
-        var hex4 = exactly(4).hexDigits();
-        var hex12 = exactly(12).hexDigits();
-        var separator = exactly(1).character('-');
+        CharacterClassConnectorStep<SiftContext.Fragment> hex8 = exactly(8).hexDigits();
+        CharacterClassConnectorStep<SiftContext.Fragment> hex4 = exactly(4).hexDigits();
+        CharacterClassConnectorStep<SiftContext.Fragment> hex12 = exactly(12).hexDigits();
+        ConnectorStep<SiftContext.Fragment> separator = exactly(1).character('-');
 
         // Compose reusable intermediate blocks
-        var hex4andSeparator = hex4.followedBy(separator);
+        ConnectorStep<SiftContext.Fragment> hex4andSeparator = hex4.followedBy(separator);
 
         // define the list of steps to follow in the final pattern
-        List<ConnectorStep<SiftContext.Fragment>> steps = List.of(
+        List<ConnectorStep<SiftContext.Fragment>> steps = Arrays.asList(
                 separator,
                 hex4andSeparator,
                 hex4andSeparator,
@@ -99,20 +104,20 @@ class SiftCookbookTest {
     @DisplayName("Recipe 2: Parsing Log Files (TSV Format with discrete semantic parts)")
     void testLogParserRecipe() {
         // Define discrete temporal components
-        var year = Sift.fromAnywhere().exactly(4).digits();
-        var month = Sift.fromAnywhere().exactly(2).digits();
-        var day = Sift.fromAnywhere().exactly(2).digits(); // same as month, but more readable
-        var dash = Sift.fromAnywhere().character('-'); // you could also use literal("-"), less verbose
+        CharacterClassConnectorStep<SiftContext.Fragment> year = Sift.fromAnywhere().exactly(4).digits();
+        CharacterClassConnectorStep<SiftContext.Fragment> month = Sift.fromAnywhere().exactly(2).digits();
+        CharacterClassConnectorStep<SiftContext.Fragment> day = Sift.fromAnywhere().exactly(2).digits(); // same as month, but more readable
+        ConnectorStep<SiftContext.Fragment> dash = Sift.fromAnywhere().character('-'); // you could also use literal("-"), less verbose
 
-        var dateBlock = year.followedBy(List.of(dash, month, dash, day));
+        ConnectorStep<SiftContext.Fragment> dateBlock = year.followedBy(Arrays.asList(dash, month, dash, day));
 
         // Define structural components
-        var tab = Sift.fromAnywhere().tab();
-        var newline = Sift.fromAnywhere().newline();
+        ConnectorStep<SiftContext.Fragment> tab = Sift.fromAnywhere().tab();
+        ConnectorStep<SiftContext.Fragment> newline = Sift.fromAnywhere().newline();
 
         // Define payload components
-        var logLevel = Sift.fromAnywhere().oneOrMore().upperCaseLetters();
-        var message = Sift.fromAnywhere().oneOrMore().anyCharacter();
+        ConnectorStep<SiftContext.Fragment> logLevel = Sift.fromAnywhere().oneOrMore().upperCaseLetters();
+        ConnectorStep<SiftContext.Fragment> message = Sift.fromAnywhere().oneOrMore().anyCharacter();
 
         // Assemble the final pattern like a natural language sentence
         String logParserRegex = dateBlock
@@ -125,7 +130,7 @@ class SiftCookbookTest {
 
         // you can also be more concise:
         String altLogParserRegex = dateBlock
-                .followedBy(List.of(tab, logLevel, tab, message, newline))
+                .followedBy(Arrays.asList(tab, logLevel, tab, message, newline))
                 .shake();
 
         // or be more verbose
@@ -156,17 +161,17 @@ class SiftCookbookTest {
         // Notice the use of fromStart() here.
         // We enforce that the token MUST begin with this exact prefix,
         // anchoring the entire evaluation to the start of the string.
-        var prefix = Sift.fromStart().exactly(2).upperCaseLetters();
+        CharacterClassConnectorStep<SiftContext.Root> prefix = Sift.fromStart().exactly(2).upperCaseLetters();
 
         // The rest of the blocks use fromAnywhere() for composition
-        var body = Sift.fromAnywhere().between(4, 6).alphanumeric();
-        var suffix = Sift.fromAnywhere().oneOrMore().punctuation();
+        CharacterClassConnectorStep<SiftContext.Fragment> body = Sift.fromAnywhere().between(4, 6).alphanumeric();
+        ConnectorStep<SiftContext.Fragment> suffix = Sift.fromAnywhere().oneOrMore().punctuation();
 
-        var underscore = Sift.fromAnywhere().character('_');
+        ConnectorStep<SiftContext.Fragment> underscore = Sift.fromAnywhere().character('_');
 
         // Create logical compound blocks
-        var prefixWithUnderscore = prefix.followedBy(underscore);
-        var bodyWithUnderscore = body.followedBy(underscore);
+        ConnectorStep<SiftContext.Root> prefixWithUnderscore = prefix.followedBy(underscore);
+        ConnectorStep<SiftContext.Fragment> bodyWithUnderscore = body.followedBy(underscore);
 
         // Final assembly
         String securityTokenRegex = prefixWithUnderscore
@@ -191,7 +196,7 @@ class SiftCookbookTest {
     @DisplayName("Recipe 4: IP Address Validation (Highly Reusable Blocks)")
     void testIpAddressValidatorRecipe() {
         // built-in pattern for IPv4
-        var libIPv4 = SiftCatalog.ipv4();
+        SiftPattern<SiftContext.Fragment> libIPv4 = SiftCatalog.ipv4();
 
         // Building the IPv4 structure using the built-in pattern, enforcing anchor start and anchor end
         String ipv4Regex = Sift.fromStart()
@@ -224,27 +229,27 @@ class SiftCookbookTest {
         char closeBracket = '>';
         String closingTagPrefix = "</";
 
-        var tagName = Sift.fromAnywhere().oneOrMore().alphanumeric();
-        var tagContent = Sift.fromAnywhere().oneOrMore().anyCharacter();
+        VariableCharacterClassConnectorStep<SiftContext.Fragment> tagName = Sift.fromAnywhere().oneOrMore().alphanumeric();
+        VariableConnectorStep<SiftContext.Fragment> tagContent = Sift.fromAnywhere().oneOrMore().anyCharacter();
 
         // 1. Defining Named Captures to extract specific data blocks
-        var groupTag = SiftPatterns.capture("tag", tagName);
-        var groupContent = SiftPatterns.capture("content", tagContent);
+        NamedCapture groupTag = SiftPatterns.capture("tag", tagName);
+        NamedCapture groupContent = SiftPatterns.capture("content", tagContent);
 
-        var openTag = Sift.fromAnywhere()
+        ConnectorStep<SiftContext.Fragment> openTag = Sift.fromAnywhere()
                 .character(openBracket)
                 .then().namedCapture(groupTag)
                 .then().character(closeBracket);
 
-        var content = Sift.fromAnywhere().namedCapture(groupContent);
+        ConnectorStep<SiftContext.Fragment> content = Sift.fromAnywhere().namedCapture(groupContent);
 
-        var closeTag = Sift.fromAnywhere()
+        ConnectorStep<SiftContext.Fragment> closeTag = Sift.fromAnywhere()
                 .pattern(literal(closingTagPrefix))
                 .then().backreference(groupTag)
                 .then().character(closeBracket);
 
         // 2. Building the pattern. Notice how SiftGlobalFlag is elegantly applied at the root!
-        var htmlTagPattern = Sift
+        SiftPattern<SiftContext.Root> htmlTagPattern = Sift
                 .filteringWith(SiftGlobalFlag.CASE_INSENSITIVE)
                 .fromStart()
                 .pattern(openTag)
@@ -277,17 +282,17 @@ class SiftCookbookTest {
         // Goal 1: Validate a complex password using Lookaheads
         // Must contain at least one uppercase, one digit, and be at least 8 chars long.
 
-        var requiresUppercase = Sift.fromAnywhere()
+        ConnectorStep<SiftContext.Fragment> requiresUppercase = Sift.fromAnywhere()
                 .pattern(SiftPatterns.positiveLookahead(
                         Sift.fromAnywhere().zeroOrMore().anyCharacter().then().exactly(1).upperCaseLetters()
                 ));
 
-        var requiresDigit = Sift.fromAnywhere()
+        ConnectorStep<SiftContext.Fragment> requiresDigit = Sift.fromAnywhere()
                 .pattern(SiftPatterns.positiveLookahead(
                         Sift.fromAnywhere().zeroOrMore().anyCharacter().then().exactly(1).digits()
                 ));
 
-        var passwordPattern = Sift.fromStart()
+        String passwordPattern = Sift.fromStart()
                 .pattern(requiresUppercase)
                 .then().pattern(requiresDigit)
                 .then().between(8, 64).anyCharacter()
@@ -301,13 +306,13 @@ class SiftCookbookTest {
 
         // Goal 2: Match specific keywords using Alternation (anyOf)
         // Extracting valid HTTP methods
-        var httpMethodPattern = Sift.fromStart()
+        String httpMethodPattern = Sift.fromStart()
                 .pattern(SiftPatterns.anyOf(
-                        SiftPatterns.literal("GET"),
-                        SiftPatterns.literal("POST"),
-                        SiftPatterns.literal("PUT"),
-                        SiftPatterns.literal("DELETE"),
-                        SiftPatterns.literal("PATCH")
+                        literal("GET"),
+                        literal("POST"),
+                        literal("PUT"),
+                        literal("DELETE"),
+                        literal("PATCH")
                 ))
                 .andNothingElse()
                 .shake();
@@ -323,7 +328,7 @@ class SiftCookbookTest {
         // We use the possessive modifier (.withoutBacktracking()) to tell the engine to NEVER give back
         // matched characters. This prevents infinite loop evaluations.
 
-        var safePayloadExtractor = Sift.fromStart()
+        String safePayloadExtractor = Sift.fromStart()
                 .character('{')
                 // We use wordCharacters() so it stops capturing BEFORE the '}'.
                 // Using .withoutBacktracking() prevents the engine from trying alternative
@@ -342,7 +347,7 @@ class SiftCookbookTest {
         assertDoesNotMatch(safePayloadExtractor, "{invalid payload}");
 
         // Example of LAZY matching (finding the shortest path instead of greedy)
-        var lazyTagExtractor = Sift.fromStart()
+        String lazyTagExtractor = Sift.fromStart()
                 .character('<')
                 .then().oneOrMore().anyCharacter().asFewAsPossible() // Translates to "+?"
                 .then().character('>')

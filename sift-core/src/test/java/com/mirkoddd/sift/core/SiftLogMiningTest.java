@@ -42,17 +42,16 @@ class SiftLogMiningTest {
     // 1. THE WALL OF TEXT
     // =================================================================================
     // Simulates a messy server log file with mixed formats and noise.
-    // Using Text Blocks for readability.
-    private final String SERVER_LOGS = """
-            [INFO] [2026-02-18] System: Booting up services... OK.
-            [INFO] [2026-02-18] User: 'Mirko' -> {Action: Login} - IP: 192.168.1.1
-            [WARN] [2026-02-18] Disk: Usage at 85%.
-            garbage_data_noise_#$@#$
-            [ERR] [2026-02-18] User: 'HackBot' -> {Action: Inject} - BLOCKED
-            [INFO] [2026-02-18] User: 'Alice' -> {Action: Upload} - File: data.csv
-            [DEBUG] Connection established.
-            [INFO] [2026-02-18] User: 'Bob' -> {Action: Logout}
-            """;
+    // Converted to Java 8 compliant string concatenation.
+    private final String SERVER_LOGS =
+            "[INFO] [2026-02-18] System: Booting up services... OK.\n" +
+                    "[INFO] [2026-02-18] User: 'Mirko' -> {Action: Login} - IP: 192.168.1.1\n" +
+                    "[WARN] [2026-02-18] Disk: Usage at 85%.\n" +
+                    "garbage_data_noise_#$@#$\n" +
+                    "[ERR] [2026-02-18] User: 'HackBot' -> {Action: Inject} - BLOCKED\n" +
+                    "[INFO] [2026-02-18] User: 'Alice' -> {Action: Upload} - File: data.csv\n" +
+                    "[DEBUG] Connection established.\n" +
+                    "[INFO] [2026-02-18] User: 'Bob' -> {Action: Logout}\n";
 
     // =================================================================================
     // 2. THE GRAMMAR (The "Business Language")
