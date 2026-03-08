@@ -12,15 +12,19 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ '8', '11', '17', '21' ]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Set up JDK 17
+      - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v5
         with:
-          java-version: '17'
+          java-version: ${{ matrix.java }}
           distribution: 'temurin'
           cache: gradle
 
@@ -31,6 +35,7 @@ jobs:
         run: ./gradlew build jacocoTestReport
 
       - name: Generate Jacoco Badge
+        if: ${{ matrix.java == '17' }}
         uses: cicirello/jacoco-badge-generator@v2
         with:
           jacoco-csv-file: sift-core/build/reports/jacoco/test/jacocoTestReport.csv sift-annotations/build/reports/jacoco/test/jacocoTestReport.csv
@@ -38,7 +43,7 @@ jobs:
           generate-branches-badge: false
 
       - name: Commit and Push Badge
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' && matrix.java == '17' }}
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
