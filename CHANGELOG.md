@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.0.0](https://github.com/Mirkoddd/Sift/compare/sift-v4.0.0...sift-v5.0.0) (2026-03-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* streamline connector interfaces and extract phantom types
+* rename pattern() to of() for better DSL readability
+
+### Code Refactoring
+
+* rename pattern() to of() for better DSL readability ([d65078c](https://github.com/Mirkoddd/Sift/commit/d65078cccbea55db6b57c453625d9fa6848aa848))
+* streamline connector interfaces and extract phantom types ([33da874](https://github.com/Mirkoddd/Sift/commit/33da874afe9a60e16ae32b8a06a44a1549a14d2f))
+
 ## [4.0.0](https://github.com/Mirkoddd/Sift/compare/sift-v3.0.2...sift-v4.0.0) (2026-03-07)
 
 
