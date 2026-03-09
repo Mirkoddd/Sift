@@ -83,7 +83,7 @@ class SiftStructuredParsingTest {
          */
         static SiftPattern<SiftContext.Fragment> header(String level, SiftPattern<SiftContext.Fragment> timestampPattern) {
             return fromAnywhere()
-                    .pattern(literal("[" + level + "]"))
+                    .of(literal("[" + level + "]"))
                     .followedBy(literal(" ["))
                     .followedBy(timestampPattern)
                     .followedBy(literal("]"));
@@ -95,7 +95,7 @@ class SiftStructuredParsingTest {
          */
         static SiftPattern<SiftContext.Fragment> userField(SiftPattern<SiftContext.Fragment> namePattern) {
             return fromAnywhere()
-                    .pattern(literal(" User: '"))
+                    .of(literal(" User: '"))
                     .followedBy(namePattern)
                     .followedBy('\'');
         }
@@ -106,7 +106,7 @@ class SiftStructuredParsingTest {
          */
         static SiftPattern<SiftContext.Fragment> actionField(SiftPattern<SiftContext.Fragment> actionPattern) {
             return fromAnywhere()
-                    .pattern(literal(" -> {Action: "))
+                    .of(literal(" -> {Action: "))
                     .followedBy(actionPattern)
                     .followedBy('}');
         }
@@ -159,7 +159,7 @@ class SiftStructuredParsingTest {
         // --- FINAL ASSEMBLY ---
 
         SiftPattern<SiftContext.Fragment> logParser = fromAnywhere()
-                .pattern(headerPart)
+                .of(headerPart)
                 .followedBy(userPart)
                 .followedBy(actionPart);
 

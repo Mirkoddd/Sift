@@ -86,7 +86,7 @@ abstract class BaseTypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx
 
     /** {@inheritDoc} */
     @Override
-    public T pattern(SiftPattern<SiftContext.Fragment> pattern) {
+    public T of(SiftPattern<SiftContext.Fragment> pattern) {
         Objects.requireNonNull(pattern, "SiftPattern cannot be null");
         PatternAssembler next = assembler.copy();
         next.addPattern(pattern);

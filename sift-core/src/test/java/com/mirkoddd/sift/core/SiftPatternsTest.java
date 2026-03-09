@@ -128,7 +128,7 @@ class SiftPatternsTest {
         assertEquals("(?:Mr\\.[\\s])", grouped.shake());
 
         String regex = Sift.fromStart()
-                .optional().pattern(grouped)
+                .optional().of(grouped)
                 .then().oneOrMore().letters()
                 .andNothingElse()
                 .shake();

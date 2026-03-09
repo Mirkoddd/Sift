@@ -170,7 +170,7 @@ class SiftTest {
         @DisplayName("Should handle Logical OR (anyOf)")
         void anyOfCheck() {
             String regex = fromStart()
-                    .pattern(anyOf(
+                    .of(anyOf(
                             literal("cat"),
                             literal("dog"),
                             literal("mouse")
@@ -187,7 +187,7 @@ class SiftTest {
         @DisplayName("Should handle Capturing Groups")
         void capturing() {
             String regex = fromAnywhere()
-                    .pattern(capture(
+                    .of(capture(
                             literal("ID-")
                     ))
                     .then()
@@ -200,7 +200,7 @@ class SiftTest {
         @Test
         @DisplayName("Should escape literals automatically")
         void literals() {
-            String regex = fromAnywhere().pattern(literal("1.50$")).shake();
+            String regex = fromAnywhere().of(literal("1.50$")).shake();
 
             assertEquals("1\\.50\\$", regex);
             assertRegexMatches(regex, "Cost is 1.50$");
@@ -239,7 +239,7 @@ class SiftTest {
         void quantifierOnGroup() {
             String regex = fromAnywhere()
                     .oneOrMore()
-                    .pattern(literal("abc"))
+                    .of(literal("abc"))
                     .shake();
 
             assertEquals("(?:abc)+", regex);
@@ -429,7 +429,7 @@ class SiftTest {
             };
 
             IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
-                    Sift.fromStart().pattern(malformedPattern)
+                    Sift.fromStart().of(malformedPattern)
             );
 
             assertTrue(exception.getMessage().contains("Sift generated an invalid regex pattern"));
@@ -464,7 +464,7 @@ class SiftTest {
             );
 
             String regex = fromAnywhere()
-                    .pattern(literal("Order: #"))
+                    .of(literal("Order: #"))
                     .then()
                     .namedCapture(orderIdGroup)
                     .shake();
@@ -500,7 +500,7 @@ class SiftTest {
                     .oneOrMore().digits()
                     .then()
                     .optional()
-                    .pattern(decimalPart)
+                    .of(decimalPart)
                     .andNothingElse()
                     .shake();
 
@@ -543,9 +543,11 @@ class SiftTest {
             SiftPattern<SiftContext.Fragment> close = literal(">");
 
             String regex = fromStart()
-                    .pattern(open).then().namedCapture(tagGroup).then().pattern(close)
+                    .of(open).then().namedCapture(tagGroup).then().of(close)
                     .then().zeroOrMore().anyCharacter()
-                    .then().pattern(slashOpen).then().backreference(tagGroup).then().pattern(close)
+                    .then().exactly(1).of(slashOpen)
+                    .then().backreference(tagGroup)
+                    .then().exactly(1).of(close)
                     .shake();
 
             assertEquals("^\\<(?<tag>[a-zA-Z]+)\\>.*\\</\\k<tag>\\>", regex);
@@ -570,9 +572,11 @@ class SiftTest {
             SiftPattern<SiftContext.Fragment> contentExceptTag = anythingBut("<");
 
             String regex = fromStart()
-                    .pattern(open).then().namedCapture(tagGroup).then().pattern(close)
-                    .then().zeroOrMore().pattern(contentExceptTag).withoutBacktracking()
-                    .then().pattern(slashOpen).then().backreference(tagGroup).then().pattern(close)
+                    .of(open).then().namedCapture(tagGroup).then().of(close)
+                    .then().zeroOrMore().of(contentExceptTag).withoutBacktracking()
+                    .then().exactly(1).of(slashOpen)
+                    .then().backreference(tagGroup)
+                    .then().exactly(1).of(close)
                     .shake();
 
             String expected = "^\\<(?<tag>[a-zA-Z]+)\\>(?:[^<])*+\\</\\k<tag>\\>";
@@ -676,7 +680,7 @@ class SiftTest {
         @Test
         @DisplayName("Should generate possessive quantifier for patterns/groups (Eager)")
         void possessiveOnGroups() {
-            String regex = fromAnywhere().optional().pattern(literal("abc")).withoutBacktracking().shake();
+            String regex = fromAnywhere().optional().of(literal("abc")).withoutBacktracking().shake();
             assertEquals("(?:abc)?+", regex);
         }
 
@@ -720,7 +724,7 @@ class SiftTest {
             SiftPattern<SiftContext.Fragment> dog = literal("dog");
             SiftPattern<SiftContext.Fragment> animal = anyOf(cat, dog).preventBacktracking();
 
-            String regex = fromAnywhere().pattern(animal).shake();
+            String regex = fromAnywhere().of(animal).shake();
 
             assertEquals("(?>(?:cat|dog))", regex);
         }
@@ -733,14 +737,14 @@ class SiftTest {
             SiftPattern<SiftContext.Fragment> aOrAb = anyOf(a, ab);
 
             String normalRegex = fromStart()
-                    .pattern(aOrAb)
+                    .of(aOrAb)
                     .followedBy('c')
                     .andNothingElse().shake();
 
             assertTrue("abc".matches(normalRegex));
 
             String atomicRegex = fromStart()
-                    .pattern(aOrAb.preventBacktracking())
+                    .of(aOrAb.preventBacktracking())
                     .followedBy('c')
                     .andNothingElse().shake();
 
@@ -751,11 +755,11 @@ class SiftTest {
         @DisplayName("asFewAsPossible() should append '?' to variable quantifiers making them lazy")
         void testLazyModifier() {
             String regex = Sift.fromStart()
-                    .exactly(1).pattern(SiftPatterns.literal("/*"))
+                    .exactly(1).of(SiftPatterns.literal("/*"))
                     .then()
                     .zeroOrMore().anyCharacter().asFewAsPossible()
                     .then()
-                    .exactly(1).pattern(SiftPatterns.literal("*/"))
+                    .exactly(1).of(SiftPatterns.literal("*/"))
                     .shake();
 
             assertEquals("^/\\*.*?\\*/", regex);
@@ -1107,7 +1111,7 @@ class SiftTest {
             String regex = fromAnywhere()
                     .character('q')
                     .then()
-                    .pattern(positiveLookahead(literal("u")))
+                    .of(positiveLookahead(literal("u")))
                     .shake();
 
             assertEquals("q(?=u)", regex);
@@ -1119,9 +1123,9 @@ class SiftTest {
         @DisplayName("Negative Lookahead: Match 'foo' only if NOT followed by 'bar'")
         void negativeLookaheadTest() {
             String regex = fromStart()
-                    .pattern(literal("foo"))
+                    .of(literal("foo"))
                     .then()
-                    .pattern(negativeLookahead(literal("bar")))
+                    .of(negativeLookahead(literal("bar")))
                     .shake();
 
             assertEquals("^foo(?!bar)", regex);
@@ -1134,9 +1138,9 @@ class SiftTest {
         @DisplayName("Positive Lookbehind: Match 'apple' only if preceded by 'green '")
         void positiveLookbehindTest() {
             String regex = fromAnywhere()
-                    .pattern(positiveLookbehind(literal("green ")))
+                    .of(positiveLookbehind(literal("green ")))
                     .then()
-                    .pattern(literal("apple"))
+                    .of(literal("apple"))
                     .shake();
 
             assertEquals("(?<=green\\ )apple", regex);
@@ -1148,9 +1152,9 @@ class SiftTest {
         @DisplayName("Negative Lookbehind: Match 'cat' only if NOT preceded by 'super'")
         void negativeLookbehindTest() {
             String regex = fromAnywhere()
-                    .pattern(negativeLookbehind(literal("super")))
+                    .of(negativeLookbehind(literal("super")))
                     .then()
-                    .pattern(literal("cat"))
+                    .of(literal("cat"))
                     .shake();
 
             assertEquals("(?<!super)cat", regex);
@@ -1169,8 +1173,7 @@ class SiftTest {
         IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
                 Sift.fromAnywhere()
                         .namedCapture(SiftPatterns.capture("id", literal("bar")))
-                        .then()
-                        .pattern(nestedModule)
+                        .then().exactly(1).of(nestedModule)
                         .andNothingElse()
                         .shake()
         );
@@ -1187,8 +1190,7 @@ class SiftTest {
 
         String regex = Sift.fromAnywhere()
                 .namedCapture(SiftPatterns.capture("mainId", fromAnywhere().oneOrMore().letters()))
-                .then()
-                .pattern(nestedModule)
+                .then().exactly(1).of(nestedModule)
                 .andNothingElse()
                 .shake();
 
@@ -1291,7 +1293,7 @@ class SiftTest {
             CharacterClassConnectorStep<SiftContext.Fragment> safeBlock = fromAnywhere().exactly(3).digits();
 
             String regex = Sift.fromStart()
-                    .pattern(safeBlock)
+                    .of(safeBlock)
                     .andNothingElse()
                     .shake();
 

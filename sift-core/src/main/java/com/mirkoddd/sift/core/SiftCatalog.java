@@ -23,7 +23,7 @@ import com.mirkoddd.sift.core.dsl.SiftPattern;
  * A curated collection of highly optimized, ReDoS-safe regular expressions for common data formats.
  * <p>
  * These patterns can be used as standalone validators or seamlessly integrated into larger
- * {@link SiftPattern} chains using {@code .pattern(SiftCatalog.xxx())}.
+ * {@link SiftPattern} chains using {@code .of(SiftCatalog.xxx())}.
  *
  * @author Mirko Dimartino
  * @since 2.0.0
@@ -76,13 +76,13 @@ public final class SiftCatalog {
         );
 
         return Sift.fromAnywhere()
-                .pattern(octet)
+                .of(octet)
                 .followedBy('.')
-                .then().exactly(1).pattern(octet)
+                .then().exactly(1).of(octet)
                 .followedBy('.')
-                .then().exactly(1).pattern(octet)
+                .then().exactly(1).of(octet)
                 .followedBy('.')
-                .then().exactly(1).pattern(octet)
+                .then().exactly(1).of(octet)
                 .preventBacktracking();
     }
 
@@ -102,12 +102,12 @@ public final class SiftCatalog {
         SiftPattern<SiftContext.Fragment> hyphenGroup = SiftPatterns.group(SiftPatterns.literal("-"), hexPair);
 
         SiftPattern<SiftContext.Fragment> colonSeparated = Sift.fromAnywhere()
-                .pattern(hexPair)
-                .then().exactly(5).pattern(colonGroup);
+                .of(hexPair)
+                .then().exactly(5).of(colonGroup);
 
         SiftPattern<SiftContext.Fragment> hyphenSeparated = Sift.fromAnywhere()
-                .pattern(hexPair)
-                .then().exactly(5).pattern(hyphenGroup);
+                .of(hexPair)
+                .then().exactly(5).of(hyphenGroup);
 
         return SiftPatterns.anyOf(colonSeparated, hyphenSeparated)
                 .preventBacktracking();
@@ -140,11 +140,11 @@ public final class SiftCatalog {
                 .between(2, 63).letters();
 
         return Sift.fromAnywhere()
-                .pattern(localPart)
+                .of(localPart)
                 .followedBy('@')
-                .then().exactly(1).pattern(domainPart)
+                .then().exactly(1).of(domainPart)
                 .followedBy('.')
-                .then().exactly(1).pattern(tld)
+                .then().exactly(1).of(tld)
                 .preventBacktracking();
     }
 
@@ -171,11 +171,11 @@ public final class SiftCatalog {
         SiftPattern<SiftContext.Fragment> pathChar = SiftPatterns.anythingBut(" \t\n\r<>\"'");
 
         return Sift.fromAnywhere()
-                .pattern(protocol)
-                .then().exactly(1).pattern(domain)
+                .of(protocol)
+                .then().exactly(1).of(domain)
                 .followedBy('.')
-                .then().exactly(1).pattern(tld)
-                .then().zeroOrMore().pattern(pathChar)
+                .then().exactly(1).of(tld)
+                .then().zeroOrMore().of(pathChar)
                 .preventBacktracking();
     }
 
@@ -205,11 +205,11 @@ public final class SiftCatalog {
         );
 
         return Sift.fromAnywhere()
-                .pattern(year)
+                .of(year)
                 .followedBy('-')
-                .then().exactly(1).pattern(month)
+                .then().exactly(1).of(month)
                 .followedBy('-')
-                .then().exactly(1).pattern(day)
+                .then().exactly(1).of(day)
                 .preventBacktracking();
     }
 }

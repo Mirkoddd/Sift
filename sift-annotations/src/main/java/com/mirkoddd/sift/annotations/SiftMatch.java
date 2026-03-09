@@ -39,7 +39,7 @@ import java.lang.annotation.Target;
 public @interface SiftMatch {
 
     /**
-     * The class implementing {@link SiftRegexProvider} that contains the Sift pattern logic.
+     * The class implementing {@link SiftRegexProvider} that contains the Sift of logic.
      * The referenced class must have a public no-args constructor.
      *
      * @return the provider class
@@ -49,7 +49,7 @@ public @interface SiftMatch {
     /**
      * @return the error message template
      */
-    String message() default "The provided value does not match the required Sift pattern";
+    String message() default "The provided value does not match the required Sift of";
 
     /**
      * @return the groups the constraint belongs to

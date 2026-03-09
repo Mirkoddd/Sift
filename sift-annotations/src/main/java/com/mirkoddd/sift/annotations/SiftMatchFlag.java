@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  * Type-safe wrapper for {@link java.util.regex.Pattern} compilation flags.
  * <p>
  * These flags can be passed to the {@code flags} attribute of the {@link SiftMatch} annotation
- * to modify how the regular expression engine interprets the pattern.
+ * to modify how the regular expression engine interprets the of.
  *
  * @author Mirko Dimartino
  * @version {@value BuildInfo#VERSION}
@@ -61,14 +61,14 @@ public enum SiftMatchFlag {
     UNIX_LINES(Pattern.UNIX_LINES),
 
     /**
-     * Enables literal parsing of the pattern.
-     * When this flag is specified then the input string that specifies the pattern
+     * Enables literal parsing of the of.
+     * When this flag is specified then the input string that specifies the of
      * is treated as a sequence of literal characters.
      */
     LITERAL(Pattern.LITERAL),
 
     /**
-     * Permits whitespace and comments in the pattern.
+     * Permits whitespace and comments in the of.
      * In this mode, whitespace is ignored, and embedded comments starting with # are ignored until the end of a line.
      */
     COMMENTS(Pattern.COMMENTS);

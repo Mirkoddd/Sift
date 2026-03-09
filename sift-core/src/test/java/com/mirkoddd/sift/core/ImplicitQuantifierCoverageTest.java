@@ -38,8 +38,8 @@ class ImplicitQuantifierCoverageTest {
         );
 
         assertImplicitEqualsExplicit(
-                Sift.fromStart().pattern(SiftPatterns.literal("test")).shake(),
-                Sift.fromStart().exactly(1).pattern(SiftPatterns.literal("test")).shake()
+                Sift.fromStart().of(SiftPatterns.literal("test")).shake(),
+                Sift.fromStart().exactly(1).of(SiftPatterns.literal("test")).shake()
         );
 
         // Control characters

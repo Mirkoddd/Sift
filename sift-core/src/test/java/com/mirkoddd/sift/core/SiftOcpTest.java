@@ -26,7 +26,6 @@ import static com.mirkoddd.sift.core.SiftPatterns.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
-import java.util.List;
 
 @DisplayName("Open/Closed Principle Showcase")
 class SiftOcpTest {
@@ -88,11 +87,11 @@ class SiftOcpTest {
         SiftPattern<SiftContext.Fragment> logLevel   = LogGrammar.bracketed(literal("INFO"));
         SiftPattern<SiftContext.Fragment> timestamp  = LogGrammar.bracketed(LogGrammar.simpleDate());
         SiftPattern<SiftContext.Fragment> username   = LogGrammar.quoted(fromAnywhere().oneOrMore().letters());
-        SiftPattern<SiftContext.Fragment> actionData = LogGrammar.braced(fromAnywhere().pattern(action).then().oneOrMore().letters());
+        SiftPattern<SiftContext.Fragment> actionData = LogGrammar.braced(fromAnywhere().of(action).then().oneOrMore().letters());
 
         // Step B: Compose the final Regex (Declarative & Clean)
         String logRegex = fromStart()
-                .pattern(logLevel)
+                .of(logLevel)
                 .then().optional().character(' ')
                 .followedBy(timestamp)
                 .then().optional().character(' ')

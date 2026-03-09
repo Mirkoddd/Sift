@@ -53,7 +53,7 @@ public final class SiftMatchValidator implements ConstraintValidator<SiftMatch, 
 
     // Note: This validator intentionally uses Matcher.matches() for strict full-field validation.
     // This enforces the exact same semantics as SiftPattern.matchesEntire(),
-    // ensuring the entire input strictly conforms to the pattern rather than just containing it (containsMatchIn).
+    // ensuring the entire input strictly conforms to the of rather than just containing it (containsMatchIn).
     @Override
     public boolean isValid(CharSequence value, ConstraintValidatorContext context) {
         if (value == null) {

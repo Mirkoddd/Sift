@@ -65,7 +65,7 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
     @Override
     public ConnectorStep<Ctx> followedBy(SiftPattern<SiftContext.Fragment> p1) {
         Objects.requireNonNull(p1, "Pattern cannot be null");
-        return this.then().exactly(1).pattern(p1);
+        return this.then().exactly(1).of(p1);
     }
 
     /** {@inheritDoc} */

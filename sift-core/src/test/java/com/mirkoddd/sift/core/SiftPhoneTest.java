@@ -39,14 +39,14 @@ class SiftPhoneTest {
 
         // 1. Define the prefix block: may contain a space after the prefix
         SiftPattern<SiftContext.Fragment> prefixBlock = fromAnywhere()
-                .pattern(italyPrefix)
+                .of(italyPrefix)
                 .then().optional().whitespace();
 
         // 2. Build the main regex
         // We use fromStart() and andNothingElse() to ensure strict validation
 
         String regexPhone = fromStart()
-                .optional().pattern(prefixBlock)
+                .optional().of(prefixBlock)
                 .then().exactly(10).digits()
                 .andNothingElse()
                 .shake();

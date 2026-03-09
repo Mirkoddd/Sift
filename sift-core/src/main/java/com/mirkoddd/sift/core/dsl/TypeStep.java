@@ -57,7 +57,7 @@ public interface TypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx>,
     /**
      * Applies the pending quantifier to a complex SiftPattern.
      * <p>
-     * Example: {@code .optional().pattern(myGroup)} makes the entire group optional.
+     * Example: {@code .optional().of(myGroup)} makes the entire group optional.
      * Internally, this wraps the pattern in a non-capturing group {@code (?:...)} if necessary.
      *
      * @param pattern The sub-pattern to apply the quantifier to.
@@ -66,7 +66,7 @@ public interface TypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx>,
      * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
      * Reusable blocks must be unanchored.
      */
-    T pattern(SiftPattern<SiftContext.Fragment> pattern);
+    T of(SiftPattern<SiftContext.Fragment> pattern);
 
     /**
      * Matches any ASCII numeric digit.

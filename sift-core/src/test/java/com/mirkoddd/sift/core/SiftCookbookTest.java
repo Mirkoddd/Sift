@@ -136,9 +136,9 @@ class SiftCookbookTest {
         // or be more verbose
         String verboseLogParserRegex = dateBlock
                 .then().exactly(1).tab()
-                .then().exactly(1).pattern(logLevel)
+                .then().exactly(1).of(logLevel)
                 .then().tab() // you can omit exactly 1, as it's the default
-                .then().pattern(message)
+                .then().exactly(1).of(message) // I want to explicitly use exactly(1) here for readability
                 .then().newline()
                 .shake();
 
@@ -200,7 +200,7 @@ class SiftCookbookTest {
 
         // Building the IPv4 structure using the built-in pattern, enforcing anchor start and anchor end
         String ipv4Regex = Sift.fromStart()
-                .pattern(libIPv4)
+                .of(libIPv4)
                 .andNothingElse()
                 .shake();
 
@@ -244,7 +244,7 @@ class SiftCookbookTest {
         ConnectorStep<SiftContext.Fragment> content = Sift.fromAnywhere().namedCapture(groupContent);
 
         ConnectorStep<SiftContext.Fragment> closeTag = Sift.fromAnywhere()
-                .pattern(literal(closingTagPrefix))
+                .of(literal(closingTagPrefix))
                 .then().backreference(groupTag)
                 .then().character(closeBracket);
 
@@ -252,7 +252,7 @@ class SiftCookbookTest {
         SiftPattern<SiftContext.Root> htmlTagPattern = Sift
                 .filteringWith(SiftGlobalFlag.CASE_INSENSITIVE)
                 .fromStart()
-                .pattern(openTag)
+                .of(openTag)
                 .followedBy(content, closeTag)
                 .andNothingElse();
 
@@ -283,18 +283,18 @@ class SiftCookbookTest {
         // Must contain at least one uppercase, one digit, and be at least 8 chars long.
 
         ConnectorStep<SiftContext.Fragment> requiresUppercase = Sift.fromAnywhere()
-                .pattern(SiftPatterns.positiveLookahead(
+                .of(SiftPatterns.positiveLookahead(
                         Sift.fromAnywhere().zeroOrMore().anyCharacter().then().exactly(1).upperCaseLetters()
                 ));
 
         ConnectorStep<SiftContext.Fragment> requiresDigit = Sift.fromAnywhere()
-                .pattern(SiftPatterns.positiveLookahead(
+                .of(SiftPatterns.positiveLookahead(
                         Sift.fromAnywhere().zeroOrMore().anyCharacter().then().exactly(1).digits()
                 ));
 
         String passwordPattern = Sift.fromStart()
-                .pattern(requiresUppercase)
-                .then().pattern(requiresDigit)
+                .of(requiresUppercase)
+                .then().exactly(1).of(requiresDigit)
                 .then().between(8, 64).anyCharacter()
                 .andNothingElse()
                 .shake();
@@ -306,14 +306,16 @@ class SiftCookbookTest {
 
         // Goal 2: Match specific keywords using Alternation (anyOf)
         // Extracting valid HTTP methods
+        SiftPattern<SiftContext.Fragment> options = SiftPatterns.anyOf(
+                literal("GET"),
+                literal("POST"),
+                literal("PUT"),
+                literal("DELETE"),
+                literal("PATCH")
+        );
+
         String httpMethodPattern = Sift.fromStart()
-                .pattern(SiftPatterns.anyOf(
-                        literal("GET"),
-                        literal("POST"),
-                        literal("PUT"),
-                        literal("DELETE"),
-                        literal("PATCH")
-                ))
+                .exactly(1).of(options)
                 .andNothingElse()
                 .shake();
 

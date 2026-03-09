@@ -132,7 +132,7 @@ class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
 
     @Override public ConnectorStep<Ctx> anyCharacter() { return exactly(1).anyCharacter(); }
     @Override public ConnectorStep<Ctx> character(char literal) { return exactly(1).character(literal); }
-    @Override public ConnectorStep<Ctx> pattern(SiftPattern<SiftContext.Fragment> pattern) { return exactly(1).pattern(pattern); }
+    @Override public ConnectorStep<Ctx> of(SiftPattern<SiftContext.Fragment> pattern) { return exactly(1).of(pattern); }
     @Override public CharacterClassConnectorStep<Ctx> digits() { return exactly(1).digits(); }
     @Override public CharacterClassConnectorStep<Ctx> nonDigits() { return exactly(1).nonDigits(); }
     @Override public CharacterClassConnectorStep<Ctx> digitsUnicode() { return exactly(1).digitsUnicode(); }

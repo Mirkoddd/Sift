@@ -116,11 +116,11 @@ class SiftLogMiningTest {
 
         // Define complex domain objects using our Grammar
         SiftPattern<SiftContext.Fragment> validUsername = LogGrammar.quoted(fromAnywhere().oneOrMore().letters());
-        SiftPattern<SiftContext.Fragment> validAction   = LogGrammar.braced(fromAnywhere().pattern(action).then().oneOrMore().letters());
+        SiftPattern<SiftContext.Fragment> validAction   = LogGrammar.braced(fromAnywhere().of(action).then().oneOrMore().letters());
 
         // Build the extraction query: "Find a User... followed by an arrow... followed by an Action"
         SiftPattern<SiftContext.Fragment> userActionQuery = fromAnywhere()
-                .pattern(userLabel)
+                .of(userLabel)
                 .followedBy(validUsername)
                 .followedBy(arrow)
                 .followedBy(validAction);
@@ -145,11 +145,11 @@ class SiftLogMiningTest {
         SiftPattern<SiftContext.Fragment> actionLogin = literal("Action: Login"); // We are looking for this specific literal
 
         // Define the specific target action
-        SiftPattern<SiftContext.Fragment> loginAction = LogGrammar.braced(fromAnywhere().pattern(actionLogin));
+        SiftPattern<SiftContext.Fragment> loginAction = LogGrammar.braced(fromAnywhere().of(actionLogin));
 
         // Build the specific query
         SiftPattern<SiftContext.Fragment> loginQuery = fromAnywhere()
-                .pattern(userLabel)
+                .of(userLabel)
                 .followedBy(LogGrammar.quoted(fromAnywhere().oneOrMore().letters()))
                 .followedBy(arrow)
                 .followedBy(loginAction);
