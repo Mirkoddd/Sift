@@ -71,7 +71,7 @@ public final class Sift {
      *
      * @return The initial quantifier step to start the definition.
      */
-    public static QuantifierStep<SiftContext.Root> fromStart() {
+    public static Quantifier<Root> fromStart() {
         PatternAssembler assembler = new PatternAssembler();
         assembler.addAnchor(RegexSyntax.START_OF_LINE);
         return new SiftQuantifier<>(assembler);
@@ -83,7 +83,7 @@ public final class Sift {
      *
      * @return The initial quantifier step to start the definition.
      */
-    public static QuantifierStep<SiftContext.Fragment> fromAnywhere() {
+    public static Quantifier<Fragment> fromAnywhere() {
         PatternAssembler assembler = new PatternAssembler();
         return new SiftQuantifier<>(assembler);
     }
@@ -94,7 +94,7 @@ public final class Sift {
      *
      * @return The standard connector step, bypassing the initial quantifier.
      */
-    public static ConnectorStep<SiftContext.Fragment> fromWordBoundary() {
+    public static Connector<Fragment> fromWordBoundary() {
         PatternAssembler assembler = new PatternAssembler();
         assembler.addWordBoundary();
         return new SiftConnector<>(assembler);
@@ -106,7 +106,7 @@ public final class Sift {
      * @param count The exact number of repetitions.
      * @return The type step to define what to repeat.
      */
-    public static TypeStep<SiftContext.Fragment, ConnectorStep<SiftContext.Fragment>, CharacterClassConnectorStep<SiftContext.Fragment>> exactly(int count) {
+    public static Type<Fragment, Connector<Fragment>, CharacterConnector<Fragment>> exactly(int count) {
         return fromAnywhere().exactly(count);
     }
 
@@ -116,7 +116,7 @@ public final class Sift {
      * @param count The minimum number of repetitions.
      * @return The type step to define what to repeat.
      */
-    public static TypeStep<SiftContext.Fragment, VariableConnectorStep<SiftContext.Fragment>, VariableCharacterClassConnectorStep<SiftContext.Fragment>> atLeast(int count) {
+    public static Type<Fragment, VariableConnector<Fragment>, VariableCharacterConnector<Fragment>> atLeast(int count) {
         return fromAnywhere().atLeast(count);
     }
 
@@ -127,7 +127,7 @@ public final class Sift {
      * @param max The maximum number of repetitions.
      * @return The type step to define what to repeat.
      */
-    public static TypeStep<SiftContext.Fragment, VariableConnectorStep<SiftContext.Fragment>, VariableCharacterClassConnectorStep<SiftContext.Fragment>> between(int min, int max) {
+    public static Type<Fragment, VariableConnector<Fragment>, VariableCharacterConnector<Fragment>> between(int min, int max) {
         return fromAnywhere().between(min, max);
     }
 
@@ -136,7 +136,7 @@ public final class Sift {
      *
      * @return The type step to define what to repeat.
      */
-    public static TypeStep<SiftContext.Fragment, VariableConnectorStep<SiftContext.Fragment>, VariableCharacterClassConnectorStep<SiftContext.Fragment>> oneOrMore() {
+    public static Type<Fragment, VariableConnector<Fragment>, VariableCharacterConnector<Fragment>> oneOrMore() {
         return fromAnywhere().oneOrMore();
     }
 
@@ -145,7 +145,7 @@ public final class Sift {
      *
      * @return The type step to define what to repeat.
      */
-    public static TypeStep<SiftContext.Fragment, VariableConnectorStep<SiftContext.Fragment>, VariableCharacterClassConnectorStep<SiftContext.Fragment>> zeroOrMore() {
+    public static Type<Fragment, VariableConnector<Fragment>, VariableCharacterConnector<Fragment>> zeroOrMore() {
         return fromAnywhere().zeroOrMore();
     }
 
@@ -154,7 +154,7 @@ public final class Sift {
      *
      * @return The type step to define what is optional.
      */
-    public static TypeStep<SiftContext.Fragment, VariableConnectorStep<SiftContext.Fragment>, VariableCharacterClassConnectorStep<SiftContext.Fragment>> optional() {
+    public static Type<Fragment, VariableConnector<Fragment>, VariableCharacterConnector<Fragment>> optional() {
         return fromAnywhere().optional();
     }
 
@@ -178,7 +178,7 @@ public final class Sift {
          *
          * @return The initial quantifier step.
          */
-        public QuantifierStep<SiftContext.Root> fromStart() {
+        public Quantifier<Root> fromStart() {
             PatternAssembler assembler = new PatternAssembler(flags);
             assembler.addAnchor(RegexSyntax.START_OF_LINE);
             return new SiftQuantifier<>(assembler);
@@ -189,7 +189,7 @@ public final class Sift {
          *
          * @return The initial quantifier step.
          */
-        public QuantifierStep<SiftContext.Root> fromAnywhere() {
+        public Quantifier<Root> fromAnywhere() {
             PatternAssembler assembler = new PatternAssembler(flags);
             return new SiftQuantifier<>(assembler);
         }
@@ -199,7 +199,7 @@ public final class Sift {
          *
          * @return The standard connector step.
          */
-        public ConnectorStep<SiftContext.Root> fromWordBoundary() {
+        public Connector<Root> fromWordBoundary() {
             PatternAssembler assembler = new PatternAssembler(flags);
             assembler.addWordBoundary();
             return new SiftConnector<>(assembler);
@@ -211,7 +211,7 @@ public final class Sift {
          * @param count The exact number of repetitions.
          * @return The type step to define what to repeat.
          */
-        public TypeStep<SiftContext.Root, ConnectorStep<SiftContext.Root>, CharacterClassConnectorStep<SiftContext.Root>> exactly(int count) {
+        public Type<Root, Connector<Root>, CharacterConnector<Root>> exactly(int count) {
             return fromAnywhere().exactly(count);
         }
 
@@ -221,7 +221,7 @@ public final class Sift {
          * @param count The minimum number of repetitions.
          * @return The type step to define what to repeat.
          */
-        public TypeStep<SiftContext.Root, VariableConnectorStep<SiftContext.Root>, VariableCharacterClassConnectorStep<SiftContext.Root>> atLeast(int count) {
+        public Type<Root, VariableConnector<Root>, VariableCharacterConnector<Root>> atLeast(int count) {
             return fromAnywhere().atLeast(count);
         }
 
@@ -232,7 +232,7 @@ public final class Sift {
          * @param max The maximum number of repetitions.
          * @return The type step to define what to repeat.
          */
-        public TypeStep<SiftContext.Root, VariableConnectorStep<SiftContext.Root>, VariableCharacterClassConnectorStep<SiftContext.Root>> between(int min, int max) {
+        public Type<Root, VariableConnector<Root>, VariableCharacterConnector<Root>> between(int min, int max) {
             return fromAnywhere().between(min, max);
         }
 
@@ -241,7 +241,7 @@ public final class Sift {
          *
          * @return The type step to define what to repeat.
          */
-        public TypeStep<SiftContext.Root, VariableConnectorStep<SiftContext.Root>, VariableCharacterClassConnectorStep<SiftContext.Root>> oneOrMore() {
+        public Type<Root, VariableConnector<Root>, VariableCharacterConnector<Root>> oneOrMore() {
             return fromAnywhere().oneOrMore();
         }
 
@@ -250,7 +250,7 @@ public final class Sift {
          *
          * @return The type step to define what to repeat.
          */
-        public TypeStep<SiftContext.Root, VariableConnectorStep<SiftContext.Root>, VariableCharacterClassConnectorStep<SiftContext.Root>> zeroOrMore() {
+        public Type<Root, VariableConnector<Root>, VariableCharacterConnector<Root>> zeroOrMore() {
             return fromAnywhere().zeroOrMore();
         }
 
@@ -259,7 +259,7 @@ public final class Sift {
          *
          * @return The type step to define what is optional.
          */
-        public TypeStep<SiftContext.Root, VariableConnectorStep<SiftContext.Root>, VariableCharacterClassConnectorStep<SiftContext.Root>> optional() {
+        public Type<Root, VariableConnector<Root>, VariableCharacterConnector<Root>> optional() {
             return fromAnywhere().optional();
         }
     }

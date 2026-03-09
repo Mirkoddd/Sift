@@ -20,13 +20,13 @@ import com.mirkoddd.sift.core.NamedCapture;
 /**
  * Defines <b>HOW MANY TIMES</b> the next element should appear, or injects structural elements.
  * <p>
- * This interface extends {@link TypeStep}, which allows for a concise syntax:
+ * This interface extends {@link Type}, which allows for a concise syntax:
  * if no quantifier is explicitly chosen, it defaults to matching <b>exactly once</b>.
  * <p>
  * <b>Type-Safe Modifiers:</b><br>
  * Notice the different return types. Methods producing a fixed repetition (like {@code exactly()})
- * return a standard {@code ConnectorStep}. Methods producing a variable repetition (like {@code oneOrMore()})
- * return a {@code VariableConnectorStep}, which safely unlocks greedy/reluctant/possessive modifiers.
+ * return a standard {@code Connector}. Methods producing a variable repetition (like {@code oneOrMore()})
+ * return a {@code VariableConnector}, which safely unlocks greedy/reluctant/possessive modifiers.
  * <p>
  * <b>Flow Examples:</b>
  * <ul>
@@ -38,7 +38,7 @@ import com.mirkoddd.sift.core.NamedCapture;
  *
  * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-public interface QuantifierStep<Ctx extends SiftContext> extends TypeStep<Ctx, ConnectorStep<Ctx>, CharacterClassConnectorStep<Ctx>> {
+public interface Quantifier<Ctx extends SiftContext> extends Type<Ctx, Connector<Ctx>, CharacterConnector<Ctx>> {
 
     /**
      * Matches exactly {@code n} times. Generates {@code {n}}.
@@ -47,7 +47,7 @@ public interface QuantifierStep<Ctx extends SiftContext> extends TypeStep<Ctx, C
      * @return The next step to define WHAT to repeat (fixed length).
      * @throws IllegalArgumentException if n is negative.
      */
-    TypeStep<Ctx, ConnectorStep<Ctx>, CharacterClassConnectorStep<Ctx>> exactly(int n);
+    Type<Ctx, Connector<Ctx>, CharacterConnector<Ctx>> exactly(int n);
 
     /**
      * Matches at least {@code n} times. Generates {@code {n,}}.
@@ -59,7 +59,7 @@ public interface QuantifierStep<Ctx extends SiftContext> extends TypeStep<Ctx, C
      * @return The next step to define WHAT to repeat (variable length, allowing relational modifiers).
      * @throws IllegalArgumentException if n is negative.
      */
-    TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> atLeast(int n);
+    Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> atLeast(int n);
 
     /**
      * Matches one or more times. Generates {@code +}.
@@ -68,7 +68,7 @@ public interface QuantifierStep<Ctx extends SiftContext> extends TypeStep<Ctx, C
      *
      * @return The next step to define WHAT to repeat (variable length, allowing relational modifiers).
      */
-    TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> oneOrMore();
+    Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> oneOrMore();
 
     /**
      * Matches zero or more times (Greedy by default). Generates {@code *}.
@@ -77,7 +77,7 @@ public interface QuantifierStep<Ctx extends SiftContext> extends TypeStep<Ctx, C
      *
      * @return The next step to define WHAT to repeat (variable length, allowing relational modifiers).
      */
-    TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> zeroOrMore();
+    Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> zeroOrMore();
 
     /**
      * Matches zero or one time. Generates {@code ?}.
@@ -87,7 +87,7 @@ public interface QuantifierStep<Ctx extends SiftContext> extends TypeStep<Ctx, C
      *
      * @return The next step to define WHAT is optional (variable length, allowing relational modifiers).
      */
-    TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> optional();
+    Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> optional();
 
     /**
      * Matches at most {@code max} times. Generates {@code {0,max}}.
@@ -96,7 +96,7 @@ public interface QuantifierStep<Ctx extends SiftContext> extends TypeStep<Ctx, C
      * @return The next step to define WHAT to repeat (variable length, allowing relational modifiers).
      * @throws IllegalArgumentException if max is zero or negative.
      */
-    TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> atMost(int max);
+    Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> atMost(int max);
 
     /**
      * Matches between {@code min} and {@code max} times inclusive. Generates {@code {min,max}}.
@@ -106,7 +106,7 @@ public interface QuantifierStep<Ctx extends SiftContext> extends TypeStep<Ctx, C
      * @return The next step to define WHAT to repeat (variable length, allowing relational modifiers).
      * @throws IllegalArgumentException if min is negative, max is zero or negative, or if min is greater than max.
      */
-    TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> between(int min, int max);
+    Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> between(int min, int max);
 
     /**
      * Starts a named capturing group using the provided definition.
@@ -114,7 +114,7 @@ public interface QuantifierStep<Ctx extends SiftContext> extends TypeStep<Ctx, C
      * @param group The named capture definition containing the name and the pattern.
      * @return A connector step to continue the chain.
      */
-    ConnectorStep<Ctx> namedCapture(NamedCapture group);
+    Connector<Ctx> namedCapture(NamedCapture group);
 
     /**
      * References a previously captured group by its name.
@@ -123,5 +123,5 @@ public interface QuantifierStep<Ctx extends SiftContext> extends TypeStep<Ctx, C
      * @return A connector step to continue the chain.
      * @throws IllegalStateException if the group has not been captured yet in this builder sequence.
      */
-    ConnectorStep<Ctx> backreference(NamedCapture group);
+    Connector<Ctx> backreference(NamedCapture group);
 }

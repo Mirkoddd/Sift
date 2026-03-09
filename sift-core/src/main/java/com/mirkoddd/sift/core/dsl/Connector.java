@@ -24,7 +24,7 @@ package com.mirkoddd.sift.core.dsl;
  *
  * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-public interface ConnectorStep<Ctx extends SiftContext> extends SiftPattern<Ctx> {
+public interface Connector<Ctx extends SiftContext> extends SiftPattern<Ctx> {
 
     /**
      * Transitions the builder state to define the quantifier for the <b>next</b> sequence element.
@@ -36,9 +36,9 @@ public interface ConnectorStep<Ctx extends SiftContext> extends SiftPattern<Ctx>
      * .oneOrMore().letters()
      * </pre>
      *
-     * @return A {@link QuantifierStep} to configure the repetition of the upcoming token.
+     * @return A {@link Quantifier} to configure the repetition of the upcoming token.
      */
-    QuantifierStep<Ctx> then();
+    Quantifier<Ctx> then();
 
     /**
      * Safely appends a single literal character to the current sequence.
@@ -47,7 +47,7 @@ public interface ConnectorStep<Ctx extends SiftContext> extends SiftPattern<Ctx>
      * @param c The literal character to append.
      * @return The current connector step for further chaining.
      */
-    ConnectorStep<Ctx> followedBy(char c);
+    Connector<Ctx> followedBy(char c);
 
     /**
      * Appends an existing, pre-compiled SiftPattern to the current sequence.
@@ -60,7 +60,7 @@ public interface ConnectorStep<Ctx extends SiftContext> extends SiftPattern<Ctx>
      * @param p1 The fragment pattern to append.
      * @return The current connector step for further chaining.
      */
-    ConnectorStep<Ctx> followedBy(SiftPattern<SiftContext.Fragment> p1);
+    Connector<Ctx> followedBy(SiftPattern<Fragment> p1);
 
     /**
      * Convenience overload for composing two patterns sequentially.
@@ -69,7 +69,7 @@ public interface ConnectorStep<Ctx extends SiftContext> extends SiftPattern<Ctx>
      * @param p2 The second fragment pattern to append.
      * @return The current connector step for further chaining.
      */
-    ConnectorStep<Ctx> followedBy(SiftPattern<SiftContext.Fragment> p1, SiftPattern<SiftContext.Fragment> p2);
+    Connector<Ctx> followedBy(SiftPattern<Fragment> p1, SiftPattern<Fragment> p2);
 
     /**
      * Appends a collection of patterns sequentially.
@@ -81,7 +81,7 @@ public interface ConnectorStep<Ctx extends SiftContext> extends SiftPattern<Ctx>
      * @param patterns An iterable of fragment patterns to be appended in order.
      * @return The current connector step for further chaining.
      */
-    ConnectorStep<Ctx> followedBy(Iterable<? extends SiftPattern<SiftContext.Fragment>> patterns);
+    Connector<Ctx> followedBy(Iterable<? extends SiftPattern<Fragment>> patterns);
 
     /**
      * Appends a Word Boundary {@code \b} to the sequence.
@@ -91,7 +91,7 @@ public interface ConnectorStep<Ctx extends SiftContext> extends SiftPattern<Ctx>
      *
      * @return The current connector step for further chaining.
      */
-    ConnectorStep<Ctx> wordBoundary();
+    Connector<Ctx> wordBoundary();
 
     /**
      * Finalizes the regex chain by appending an end-of-line anchor {@code $}.
@@ -103,5 +103,5 @@ public interface ConnectorStep<Ctx extends SiftContext> extends SiftPattern<Ctx>
      *
      * @return A sealed, anchored Root pattern ready for compilation.
      */
-    SiftPattern<SiftContext.Root> andNothingElse();
+    SiftPattern<Root> andNothingElse();
 }

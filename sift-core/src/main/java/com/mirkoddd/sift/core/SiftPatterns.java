@@ -15,7 +15,7 @@
  */
 package com.mirkoddd.sift.core;
 
-import com.mirkoddd.sift.core.dsl.SiftContext;
+import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.Objects;
@@ -49,16 +49,16 @@ public final class SiftPatterns {
      * @return A fragment representing the OR logic.
      */
     @SafeVarargs
-    public static SiftPattern<SiftContext.Fragment> anyOf(
-            SiftPattern<SiftContext.Fragment> option1,
-            SiftPattern<SiftContext.Fragment> option2,
-            SiftPattern<SiftContext.Fragment>... additionalOptions) {
+    public static SiftPattern<Fragment> anyOf(
+            SiftPattern<Fragment> option1,
+            SiftPattern<Fragment> option2,
+            SiftPattern<Fragment>... additionalOptions) {
 
         Objects.requireNonNull(option1, "First option cannot be null");
         Objects.requireNonNull(option2, "Second option cannot be null");
         Objects.requireNonNull(additionalOptions, "Additional options array cannot be null");
 
-        for (SiftPattern<SiftContext.Fragment> opt : additionalOptions) {
+        for (SiftPattern<Fragment> opt : additionalOptions) {
             Objects.requireNonNull(opt, "Additional option cannot be null");
         }
 
@@ -70,7 +70,7 @@ public final class SiftPatterns {
             sb.append(RegexSyntax.OR);
             sb.append(option2.shake());
 
-            for (SiftPattern<SiftContext.Fragment> opt : additionalOptions) {
+            for (SiftPattern<Fragment> opt : additionalOptions) {
                 sb.append(RegexSyntax.OR);
                 sb.append(opt.shake());
             }
@@ -90,7 +90,7 @@ public final class SiftPatterns {
      * @return A fragment representing the OR logic.
      * @throws IllegalArgumentException if the list is null or empty.
      */
-    public static SiftPattern<SiftContext.Fragment> anyOf(java.util.List<? extends SiftPattern<SiftContext.Fragment>> patterns) {
+    public static SiftPattern<Fragment> anyOf(java.util.List<? extends SiftPattern<Fragment>> patterns) {
         if (patterns == null || patterns.isEmpty()) {
             throw new IllegalArgumentException("anyOf() requires at least one pattern in the list.");
         }
@@ -121,7 +121,7 @@ public final class SiftPatterns {
      * @param pattern The pattern to isolate and capture.
      * @return A capturing group fragment.
      */
-    public static SiftPattern<SiftContext.Fragment> capture(SiftPattern<SiftContext.Fragment> pattern) {
+    public static SiftPattern<Fragment> capture(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Pattern to capture cannot be null");
         return memoize(() -> RegexSyntax.GROUP_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
@@ -137,7 +137,7 @@ public final class SiftPatterns {
      * @param pattern The condition that must be met ahead.
      * @return A lookahead fragment.
      */
-    public static SiftPattern<SiftContext.Fragment> positiveLookahead(SiftPattern<SiftContext.Fragment> pattern) {
+    public static SiftPattern<Fragment> positiveLookahead(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
         return memoize(() -> RegexSyntax.POSITIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
@@ -151,7 +151,7 @@ public final class SiftPatterns {
      * @param pattern The condition that must NOT be met ahead.
      * @return A negative lookahead fragment.
      */
-    public static SiftPattern<SiftContext.Fragment> negativeLookahead(SiftPattern<SiftContext.Fragment> pattern) {
+    public static SiftPattern<Fragment> negativeLookahead(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
         return memoize(() -> RegexSyntax.NEGATIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
@@ -165,7 +165,7 @@ public final class SiftPatterns {
      * @param pattern The condition that must be met behind.
      * @return A lookbehind fragment.
      */
-    public static SiftPattern<SiftContext.Fragment> positiveLookbehind(SiftPattern<SiftContext.Fragment> pattern) {
+    public static SiftPattern<Fragment> positiveLookbehind(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
         return memoize(() -> RegexSyntax.POSITIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
@@ -179,7 +179,7 @@ public final class SiftPatterns {
      * @param pattern The condition that must NOT be met behind.
      * @return A negative lookbehind fragment.
      */
-    public static SiftPattern<SiftContext.Fragment> negativeLookbehind(SiftPattern<SiftContext.Fragment> pattern) {
+    public static SiftPattern<Fragment> negativeLookbehind(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
         return memoize(() -> RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
@@ -194,7 +194,7 @@ public final class SiftPatterns {
      * @param pattern   The pattern to capture.
      * @return A strongly-typed NamedCapture object.
      */
-    public static NamedCapture capture(String groupName, SiftPattern<SiftContext.Fragment> pattern) {
+    public static NamedCapture capture(String groupName, SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Pattern to capture cannot be null");
         GroupName validatedName = GroupName.of(groupName);
         return new NamedCapture(validatedName, pattern);
@@ -211,14 +211,14 @@ public final class SiftPatterns {
      * @return A non-capturing group fragment.
      */
     @SafeVarargs
-    public static SiftPattern<SiftContext.Fragment> group(
-            SiftPattern<SiftContext.Fragment> first,
-            SiftPattern<SiftContext.Fragment>... then) {
+    public static SiftPattern<Fragment> group(
+            SiftPattern<Fragment> first,
+            SiftPattern<Fragment>... then) {
 
         Objects.requireNonNull(first, "First pattern in group cannot be null");
         Objects.requireNonNull(then, "Additional patterns array cannot be null");
 
-        for (SiftPattern<SiftContext.Fragment> opt : then) {
+        for (SiftPattern<Fragment> opt : then) {
             Objects.requireNonNull(opt, "Additional option cannot be null");
         }
 
@@ -228,7 +228,7 @@ public final class SiftPatterns {
 
             sb.append(first.shake());
 
-            for (SiftPattern<SiftContext.Fragment> p : then) {
+            for (SiftPattern<Fragment> p : then) {
                 sb.append(p.shake());
             }
 
@@ -247,7 +247,7 @@ public final class SiftPatterns {
      * @return A safely escaped pattern fragment.
      * @throws IllegalArgumentException if the text is empty.
      */
-    public static SiftPattern<SiftContext.Fragment> literal(String text) {
+    public static SiftPattern<Fragment> literal(String text) {
         Objects.requireNonNull(text, "Literal text cannot be null");
 
         if (text.isEmpty()) {
@@ -271,7 +271,7 @@ public final class SiftPatterns {
      * @return A negated character class fragment.
      * @throws IllegalArgumentException if the characters string is empty.
      */
-    public static SiftPattern<SiftContext.Fragment> anythingBut(String chars) {
+    public static SiftPattern<Fragment> anythingBut(String chars) {
         Objects.requireNonNull(chars, "Excluded characters string cannot be null");
 
         if (chars.isEmpty()) {
@@ -296,11 +296,11 @@ public final class SiftPatterns {
      * Wraps a string generator in a memoized pattern to ensure the string building
      * logic is executed only once, optimizing performance.
      */
-    private static SiftPattern<SiftContext.Fragment> memoize(Supplier<String> generator) {
+    private static SiftPattern<Fragment> memoize(Supplier<String> generator) {
         return new MemoizedPattern(generator);
     }
 
-    private static final class MemoizedPattern extends BaseSiftPattern<SiftContext.Fragment> {
+    private static final class MemoizedPattern extends BaseSiftPattern<Fragment> {
         private final Supplier<String> generator;
 
         private MemoizedPattern(Supplier<String> generator) {

@@ -15,7 +15,7 @@
  */
 package com.mirkoddd.sift.core;
 
-import com.mirkoddd.sift.core.dsl.SiftContext;
+import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.Collections;
@@ -156,7 +156,7 @@ class PatternAssembler {
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
-    void addPattern(SiftPattern<SiftContext.Fragment> pattern) {
+    void addPattern(SiftPattern<Fragment> pattern) {
         flush();
         extractAndCheckGroupsAndRequirements(pattern, null);
 

@@ -23,19 +23,19 @@ package com.mirkoddd.sift.core.dsl;
  * (like {@code withoutBacktracking()}) on the exact same node, preventing the loss
  * of either capability.
  */
-public interface VariableCharacterClassConnectorStep<Ctx extends SiftContext> extends VariableConnectorStep<Ctx>, CharacterClassConnectorStep<Ctx> {
+public interface VariableCharacterConnector<Ctx extends SiftContext> extends VariableConnector<Ctx>, CharacterConnector<Ctx> {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    VariableCharacterClassConnectorStep<Ctx> including(char extra, char... additionalExtras);
+    VariableCharacterConnector<Ctx> including(char extra, char... additionalExtras);
 
     /**
      * {@inheritDoc}
      */
     @Override
-    VariableCharacterClassConnectorStep<Ctx> excluding(char excluded, char... additionalExcluded);
+    VariableCharacterConnector<Ctx> excluding(char excluded, char... additionalExcluded);
 
     /**
      * Anchors the pattern to the end of the input string using {@code $}.
@@ -49,5 +49,5 @@ public interface VariableCharacterClassConnectorStep<Ctx extends SiftContext> ex
      * @return The final {@link SiftPattern} ready for evaluation.
      */
     @Override
-    SiftPattern<SiftContext.Root> andNothingElse();
+    SiftPattern<Root> andNothingElse();
 }

@@ -33,7 +33,7 @@ import java.util.Objects;
  *
  * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
+class SiftQuantifier<Ctx extends SiftContext> implements Quantifier<Ctx> {
 
     protected final PatternAssembler assembler;
 
@@ -48,7 +48,7 @@ class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
 
     /** {@inheritDoc} */
     @Override
-    public TypeStep<Ctx, ConnectorStep<Ctx>, CharacterClassConnectorStep<Ctx>> exactly(int n) {
+    public Type<Ctx, Connector<Ctx>, CharacterConnector<Ctx>> exactly(int n) {
         if (n <= 0) throw new IllegalArgumentException("Quantity must be strictly positive: " + n);
         PatternAssembler next = assembler.copy();
         next.setQuantifier((n == 1) ? RegexSyntax.EMPTY : RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.QUANTIFIER_CLOSE);
@@ -57,7 +57,7 @@ class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
 
     /** {@inheritDoc} */
     @Override
-    public TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> atLeast(int n) {
+    public Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> atLeast(int n) {
         if (n < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + n);
         PatternAssembler next = assembler.copy();
         next.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.COMMA + RegexSyntax.QUANTIFIER_CLOSE);
@@ -66,7 +66,7 @@ class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
 
     /** {@inheritDoc} */
     @Override
-    public TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> oneOrMore() {
+    public Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> oneOrMore() {
         PatternAssembler next = assembler.copy();
         next.setQuantifier(RegexSyntax.ONE_OR_MORE);
         return new SiftVariableType<>(next);
@@ -74,7 +74,7 @@ class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
 
     /** {@inheritDoc} */
     @Override
-    public TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> zeroOrMore() {
+    public Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> zeroOrMore() {
         PatternAssembler next = assembler.copy();
         next.setQuantifier(RegexSyntax.ZERO_OR_MORE);
         return new SiftVariableType<>(next);
@@ -82,7 +82,7 @@ class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
 
     /** {@inheritDoc} */
     @Override
-    public TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> optional() {
+    public Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> optional() {
         PatternAssembler next = assembler.copy();
         next.setQuantifier(RegexSyntax.OPTIONAL);
         return new SiftVariableType<>(next);
@@ -90,7 +90,7 @@ class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
 
     /** {@inheritDoc} */
     @Override
-    public TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> atMost(int max) {
+    public Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> atMost(int max) {
         if (max == 0) throw new IllegalArgumentException("atMost(0) is invalid as it always matches an empty string.");
         if (max < 0) throw new IllegalArgumentException("Max quantity cannot be negative: " + max);
         PatternAssembler next = assembler.copy();
@@ -100,7 +100,7 @@ class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
 
     /** {@inheritDoc} */
     @Override
-    public TypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> between(int min, int max) {
+    public Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> between(int min, int max) {
         if (min == 0 && max == 0) throw new IllegalArgumentException("between(0, 0) is invalid as it always matches an empty string.");
         if (min < 0) throw new IllegalArgumentException("Min quantity cannot be negative: " + min);
         if (max <= 0) throw new IllegalArgumentException("Max quantity must be strictly positive: " + max);
@@ -112,7 +112,7 @@ class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
 
     /** {@inheritDoc} */
     @Override
-    public ConnectorStep<Ctx> namedCapture(NamedCapture group) {
+    public Connector<Ctx> namedCapture(NamedCapture group) {
         Objects.requireNonNull(group, "NamedCapture cannot be null.");
         PatternAssembler next = assembler.copy();
         next.addNamedCapture(group);
@@ -121,7 +121,7 @@ class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
 
     /** {@inheritDoc} */
     @Override
-    public ConnectorStep<Ctx> backreference(NamedCapture group) {
+    public Connector<Ctx> backreference(NamedCapture group) {
         Objects.requireNonNull(group, "Backreference group cannot be null.");
         PatternAssembler next = assembler.copy();
         next.addBackreference(group);
@@ -130,80 +130,80 @@ class SiftQuantifier<Ctx extends SiftContext> implements QuantifierStep<Ctx> {
 
     // --- Implicit Quantity Fallbacks (Defaults to exactly 1) ---
 
-    @Override public ConnectorStep<Ctx> anyCharacter() { return exactly(1).anyCharacter(); }
-    @Override public ConnectorStep<Ctx> character(char literal) { return exactly(1).character(literal); }
-    @Override public ConnectorStep<Ctx> of(SiftPattern<SiftContext.Fragment> pattern) { return exactly(1).of(pattern); }
-    @Override public CharacterClassConnectorStep<Ctx> digits() { return exactly(1).digits(); }
-    @Override public CharacterClassConnectorStep<Ctx> nonDigits() { return exactly(1).nonDigits(); }
-    @Override public CharacterClassConnectorStep<Ctx> digitsUnicode() { return exactly(1).digitsUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> nonDigitsUnicode() { return exactly(1).nonDigitsUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> letters() { return exactly(1).letters(); }
-    @Override public CharacterClassConnectorStep<Ctx> nonLetters() { return exactly(1).nonLetters(); }
-    @Override public CharacterClassConnectorStep<Ctx> upperCaseLetters() { return exactly(1).upperCaseLetters(); }
-    @Override public CharacterClassConnectorStep<Ctx> lowerCaseLetters() { return exactly(1).lowerCaseLetters(); }
-    @Override public CharacterClassConnectorStep<Ctx> lettersUnicode() { return exactly(1).lettersUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> nonLettersUnicode() { return exactly(1).nonLettersUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> upperCaseLettersUnicode() { return exactly(1).upperCaseLettersUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> lowerCaseLettersUnicode() { return exactly(1).lowerCaseLettersUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> alphanumeric() { return exactly(1).alphanumeric(); }
-    @Override public CharacterClassConnectorStep<Ctx> nonAlphanumeric() { return exactly(1).nonAlphanumeric(); }
-    @Override public CharacterClassConnectorStep<Ctx> alphanumericUnicode() { return exactly(1).alphanumericUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> nonAlphanumericUnicode() { return exactly(1).nonAlphanumericUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> wordCharacters() { return exactly(1).wordCharacters(); }
-    @Override public CharacterClassConnectorStep<Ctx> nonWordCharacters() { return exactly(1).nonWordCharacters(); }
-    @Override public CharacterClassConnectorStep<Ctx> wordCharactersUnicode() { return exactly(1).wordCharactersUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> nonWordCharactersUnicode() { return exactly(1).nonWordCharactersUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> whitespace() { return exactly(1).whitespace(); }
-    @Override public CharacterClassConnectorStep<Ctx> nonWhitespace() { return exactly(1).nonWhitespace(); }
-    @Override public CharacterClassConnectorStep<Ctx> whitespaceUnicode() { return exactly(1).whitespaceUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> nonWhitespaceUnicode() { return exactly(1).nonWhitespaceUnicode(); }
-    @Override public CharacterClassConnectorStep<Ctx> range(char start, char end) { return exactly(1).range(start, end); }
+    @Override public Connector<Ctx> anyCharacter() { return exactly(1).anyCharacter(); }
+    @Override public Connector<Ctx> character(char literal) { return exactly(1).character(literal); }
+    @Override public Connector<Ctx> of(SiftPattern<Fragment> pattern) { return exactly(1).of(pattern); }
+    @Override public CharacterConnector<Ctx> digits() { return exactly(1).digits(); }
+    @Override public CharacterConnector<Ctx> nonDigits() { return exactly(1).nonDigits(); }
+    @Override public CharacterConnector<Ctx> digitsUnicode() { return exactly(1).digitsUnicode(); }
+    @Override public CharacterConnector<Ctx> nonDigitsUnicode() { return exactly(1).nonDigitsUnicode(); }
+    @Override public CharacterConnector<Ctx> letters() { return exactly(1).letters(); }
+    @Override public CharacterConnector<Ctx> nonLetters() { return exactly(1).nonLetters(); }
+    @Override public CharacterConnector<Ctx> upperCaseLetters() { return exactly(1).upperCaseLetters(); }
+    @Override public CharacterConnector<Ctx> lowerCaseLetters() { return exactly(1).lowerCaseLetters(); }
+    @Override public CharacterConnector<Ctx> lettersUnicode() { return exactly(1).lettersUnicode(); }
+    @Override public CharacterConnector<Ctx> nonLettersUnicode() { return exactly(1).nonLettersUnicode(); }
+    @Override public CharacterConnector<Ctx> upperCaseLettersUnicode() { return exactly(1).upperCaseLettersUnicode(); }
+    @Override public CharacterConnector<Ctx> lowerCaseLettersUnicode() { return exactly(1).lowerCaseLettersUnicode(); }
+    @Override public CharacterConnector<Ctx> alphanumeric() { return exactly(1).alphanumeric(); }
+    @Override public CharacterConnector<Ctx> nonAlphanumeric() { return exactly(1).nonAlphanumeric(); }
+    @Override public CharacterConnector<Ctx> alphanumericUnicode() { return exactly(1).alphanumericUnicode(); }
+    @Override public CharacterConnector<Ctx> nonAlphanumericUnicode() { return exactly(1).nonAlphanumericUnicode(); }
+    @Override public CharacterConnector<Ctx> wordCharacters() { return exactly(1).wordCharacters(); }
+    @Override public CharacterConnector<Ctx> nonWordCharacters() { return exactly(1).nonWordCharacters(); }
+    @Override public CharacterConnector<Ctx> wordCharactersUnicode() { return exactly(1).wordCharactersUnicode(); }
+    @Override public CharacterConnector<Ctx> nonWordCharactersUnicode() { return exactly(1).nonWordCharactersUnicode(); }
+    @Override public CharacterConnector<Ctx> whitespace() { return exactly(1).whitespace(); }
+    @Override public CharacterConnector<Ctx> nonWhitespace() { return exactly(1).nonWhitespace(); }
+    @Override public CharacterConnector<Ctx> whitespaceUnicode() { return exactly(1).whitespaceUnicode(); }
+    @Override public CharacterConnector<Ctx> nonWhitespaceUnicode() { return exactly(1).nonWhitespaceUnicode(); }
+    @Override public CharacterConnector<Ctx> range(char start, char end) { return exactly(1).range(start, end); }
 
     /** {@inheritDoc} */
     @Override
-    public ConnectorStep<Ctx> newline() {
+    public Connector<Ctx> newline() {
         return exactly(1).newline();
     }
 
     /** {@inheritDoc} */
     @Override
-    public ConnectorStep<Ctx> carriageReturn() {
+    public Connector<Ctx> carriageReturn() {
         return exactly(1).carriageReturn();
     }
 
     /** {@inheritDoc} */
     @Override
-    public ConnectorStep<Ctx> tab() {
+    public Connector<Ctx> tab() {
         return exactly(1).tab();
     }
 
     /** {@inheritDoc} */
     @Override
-    public CharacterClassConnectorStep<Ctx> hexDigits() {
+    public CharacterConnector<Ctx> hexDigits() {
         return exactly(1).hexDigits();
     }
 
     /** {@inheritDoc} */
     @Override
-    public CharacterClassConnectorStep<Ctx> punctuation() {
+    public CharacterConnector<Ctx> punctuation() {
         return exactly(1).punctuation();
     }
 
     /** {@inheritDoc} */
     @Override
-    public CharacterClassConnectorStep<Ctx> punctuationUnicode() {
+    public CharacterConnector<Ctx> punctuationUnicode() {
         return exactly(1).punctuationUnicode();
     }
 
     /** {@inheritDoc} */
     @Override
-    public CharacterClassConnectorStep<Ctx> blank() {
+    public CharacterConnector<Ctx> blank() {
         return exactly(1).blank();
     }
 
     /** {@inheritDoc} */
     @Override
-    public CharacterClassConnectorStep<Ctx> blankUnicode() {
+    public CharacterConnector<Ctx> blankUnicode() {
         return exactly(1).blankUnicode();
     }
 }

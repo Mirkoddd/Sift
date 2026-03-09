@@ -17,7 +17,8 @@ package com.mirkoddd.sift.core;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import com.mirkoddd.sift.core.dsl.SiftContext;
+
+import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.ArrayList;
@@ -81,7 +82,7 @@ class SiftStructuredParsingTest {
          * Matches the log header structure: [LEVEL] [TIMESTAMP]
          * Encapsulates the brackets and spacing.
          */
-        static SiftPattern<SiftContext.Fragment> header(String level, SiftPattern<SiftContext.Fragment> timestampPattern) {
+        static SiftPattern<Fragment> header(String level, SiftPattern<Fragment> timestampPattern) {
             return fromAnywhere()
                     .of(literal("[" + level + "]"))
                     .followedBy(literal(" ["))
@@ -93,7 +94,7 @@ class SiftStructuredParsingTest {
          * Matches the user field: User: 'NAME'
          * Encapsulates the label, spacing and quotes.
          */
-        static SiftPattern<SiftContext.Fragment> userField(SiftPattern<SiftContext.Fragment> namePattern) {
+        static SiftPattern<Fragment> userField(SiftPattern<Fragment> namePattern) {
             return fromAnywhere()
                     .of(literal(" User: '"))
                     .followedBy(namePattern)
@@ -104,7 +105,7 @@ class SiftStructuredParsingTest {
          * Matches the action field: -> {Action: ACTION}
          * Encapsulates the arrow, braces and label.
          */
-        static SiftPattern<SiftContext.Fragment> actionField(SiftPattern<SiftContext.Fragment> actionPattern) {
+        static SiftPattern<Fragment> actionField(SiftPattern<Fragment> actionPattern) {
             return fromAnywhere()
                     .of(literal(" -> {Action: "))
                     .followedBy(actionPattern)
@@ -115,7 +116,7 @@ class SiftStructuredParsingTest {
     // =================================================================================
     // 3. PARSING ENGINE
     // =================================================================================
-    private List<LogEntry> parse(String text, SiftPattern<SiftContext.Fragment> pattern) {
+    private List<LogEntry> parse(String text, SiftPattern<Fragment> pattern) {
         List<LogEntry> list = new ArrayList<>();
         Pattern regex = Pattern.compile(pattern.shake());
         Matcher matcher = regex.matcher(text);
@@ -136,29 +137,29 @@ class SiftStructuredParsingTest {
 
         // --- DEFINITION OF CORE PATTERNS ---
 
-        SiftPattern<SiftContext.Fragment> datePattern = fromAnywhere()
+        SiftPattern<Fragment> datePattern = fromAnywhere()
                 .exactly(4).digits().followedBy('-')
                 .then().exactly(2).digits().followedBy('-')
                 .then().exactly(2).digits();
 
-        SiftPattern<SiftContext.Fragment> wordPattern = fromAnywhere().oneOrMore().letters();
+        SiftPattern<Fragment> wordPattern = fromAnywhere().oneOrMore().letters();
 
         // --- SEMANTIC COMPOSITION ---
         // We compose the log structure using our Grammar methods.
         // No more ugly literals floating around in the main logic.
 
         // 1. Header: [INFO] [DATE] -> Capture Date
-        SiftPattern<SiftContext.Fragment> headerPart = LogGrammar.header("INFO", capture(datePattern));
+        SiftPattern<Fragment> headerPart = LogGrammar.header("INFO", capture(datePattern));
 
         // 2. User: User: 'NAME' -> Capture Name
-        SiftPattern<SiftContext.Fragment> userPart = LogGrammar.userField(capture(wordPattern));
+        SiftPattern<Fragment> userPart = LogGrammar.userField(capture(wordPattern));
 
         // 3. Action: -> {Action: ACTION} -> Capture Action
-        SiftPattern<SiftContext.Fragment> actionPart = LogGrammar.actionField(capture(wordPattern));
+        SiftPattern<Fragment> actionPart = LogGrammar.actionField(capture(wordPattern));
 
         // --- FINAL ASSEMBLY ---
 
-        SiftPattern<SiftContext.Fragment> logParser = fromAnywhere()
+        SiftPattern<Fragment> logParser = fromAnywhere()
                 .of(headerPart)
                 .followedBy(userPart)
                 .followedBy(actionPart);

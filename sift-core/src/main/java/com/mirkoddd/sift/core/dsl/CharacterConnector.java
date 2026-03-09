@@ -16,7 +16,7 @@
 package com.mirkoddd.sift.core.dsl;
 
 /**
- * A specialized {@link ConnectorStep} that safely exposes modifiers for character classes.
+ * A specialized {@link Connector} that safely exposes modifiers for character classes.
  * <p>
  * This interface enforces the <b>Interface Segregation Principle (ISP)</b> by ensuring that inclusion
  * and exclusion modifiers can only be invoked immediately after a character class definition.
@@ -30,7 +30,7 @@ package com.mirkoddd.sift.core.dsl;
  *
  * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-public interface CharacterClassConnectorStep<Ctx extends SiftContext> extends ConnectorStep<Ctx> {
+public interface CharacterConnector<Ctx extends SiftContext> extends Connector<Ctx> {
 
     /**
      * Safely adds specific characters to the currently built character class.
@@ -43,7 +43,7 @@ public interface CharacterClassConnectorStep<Ctx extends SiftContext> extends Co
      * @param additionalExtras Optional additional primitive characters to include (varargs are safe here).
      * @return The current builder step for further fluent chaining.
      */
-    CharacterClassConnectorStep<Ctx> including(char extra, char... additionalExtras);
+    CharacterConnector<Ctx> including(char extra, char... additionalExtras);
 
     /**
      * Safely excludes specific characters from the currently built character class.
@@ -55,5 +55,5 @@ public interface CharacterClassConnectorStep<Ctx extends SiftContext> extends Co
      * @param additionalExcluded Optional additional primitive characters to exclude.
      * @return The current builder step for further fluent chaining.
      */
-    CharacterClassConnectorStep<Ctx> excluding(char excluded, char... additionalExcluded);
+    CharacterConnector<Ctx> excluding(char excluded, char... additionalExcluded);
 }

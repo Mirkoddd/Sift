@@ -34,7 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.mirkoddd.sift.core.dsl.SiftContext;
+import com.mirkoddd.sift.core.dsl.Fragment;
+import com.mirkoddd.sift.core.dsl.Root;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 class SiftPatternsTest {
@@ -120,7 +121,7 @@ class SiftPatternsTest {
     @Test
     @DisplayName("group() should combine multiple patterns into a non-capturing block")
     void groupTest() {
-        SiftPattern<SiftContext.Fragment> grouped = group(
+        SiftPattern<Fragment> grouped = group(
                 literal("Mr."),
                 Sift.fromAnywhere().whitespace()
         );
@@ -180,17 +181,17 @@ class SiftPatternsTest {
 
     @Test
     void anyOf_withNullElementInVarargs_throwsNullPointerException() {
-        SiftPattern<SiftContext.Fragment> validPattern = literal("test");
+        SiftPattern<Fragment> validPattern = literal("test");
         assertThrows(NullPointerException.class, () ->
-                anyOf(validPattern, validPattern, (SiftPattern<SiftContext.Fragment>) null)
+                anyOf(validPattern, validPattern, (SiftPattern<Fragment>) null)
         );
     }
 
     @Test
     void group_withNullElementInVarargs_throwsNullPointerException() {
-        SiftPattern<SiftContext.Fragment> validPattern = literal("test");
+        SiftPattern<Fragment> validPattern = literal("test");
         assertThrows(NullPointerException.class, () ->
-                group(validPattern, (SiftPattern<SiftContext.Fragment>) null)
+                group(validPattern, (SiftPattern<Fragment>) null)
         );
     }
 
@@ -210,7 +211,7 @@ class SiftPatternsTest {
     @Test
     @DisplayName("SiftPattern interface should correctly expose and execute sieve()")
     void testSiftPatternInterfaceSieveCoverage() {
-        SiftPattern<SiftContext.Root> patternInterface =
+        SiftPattern<Root> patternInterface =
                 Sift.fromStart().exactly(3).digits();
 
         java.util.regex.Pattern compiled = patternInterface.sieve();
@@ -222,7 +223,7 @@ class SiftPatternsTest {
     @Test
     @DisplayName("SiftPattern default sieve() should compile the result of shake()")
     void testDefaultSieveImplementation() {
-        BaseSiftPattern<SiftContext.Fragment> fakePattern = new BaseSiftPattern<SiftContext.Fragment>() {
+        BaseSiftPattern<Fragment> fakePattern = new BaseSiftPattern<Fragment>() {
             @Override
             protected String buildRegex() {
                 return "[a-z]+";
@@ -244,7 +245,7 @@ class SiftPatternsTest {
 
     @Test
     void shouldMemoizeShakeAndSieveResults() {
-        SiftPattern<SiftContext.Fragment> memoizedPattern = SiftPatterns.literal("cache-test");
+        SiftPattern<Fragment> memoizedPattern = SiftPatterns.literal("cache-test");
 
         String firstShake = memoizedPattern.shake();
         String secondShake = memoizedPattern.shake();
@@ -274,9 +275,9 @@ class SiftPatternsTest {
     @Test
     @DisplayName("anyOf(List) should optimize single-element lists by avoiding unnecessary grouping")
     void testAnyOfListSingleElementOptimization() {
-        SiftPattern<SiftContext.Fragment> singlePattern = Sift.fromAnywhere().digits();
+        SiftPattern<Fragment> singlePattern = Sift.fromAnywhere().digits();
 
-        SiftPattern<SiftContext.Fragment> result = SiftPatterns.anyOf(java.util.Collections.singletonList(singlePattern));
+        SiftPattern<Fragment> result = SiftPatterns.anyOf(java.util.Collections.singletonList(singlePattern));
 
         assertEquals("[0-9]", result.shake(),
                 "Should return the exact pattern without the (?:...) wrapper overhead");
@@ -285,11 +286,11 @@ class SiftPatternsTest {
     @Test
     @DisplayName("anyOf(List) should wrap multiple elements in a non-capturing OR group")
     void testAnyOfListMultipleElements() {
-        SiftPattern<SiftContext.Fragment> p1 = Sift.fromAnywhere().letters();
-        SiftPattern<SiftContext.Fragment> p2 = Sift.fromAnywhere().digits();
-        SiftPattern<SiftContext.Fragment> p3 = Sift.fromAnywhere().character('-');
+        SiftPattern<Fragment> p1 = Sift.fromAnywhere().letters();
+        SiftPattern<Fragment> p2 = Sift.fromAnywhere().digits();
+        SiftPattern<Fragment> p3 = Sift.fromAnywhere().character('-');
 
-        SiftPattern<SiftContext.Fragment> result = SiftPatterns.anyOf(java.util.Arrays.asList(p1, p2, p3));
+        SiftPattern<Fragment> result = SiftPatterns.anyOf(java.util.Arrays.asList(p1, p2, p3));
 
         assertEquals("(?:[a-zA-Z]|[0-9]|-)", result.shake(),
                 "Should accurately wrap multiple patterns separated by the OR operator");
@@ -299,7 +300,7 @@ class SiftPatternsTest {
     @DisplayName("Semantic matching methods should correctly evaluate inputs, handle nulls, and support StringBuilders")
     @SuppressWarnings("deprecation")
     void testPatternMatchingConvenienceMethods() {
-        SiftPattern<SiftContext.Root> pattern = Sift.fromStart().exactly(3).digits().andNothingElse();
+        SiftPattern<Root> pattern = Sift.fromStart().exactly(3).digits().andNothingElse();
 
         // matchesEntire tests
         assertFalse(pattern.matchesEntire(null),
@@ -316,7 +317,7 @@ class SiftPatternsTest {
                 "Should natively support other CharSequence implementations like StringBuilder without allocations");
 
         // containsMatchIn tests
-        SiftPattern<SiftContext.Fragment> partialPattern = Sift.fromAnywhere().exactly(3).digits();
+        SiftPattern<Fragment> partialPattern = Sift.fromAnywhere().exactly(3).digits();
         assertTrue(partialPattern.containsMatchIn("abc123def"),
                 "Should return true when the exact sequence is contained within a larger string");
         assertFalse(partialPattern.containsMatchIn("ab12cd"),

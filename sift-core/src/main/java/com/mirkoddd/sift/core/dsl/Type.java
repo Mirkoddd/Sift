@@ -31,7 +31,7 @@ package com.mirkoddd.sift.core.dsl;
  * @param <T> The standard connector step returned for non-character-class types.
  * @param <C> The specialized connector step returned for character classes, which exposes class modifiers like {@code including()}.
  */
-public interface TypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx>, C extends CharacterClassConnectorStep<Ctx>> {
+public interface Type<Ctx extends SiftContext, T extends Connector<Ctx>, C extends CharacterConnector<Ctx>> {
 
     /**
      * Matches <b>ANY</b> single character (the Dot {@code .}).
@@ -66,7 +66,7 @@ public interface TypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx>,
      * (e.g., created with {@code fromStart()} or closed with {@code andNothingElse()}).
      * Reusable blocks must be unanchored.
      */
-    T of(SiftPattern<SiftContext.Fragment> pattern);
+    T of(SiftPattern<Fragment> pattern);
 
     /**
      * Matches any ASCII numeric digit.

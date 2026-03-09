@@ -15,8 +15,8 @@
  */
 package com.mirkoddd.sift.core;
 
-import com.mirkoddd.sift.core.dsl.CharacterClassConnectorStep;
-import com.mirkoddd.sift.core.dsl.ConnectorStep;
+import com.mirkoddd.sift.core.dsl.CharacterConnector;
+import com.mirkoddd.sift.core.dsl.Connector;
 import com.mirkoddd.sift.core.dsl.SiftContext;
 
 /**
@@ -24,9 +24,9 @@ import com.mirkoddd.sift.core.dsl.SiftContext;
  * <p>
  * <b>Architecture &amp; Type Safety:</b><br>
  * This class is instantiated when the DSL processes a token with an exact repetition
- * (e.g., {@code .exactly(3)} or implicitly exactly one). By extending {@link BaseTypeStep}
- * with standard connector bounds, its factory methods strictly return a generic {@link ConnectorStep}
- * and {@link CharacterClassConnectorStep}.
+ * (e.g., {@code .exactly(3)} or implicitly exactly one). By extending {@link BaseType}
+ * with standard connector bounds, its factory methods strictly return a generic {@link Connector}
+ * and {@link CharacterConnector}.
  * <p>
  * This architectural choice physically prevents the compiler from exposing variable-length
  * modifiers (like {@code asFewAsPossible()} or {@code withoutBacktracking()}) on fixed-length tokens,
@@ -34,7 +34,7 @@ import com.mirkoddd.sift.core.dsl.SiftContext;
  *
  * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-class SiftFixedType<Ctx extends SiftContext> extends BaseTypeStep<Ctx, ConnectorStep<Ctx>, CharacterClassConnectorStep<Ctx>> {
+class SiftFixedType<Ctx extends SiftContext> extends BaseType<Ctx, Connector<Ctx>, CharacterConnector<Ctx>> {
 
     /**
      * Instantiates the fixed-type step with the current state of the pattern assembler.
@@ -47,13 +47,13 @@ class SiftFixedType<Ctx extends SiftContext> extends BaseTypeStep<Ctx, Connector
 
     /** {@inheritDoc} */
     @Override
-    protected ConnectorStep<Ctx> getNormalConnector(PatternAssembler nextAssembler) {
+    protected Connector<Ctx> getNormalConnector(PatternAssembler nextAssembler) {
         return new SiftConnector<>(nextAssembler);
     }
 
     /** {@inheritDoc} */
     @Override
-    protected CharacterClassConnectorStep<Ctx> getCharacterClassConnector(PatternAssembler nextAssembler) {
+    protected CharacterConnector<Ctx> getCharacterClassConnector(PatternAssembler nextAssembler) {
         return new SiftConnector<>(nextAssembler);
     }
 }

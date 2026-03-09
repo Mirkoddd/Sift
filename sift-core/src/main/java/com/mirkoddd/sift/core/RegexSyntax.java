@@ -15,12 +15,14 @@
  */
 package com.mirkoddd.sift.core;
 
+import com.mirkoddd.sift.core.dsl.Type;
+
 /**
  * Dictionary of all special Regular Expression characters used by Sift.
  * <p>
  * This class centralizes the syntax, removing "magic strings" from the builder logic.
  * The constants are organized to perfectly mirror the methods in
- * {@link com.mirkoddd.sift.core.dsl.TypeStep}.
+ * {@link Type}.
  */
 final class RegexSyntax {
     static final String EMPTY = "";

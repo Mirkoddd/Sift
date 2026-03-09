@@ -34,11 +34,12 @@ import static com.mirkoddd.sift.core.SiftGlobalFlag.CASE_INSENSITIVE;
 import static com.mirkoddd.sift.core.SiftPatterns.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.mirkoddd.sift.core.dsl.CharacterClassConnectorStep;
-import com.mirkoddd.sift.core.dsl.ConnectorStep;
-import com.mirkoddd.sift.core.dsl.SiftContext;
+import com.mirkoddd.sift.core.dsl.CharacterConnector;
+import com.mirkoddd.sift.core.dsl.Connector;
+import com.mirkoddd.sift.core.dsl.Fragment;
+import com.mirkoddd.sift.core.dsl.Root;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
-import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
+import com.mirkoddd.sift.core.dsl.VariableConnector;
 
 /**
  * Test suite for Sift library.
@@ -314,9 +315,9 @@ class SiftTest {
         @DisplayName("Should skip possessive modifier if quantifier already ends with + (Coverage Booster)")
         @SuppressWarnings("unchecked")
         void coverageDuplicatePossessiveCondition() {
-            VariableConnectorStep<SiftContext.Fragment> step1 = Sift.fromAnywhere().zeroOrMore().digits();
-            ConnectorStep<SiftContext.Fragment> step2 = step1.withoutBacktracking();
-            ((VariableConnectorStep<SiftContext.Fragment>) step2).withoutBacktracking();
+            VariableConnector<Fragment> step1 = Sift.fromAnywhere().zeroOrMore().digits();
+            Connector<Fragment> step2 = step1.withoutBacktracking();
+            ((VariableConnector<Fragment>) step2).withoutBacktracking();
 
             assertEquals("[0-9]*+", step2.shake());
         }
@@ -334,8 +335,8 @@ class SiftTest {
         void throwOnDuplicateGroupNames() {
             String duplicateName = "user";
 
-            SiftPattern<SiftContext.Fragment> digits = fromAnywhere().digits();
-            SiftPattern<SiftContext.Fragment> letters = fromAnywhere().letters();
+            SiftPattern<Fragment> digits = fromAnywhere().digits();
+            SiftPattern<Fragment> letters = fromAnywhere().letters();
 
             NamedCapture group1 = capture(duplicateName, digits);
             NamedCapture group2 = capture(duplicateName, letters);
@@ -354,7 +355,7 @@ class SiftTest {
         @Test
         @DisplayName("Should throw NullPointerException when a null pattern is passed in followedBy varargs")
         void followedByNullVarargs() {
-            SiftPattern<SiftContext.Fragment> validPattern = SiftPatterns.literal("valid");
+            SiftPattern<Fragment> validPattern = SiftPatterns.literal("valid");
 
             NullPointerException exception = assertThrows(NullPointerException.class, () ->
                     Sift.fromAnywhere().letters().followedBy(Arrays.asList(validPattern, validPattern, null, validPattern))
@@ -366,7 +367,7 @@ class SiftTest {
         @Test
         @DisplayName("shake() should be idempotent and cache the generated regex")
         void testShakeIdempotency() {
-            SiftPattern<SiftContext.Root> pattern = Sift.fromStart().oneOrMore().digits();
+            SiftPattern<Root> pattern = Sift.fromStart().oneOrMore().digits();
 
             String firstShake = pattern.shake();
             String secondShake = pattern.shake();
@@ -378,7 +379,7 @@ class SiftTest {
         @Test
         @DisplayName("sieve() should return a cached compiled Pattern that correctly matches the input")
         void testSieveReturnsCachedPattern() {
-            SiftPattern<SiftContext.Root> pattern = Sift.fromStart().exactly(3).digits();
+            SiftPattern<Root> pattern = Sift.fromStart().exactly(3).digits();
 
             java.util.regex.Pattern firstPattern = pattern.sieve();
 
@@ -397,9 +398,9 @@ class SiftTest {
         @Test
         @DisplayName("equals() and hashCode() should evaluate structural identity based on the regex")
         void testPatternIdentity() {
-            SiftPattern<SiftContext.Root> patternA = Sift.fromStart().optional().letters();
-            SiftPattern<SiftContext.Root> patternB = Sift.fromStart().optional().letters();
-            SiftPattern<SiftContext.Root> patternDifferent = Sift.fromStart().optional().digits();
+            SiftPattern<Root> patternA = Sift.fromStart().optional().letters();
+            SiftPattern<Root> patternB = Sift.fromStart().optional().letters();
+            SiftPattern<Root> patternDifferent = Sift.fromStart().optional().digits();
 
             assertEquals(patternA, patternB);
             assertEquals(patternA.hashCode(), patternB.hashCode());
@@ -412,7 +413,7 @@ class SiftTest {
         @Test
         @DisplayName("toString() should return the generated pattern string")
         void testPatternToString() {
-            SiftPattern<SiftContext.Root> pattern = Sift.fromStart().exactly(3).digits();
+            SiftPattern<Root> pattern = Sift.fromStart().exactly(3).digits();
 
             assertEquals("^[0-9]{3}", pattern.toString());
             assertEquals(pattern.shake(), pattern.toString());
@@ -421,7 +422,7 @@ class SiftTest {
         @Test
         @DisplayName("shake() should perform fail-fast validation the moment a malformed pattern is injected")
         void testShakeFailFastValidation() {
-            BaseSiftPattern<SiftContext.Fragment> malformedPattern = new BaseSiftPattern<SiftContext.Fragment>() {
+            BaseSiftPattern<Fragment> malformedPattern = new BaseSiftPattern<Fragment>() {
                 @Override
                 protected String buildRegex() {
                     return "(?unclosedGroup";
@@ -489,7 +490,7 @@ class SiftTest {
         @Test
         @DisplayName("Scenario: Extracting Prices")
         void priceExtraction() {
-            SiftPattern<SiftContext.Fragment> decimalPart = fromAnywhere()
+            SiftPattern<Fragment> decimalPart = fromAnywhere()
                     .character('.')
                     .then()
                     .exactly(2).digits();
@@ -535,12 +536,12 @@ class SiftTest {
         @DisplayName("Should successfully match symmetric text using backreferences (XML-style)")
         void backreferenceSuccess() {
 
-            ConnectorStep<SiftContext.Fragment> tagContent = fromAnywhere().oneOrMore().letters();
+            Connector<Fragment> tagContent = fromAnywhere().oneOrMore().letters();
             NamedCapture tagGroup = capture("tag", tagContent);
 
-            SiftPattern<SiftContext.Fragment> open = literal("<");
-            SiftPattern<SiftContext.Fragment> slashOpen = literal("</");
-            SiftPattern<SiftContext.Fragment> close = literal(">");
+            SiftPattern<Fragment> open = literal("<");
+            SiftPattern<Fragment> slashOpen = literal("</");
+            SiftPattern<Fragment> close = literal(">");
 
             String regex = fromStart()
                     .of(open).then().namedCapture(tagGroup).then().of(close)
@@ -563,13 +564,13 @@ class SiftTest {
         @Test
         @DisplayName("Should match symmetric text with possessive quantifier for performance")
         void backreferencePossessiveSuccess() {
-            ConnectorStep<SiftContext.Fragment> tagContent = fromAnywhere().oneOrMore().letters();
+            Connector<Fragment> tagContent = fromAnywhere().oneOrMore().letters();
             NamedCapture tagGroup = SiftPatterns.capture("tag", tagContent);
 
-            SiftPattern<SiftContext.Fragment> open = literal("<");
-            SiftPattern<SiftContext.Fragment> slashOpen = literal("</");
-            SiftPattern<SiftContext.Fragment> close = literal(">");
-            SiftPattern<SiftContext.Fragment> contentExceptTag = anythingBut("<");
+            SiftPattern<Fragment> open = literal("<");
+            SiftPattern<Fragment> slashOpen = literal("</");
+            SiftPattern<Fragment> close = literal(">");
+            SiftPattern<Fragment> contentExceptTag = anythingBut("<");
 
             String regex = fromStart()
                     .of(open).then().namedCapture(tagGroup).then().of(close)
@@ -656,7 +657,7 @@ class SiftTest {
         @Test
         @DisplayName("Should wrap pattern in atomic group (?>...) via preventBacktracking()")
         void applyAtomicGroup() {
-            SiftPattern<SiftContext.Fragment> basePattern = Sift.fromAnywhere().exactly(3).digits();
+            SiftPattern<Fragment> basePattern = Sift.fromAnywhere().exactly(3).digits();
 
             String regex = basePattern.preventBacktracking().shake();
 
@@ -720,9 +721,9 @@ class SiftTest {
         @Test
         @DisplayName("Should generate atomic group for standalone SiftPatterns")
         void atomicGroupSyntax() {
-            SiftPattern<SiftContext.Fragment> cat = literal("cat");
-            SiftPattern<SiftContext.Fragment> dog = literal("dog");
-            SiftPattern<SiftContext.Fragment> animal = anyOf(cat, dog).preventBacktracking();
+            SiftPattern<Fragment> cat = literal("cat");
+            SiftPattern<Fragment> dog = literal("dog");
+            SiftPattern<Fragment> animal = anyOf(cat, dog).preventBacktracking();
 
             String regex = fromAnywhere().of(animal).shake();
 
@@ -732,9 +733,9 @@ class SiftTest {
         @Test
         @DisplayName("Should actually prevent backtracking using Atomic Groups")
         void atomicGroupBehaviorCheck() {
-            SiftPattern<SiftContext.Fragment> a = literal("a");
-            SiftPattern<SiftContext.Fragment> ab = literal("ab");
-            SiftPattern<SiftContext.Fragment> aOrAb = anyOf(a, ab);
+            SiftPattern<Fragment> a = literal("a");
+            SiftPattern<Fragment> ab = literal("ab");
+            SiftPattern<Fragment> aOrAb = anyOf(a, ab);
 
             String normalRegex = fromStart()
                     .of(aOrAb)
@@ -837,8 +838,8 @@ class SiftTest {
 
         @Test
         void shouldMemoizeShakeAndSieveForPreventBacktracking() {
-            SiftPattern<SiftContext.Fragment> basePattern = SiftPatterns.literal("atomic");
-            SiftPattern<SiftContext.Fragment> atomicPattern = basePattern.preventBacktracking();
+            SiftPattern<Fragment> basePattern = SiftPatterns.literal("atomic");
+            SiftPattern<Fragment> atomicPattern = basePattern.preventBacktracking();
 
             String firstShake = atomicPattern.shake();
             String secondShake = atomicPattern.shake();
@@ -1167,7 +1168,7 @@ class SiftTest {
     @Test
     @DisplayName("Should detect group name collisions when injecting nested patterns")
     void nestedPatternGroupCollision() {
-        SiftPattern<SiftContext.Fragment> nestedModule = Sift.fromAnywhere()
+        SiftPattern<Fragment> nestedModule = Sift.fromAnywhere()
                 .namedCapture(SiftPatterns.capture("id", literal("foo")));
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
@@ -1185,7 +1186,7 @@ class SiftTest {
     @Test
     @DisplayName("Should successfully merge nested patterns with non-colliding groups")
     void nestedPatternGroupMergeSuccess() {
-        SiftPattern<SiftContext.Fragment> nestedModule = Sift.fromAnywhere()
+        SiftPattern<Fragment> nestedModule = Sift.fromAnywhere()
                 .namedCapture(SiftPatterns.capture("nestedId", fromAnywhere().oneOrMore().digits()));
 
         String regex = Sift.fromAnywhere()
@@ -1200,7 +1201,7 @@ class SiftTest {
     @Test
     @DisplayName("Should detect collisions when a NamedCapture contains nested groups")
     void namedCaptureNestedGroupCollision() {
-        SiftPattern<SiftContext.Fragment> innerPattern = Sift.fromAnywhere()
+        SiftPattern<Fragment> innerPattern = Sift.fromAnywhere()
                 .namedCapture(SiftPatterns.capture("sharedId", Sift.fromAnywhere().oneOrMore().digits()));
 
         NamedCapture wrapperGroup = SiftPatterns.capture("wrapper", innerPattern);
@@ -1222,7 +1223,7 @@ class SiftTest {
     @Test
     @DisplayName("Should successfully merge NamedCapture containing non-colliding nested groups")
     void namedCaptureNestedGroupMergeSuccess() {
-        SiftPattern<SiftContext.Fragment> innerPattern = Sift.fromAnywhere()
+        SiftPattern<Fragment> innerPattern = Sift.fromAnywhere()
                 .namedCapture(SiftPatterns.capture("innerId", Sift.fromAnywhere().oneOrMore().digits()));
 
         NamedCapture wrapperGroup = SiftPatterns.capture("wrapper", innerPattern);
@@ -1290,7 +1291,7 @@ class SiftTest {
         @Test
         @DisplayName("Should allow nesting pure unanchored patterns seamlessly")
         void shouldAllowNestingUnanchoredPatterns() {
-            CharacterClassConnectorStep<SiftContext.Fragment> safeBlock = fromAnywhere().exactly(3).digits();
+            CharacterConnector<Fragment> safeBlock = fromAnywhere().exactly(3).digits();
 
             String regex = Sift.fromStart()
                     .of(safeBlock)

@@ -23,7 +23,7 @@ import java.lang.reflect.Modifier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.mirkoddd.sift.core.dsl.SiftContext;
+import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 class RegexEscaperTest {
@@ -85,7 +85,7 @@ class RegexEscaperTest {
     @Test
     @DisplayName("Should correctly handle and not escape non-ASCII characters")
     void literalWithNonAsciiCharacters() {
-        SiftPattern<SiftContext.Fragment> pattern = SiftPatterns.literal("Caffè €");
+        SiftPattern<Fragment> pattern = SiftPatterns.literal("Caffè €");
 
         assertEquals("Caffè\\ €", pattern.shake());
     }

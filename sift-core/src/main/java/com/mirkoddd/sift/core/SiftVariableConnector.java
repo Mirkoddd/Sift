@@ -16,16 +16,16 @@
 package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.SiftContext;
-import com.mirkoddd.sift.core.dsl.VariableCharacterClassConnectorStep;
-import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
+import com.mirkoddd.sift.core.dsl.VariableCharacterConnector;
+import com.mirkoddd.sift.core.dsl.VariableConnector;
 
 /**
  * Specialized connector for variable-length steps.
  * <p>
  * <b>Architectural Note (Interface Segregation & Memory Optimization):</b><br>
  * Similar to {@link SiftConnector}, this single package-private class implements multiple
- * variable-length state interfaces (e.g., {@link VariableConnectorStep} and
- * {@link VariableCharacterClassConnectorStep}). These logically distinct states are unified
+ * variable-length state interfaces (e.g., {@link VariableConnector} and
+ * {@link VariableCharacterConnector}). These logically distinct states are unified
  * into a single concrete implementation to prevent "class explosion" and minimize memory
  * overhead, which is particularly beneficial in Android environments.
  * <p>
@@ -34,7 +34,7 @@ import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
  *
  * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-class SiftVariableConnector<Ctx extends SiftContext> extends SiftConnector<Ctx> implements VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx> {
+class SiftVariableConnector<Ctx extends SiftContext> extends SiftConnector<Ctx> implements VariableConnector<Ctx>, VariableCharacterConnector<Ctx> {
 
     /**
      * Instantiates the variable-length connector with the current state of the pattern assembler.
@@ -49,12 +49,12 @@ class SiftVariableConnector<Ctx extends SiftContext> extends SiftConnector<Ctx> 
      * {@inheritDoc}
      * <p>
      * <b>Note on Covariant Return Types:</b> This overrides the parent implementation to return a
-     * narrower type ({@link VariableCharacterClassConnectorStep}). This ensures that variable-length
+     * narrower type ({@link VariableCharacterConnector}). This ensures that variable-length
      * modifiers (like possessive or lazy behaviors) are not lost from the fluent chain after
      * modifying the character class.
      */
     @Override
-    public VariableCharacterClassConnectorStep<Ctx> including(char extra, char... additionalExtras) {
+    public VariableCharacterConnector<Ctx> including(char extra, char... additionalExtras) {
         PatternAssembler next = assembler.copy();
         next.addClassInclusion(extra, additionalExtras);
         return new SiftVariableConnector<>(next);
@@ -66,7 +66,7 @@ class SiftVariableConnector<Ctx extends SiftContext> extends SiftConnector<Ctx> 
      * <b>Note on Covariant Return Types:</b> Overridden to return a narrower, variable-length specific type.
      */
     @Override
-    public VariableCharacterClassConnectorStep<Ctx> excluding(char excluded, char... additionalExcluded) {
+    public VariableCharacterConnector<Ctx> excluding(char excluded, char... additionalExcluded) {
         PatternAssembler next = assembler.copy();
         next.addClassExclusion(excluded, additionalExcluded);
         return new SiftVariableConnector<>(next);
@@ -74,7 +74,7 @@ class SiftVariableConnector<Ctx extends SiftContext> extends SiftConnector<Ctx> 
 
     /** {@inheritDoc} */
     @Override
-    public VariableConnectorStep<Ctx> withoutBacktracking() {
+    public VariableConnector<Ctx> withoutBacktracking() {
         PatternAssembler next = assembler.copy();
         next.applyPossessiveModifier();
         return new SiftVariableConnector<>(next);
@@ -82,7 +82,7 @@ class SiftVariableConnector<Ctx extends SiftContext> extends SiftConnector<Ctx> 
 
     /** {@inheritDoc} */
     @Override
-    public VariableConnectorStep<Ctx> asFewAsPossible() {
+    public VariableConnector<Ctx> asFewAsPossible() {
         PatternAssembler next = assembler.copy();
         next.applyLazyModifier();
         return new SiftVariableConnector<>(next);

@@ -24,8 +24,8 @@ import java.util.Set;
  * Node responsible for connecting steps and terminating the DSL chain.
  * <p>
  * <b>Architectural Note (Interface Segregation & Memory Optimization):</b><br>
- * This single package-private class implements multiple state interfaces (e.g., {@link ConnectorStep}
- * and {@link CharacterClassConnectorStep}). While these represent logically distinct states in the DSL,
+ * This single package-private class implements multiple state interfaces (e.g., {@link Connector}
+ * and {@link CharacterConnector}). While these represent logically distinct states in the DSL,
  * they are unified into a single concrete implementation to prevent "class explosion" and reduce
  * memory footprint (especially useful for Android environments).
  * <p>
@@ -34,7 +34,7 @@ import java.util.Set;
  *
  * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implements ConnectorStep<Ctx>, CharacterClassConnectorStep<Ctx>, PatternMetadata {
+class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implements Connector<Ctx>, CharacterConnector<Ctx>, PatternMetadata {
 
     protected final PatternAssembler assembler;
 
@@ -49,7 +49,7 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
 
     /** {@inheritDoc} */
     @Override
-    public QuantifierStep<Ctx> then() {
+    public Quantifier<Ctx> then() {
         PatternAssembler next = assembler.copy();
         next.flush();
         return new SiftQuantifier<>(next);
@@ -57,30 +57,30 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
 
     /** {@inheritDoc} */
     @Override
-    public ConnectorStep<Ctx> followedBy(char c) {
+    public Connector<Ctx> followedBy(char c) {
         return this.then().exactly(1).character(c);
     }
 
     /** {@inheritDoc} */
     @Override
-    public ConnectorStep<Ctx> followedBy(SiftPattern<SiftContext.Fragment> p1) {
+    public Connector<Ctx> followedBy(SiftPattern<Fragment> p1) {
         Objects.requireNonNull(p1, "Pattern cannot be null");
         return this.then().exactly(1).of(p1);
     }
 
     /** {@inheritDoc} */
     @Override
-    public ConnectorStep<Ctx> followedBy(SiftPattern<SiftContext.Fragment> p1, SiftPattern<SiftContext.Fragment> p2) {
+    public Connector<Ctx> followedBy(SiftPattern<Fragment> p1, SiftPattern<Fragment> p2) {
         return followedBy(p1).followedBy(p2);
     }
 
     /** {@inheritDoc} */
     @Override
-    public ConnectorStep<Ctx> followedBy(Iterable<? extends SiftPattern<SiftContext.Fragment>> patterns) {
+    public Connector<Ctx> followedBy(Iterable<? extends SiftPattern<Fragment>> patterns) {
         Objects.requireNonNull(patterns, "Patterns iterable cannot be null");
 
-        ConnectorStep<Ctx> current = this;
-        for (SiftPattern<SiftContext.Fragment> p : patterns) {
+        Connector<Ctx> current = this;
+        for (SiftPattern<Fragment> p : patterns) {
             Objects.requireNonNull(p, "SiftPattern in iterable cannot be null");
             current = current.followedBy(p);
         }
@@ -89,7 +89,7 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
 
     /** {@inheritDoc} */
     @Override
-    public CharacterClassConnectorStep<Ctx> including(char extra, char... additionalExtras) {
+    public CharacterConnector<Ctx> including(char extra, char... additionalExtras) {
         PatternAssembler next = assembler.copy();
         next.addClassInclusion(extra, additionalExtras);
         return new SiftConnector<>(next);
@@ -97,7 +97,7 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
 
     /** {@inheritDoc} */
     @Override
-    public CharacterClassConnectorStep<Ctx> excluding(char excluded, char... additionalExcluded) {
+    public CharacterConnector<Ctx> excluding(char excluded, char... additionalExcluded) {
         PatternAssembler next = assembler.copy();
         next.addClassExclusion(excluded, additionalExcluded);
         return new SiftConnector<>(next);
@@ -105,7 +105,7 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
 
     /** {@inheritDoc} */
     @Override
-    public ConnectorStep<Ctx> wordBoundary() {
+    public Connector<Ctx> wordBoundary() {
         PatternAssembler next = assembler.copy();
         next.addWordBoundary();
         return new SiftConnector<>(next);
@@ -113,7 +113,7 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
 
     /** {@inheritDoc} */
     @Override
-    public SiftPattern<SiftContext.Root> andNothingElse() {
+    public SiftPattern<Root> andNothingElse() {
         PatternAssembler next = assembler.copy();
         next.addAnchor(RegexSyntax.END_OF_LINE);
         return new SiftConnector<>(next);

@@ -15,11 +15,12 @@
  */
 package com.mirkoddd.sift.core;
 
-import com.mirkoddd.sift.core.dsl.CharacterClassConnectorStep;
-import com.mirkoddd.sift.core.dsl.ConnectorStep;
+import com.mirkoddd.sift.core.dsl.CharacterConnector;
+import com.mirkoddd.sift.core.dsl.Connector;
+import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
-import com.mirkoddd.sift.core.dsl.TypeStep;
+import com.mirkoddd.sift.core.dsl.Type;
 
 import java.util.Objects;
 
@@ -34,10 +35,10 @@ import java.util.Objects;
  * reusing intermediate builder variables.
  *
  * @param <Ctx> The Context (Fragment or Root) enforcing Type-Driven Design.
- * @param <T>   The specific {@link ConnectorStep} returned for standard type definitions.
- * @param <C>   The specific {@link CharacterClassConnectorStep} returned for character classes.
+ * @param <T>   The specific {@link Connector} returned for standard type definitions.
+ * @param <C>   The specific {@link CharacterConnector} returned for character classes.
  */
-abstract class BaseTypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx>, C extends CharacterClassConnectorStep<Ctx>> implements TypeStep<Ctx, T, C> {
+abstract class BaseType<Ctx extends SiftContext, T extends Connector<Ctx>, C extends CharacterConnector<Ctx>> implements Type<Ctx, T, C> {
 
     protected final PatternAssembler assembler;
 
@@ -46,7 +47,7 @@ abstract class BaseTypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx
      *
      * @param assembler The current internal state machine builder.
      */
-    protected BaseTypeStep(PatternAssembler assembler) {
+    protected BaseType(PatternAssembler assembler) {
         this.assembler = assembler;
     }
 
@@ -86,7 +87,7 @@ abstract class BaseTypeStep<Ctx extends SiftContext, T extends ConnectorStep<Ctx
 
     /** {@inheritDoc} */
     @Override
-    public T of(SiftPattern<SiftContext.Fragment> pattern) {
+    public T of(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "SiftPattern cannot be null");
         PatternAssembler next = assembler.copy();
         next.addPattern(pattern);

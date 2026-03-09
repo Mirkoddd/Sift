@@ -17,7 +17,8 @@ package com.mirkoddd.sift.core;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import com.mirkoddd.sift.core.dsl.SiftContext;
+
+import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.ArrayList;
@@ -64,12 +65,12 @@ class SiftLogMiningTest {
     static class LogGrammar {
 
         // Matches content enclosed in single quotes: '...'
-        static SiftPattern<SiftContext.Fragment> quoted(SiftPattern<SiftContext.Fragment> inner) {
+        static SiftPattern<Fragment> quoted(SiftPattern<Fragment> inner) {
             return fromAnywhere().character('\'').followedBy(inner).followedBy('\'');
         }
 
         // Matches content enclosed in curly braces: { ... }
-        static SiftPattern<SiftContext.Fragment> braced(SiftPattern<SiftContext.Fragment> inner) {
+        static SiftPattern<Fragment> braced(SiftPattern<Fragment> inner) {
             return fromAnywhere().character('{').followedBy(inner).followedBy('}');
         }
     }
@@ -110,16 +111,16 @@ class SiftLogMiningTest {
         System.out.println("--- Mining User Actions ---");
 
         // Define the structural literals of our log lines
-        SiftPattern<SiftContext.Fragment> userLabel = literal("User: ");
-        SiftPattern<SiftContext.Fragment> arrow     = literal(" -> ");
-        SiftPattern<SiftContext.Fragment> action    = literal("Action: ");
+        SiftPattern<Fragment> userLabel = literal("User: ");
+        SiftPattern<Fragment> arrow     = literal(" -> ");
+        SiftPattern<Fragment> action    = literal("Action: ");
 
         // Define complex domain objects using our Grammar
-        SiftPattern<SiftContext.Fragment> validUsername = LogGrammar.quoted(fromAnywhere().oneOrMore().letters());
-        SiftPattern<SiftContext.Fragment> validAction   = LogGrammar.braced(fromAnywhere().of(action).then().oneOrMore().letters());
+        SiftPattern<Fragment> validUsername = LogGrammar.quoted(fromAnywhere().oneOrMore().letters());
+        SiftPattern<Fragment> validAction   = LogGrammar.braced(fromAnywhere().of(action).then().oneOrMore().letters());
 
         // Build the extraction query: "Find a User... followed by an arrow... followed by an Action"
-        SiftPattern<SiftContext.Fragment> userActionQuery = fromAnywhere()
+        SiftPattern<Fragment> userActionQuery = fromAnywhere()
                 .of(userLabel)
                 .followedBy(validUsername)
                 .followedBy(arrow)
@@ -140,15 +141,15 @@ class SiftLogMiningTest {
     void mineSpecificLogins() {
         System.out.println("\n--- Mining Only Logins ---");
 
-        SiftPattern<SiftContext.Fragment> userLabel   = literal("User: ");
-        SiftPattern<SiftContext.Fragment> arrow       = literal(" -> ");
-        SiftPattern<SiftContext.Fragment> actionLogin = literal("Action: Login"); // We are looking for this specific literal
+        SiftPattern<Fragment> userLabel   = literal("User: ");
+        SiftPattern<Fragment> arrow       = literal(" -> ");
+        SiftPattern<Fragment> actionLogin = literal("Action: Login"); // We are looking for this specific literal
 
         // Define the specific target action
-        SiftPattern<SiftContext.Fragment> loginAction = LogGrammar.braced(fromAnywhere().of(actionLogin));
+        SiftPattern<Fragment> loginAction = LogGrammar.braced(fromAnywhere().of(actionLogin));
 
         // Build the specific query
-        SiftPattern<SiftContext.Fragment> loginQuery = fromAnywhere()
+        SiftPattern<Fragment> loginQuery = fromAnywhere()
                 .of(userLabel)
                 .followedBy(LogGrammar.quoted(fromAnywhere().oneOrMore().letters()))
                 .followedBy(arrow)

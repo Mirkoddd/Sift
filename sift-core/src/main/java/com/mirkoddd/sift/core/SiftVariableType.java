@@ -16,17 +16,17 @@
 package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.SiftContext;
-import com.mirkoddd.sift.core.dsl.VariableCharacterClassConnectorStep;
-import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
+import com.mirkoddd.sift.core.dsl.VariableCharacterConnector;
+import com.mirkoddd.sift.core.dsl.VariableConnector;
 
 /**
  * Concrete implementation of the type evaluation step for <b>variable-length</b> quantifiers.
  * <p>
  * <b>Architecture &amp; Type Safety:</b><br>
  * This class is instantiated when the DSL processes a token with a variable repetition
- * (e.g., {@code .oneOrMore()} or {@code .between(min, max)}). By extending {@link BaseTypeStep}
- * with variable-bound generics, its factory methods strictly return {@link VariableConnectorStep}
- * and {@link VariableCharacterClassConnectorStep}.
+ * (e.g., {@code .oneOrMore()} or {@code .between(min, max)}). By extending {@link BaseType}
+ * with variable-bound generics, its factory methods strictly return {@link VariableConnector}
+ * and {@link VariableCharacterConnector}.
  * <p>
  * This unlocks advanced modifier operations for the user, ensuring that methods like
  * {@code asFewAsPossible()} (reluctant) or {@code withoutBacktracking()} (possessive)
@@ -34,7 +34,7 @@ import com.mirkoddd.sift.core.dsl.VariableConnectorStep;
  *
  * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-class SiftVariableType<Ctx extends SiftContext> extends BaseTypeStep<Ctx, VariableConnectorStep<Ctx>, VariableCharacterClassConnectorStep<Ctx>> {
+class SiftVariableType<Ctx extends SiftContext> extends BaseType<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> {
 
     /**
      * Instantiates the variable-type step with the current state of the pattern assembler.
@@ -51,7 +51,7 @@ class SiftVariableType<Ctx extends SiftContext> extends BaseTypeStep<Ctx, Variab
      * Returns a specialized connector that exposes variable-length modifiers.
      */
     @Override
-    protected VariableConnectorStep<Ctx> getNormalConnector(PatternAssembler nextAssembler) {
+    protected VariableConnector<Ctx> getNormalConnector(PatternAssembler nextAssembler) {
         return new SiftVariableConnector<>(nextAssembler);
     }
 
@@ -61,7 +61,7 @@ class SiftVariableType<Ctx extends SiftContext> extends BaseTypeStep<Ctx, Variab
      * Returns a specialized character class connector that retains variable-length modifiers.
      */
     @Override
-    protected VariableCharacterClassConnectorStep<Ctx> getCharacterClassConnector(PatternAssembler nextAssembler) {
+    protected VariableCharacterConnector<Ctx> getCharacterClassConnector(PatternAssembler nextAssembler) {
         return new SiftVariableConnector<>(nextAssembler);
     }
 }

@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static com.mirkoddd.sift.core.Sift.*;
 import static com.mirkoddd.sift.core.SiftPatterns.*;
 
-import com.mirkoddd.sift.core.dsl.SiftContext;
+import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 @DisplayName("Phone Number Validation Tests")
@@ -32,13 +32,13 @@ class SiftPhoneTest {
     @DisplayName("Should validate Italian phone numbers with various prefix formats")
     void testItalyPhone() {
         // 0. Define the prefix options: (+39 or 0039)
-        SiftPattern<SiftContext.Fragment> italyPrefix = anyOf(
+        SiftPattern<Fragment> italyPrefix = anyOf(
                 literal("+39"),
                 literal("0039")
         );
 
         // 1. Define the prefix block: may contain a space after the prefix
-        SiftPattern<SiftContext.Fragment> prefixBlock = fromAnywhere()
+        SiftPattern<Fragment> prefixBlock = fromAnywhere()
                 .of(italyPrefix)
                 .then().optional().whitespace();
 

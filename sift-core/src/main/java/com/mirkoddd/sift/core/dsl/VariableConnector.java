@@ -16,7 +16,7 @@
 package com.mirkoddd.sift.core.dsl;
 
 /**
- * A specialized {@link ConnectorStep} that follows variable-length quantifiers.
+ * A specialized {@link Connector} that follows variable-length quantifiers.
  * <p>
  * This interface exposes modifiers that are only mathematically or logically valid
  * when the preceding element has a variable width (e.g., {@code +}, {@code *}, or {@code {min,max}}).
@@ -26,7 +26,7 @@ package com.mirkoddd.sift.core.dsl;
  * @author Mirko Dimartino
  * @since 1.5.0
  */
-public interface VariableConnectorStep<Ctx extends SiftContext> extends ConnectorStep<Ctx> {
+public interface VariableConnector<Ctx extends SiftContext> extends Connector<Ctx> {
 
     /**
      * Makes the preceding quantifier "possessive" (e.g., {@code *+} or {@code ++}),
@@ -38,9 +38,9 @@ public interface VariableConnectorStep<Ctx extends SiftContext> extends Connecto
      * <b>Performance Note:</b> Use this when you are certain that the matched sequence
      * should not be re-evaluated, as it significantly reduces the engine's search space.
      *
-     * @return A standard {@link ConnectorStep}, as possessive modifiers cannot be stacked.
+     * @return A standard {@link Connector}, as possessive modifiers cannot be stacked.
      */
-    ConnectorStep<Ctx> withoutBacktracking();
+    Connector<Ctx> withoutBacktracking();
 
     /**
      * Makes the preceding quantifier "lazy" (or reluctant) (e.g., {@code *?} or {@code +?}).
@@ -50,9 +50,9 @@ public interface VariableConnectorStep<Ctx extends SiftContext> extends Connecto
      * <b>Performance Note:</b> Use this when you want to stop matching at the first occurrence
      * of the subsequent pattern, rather than the last (which is the default greedy behavior).
      *
-     * @return A standard {@link ConnectorStep}, as lazy modifiers cannot be stacked.
+     * @return A standard {@link Connector}, as lazy modifiers cannot be stacked.
      */
-    ConnectorStep<Ctx> asFewAsPossible();
+    Connector<Ctx> asFewAsPossible();
 
     /**
      * Anchors the pattern to the end of the input string using {@code $}.
@@ -66,5 +66,5 @@ public interface VariableConnectorStep<Ctx extends SiftContext> extends Connecto
      * @return The final {@link SiftPattern} ready for evaluation.
      */
     @Override
-    SiftPattern<SiftContext.Root> andNothingElse();
+    SiftPattern<Root> andNothingElse();
 }
