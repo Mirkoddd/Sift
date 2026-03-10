@@ -242,3 +242,60 @@ var lazyTagExtractor = Sift.fromStart()
 
 // On input "<first>...<second>", it stops at the first closing '>' instead of the last one.
 ```
+
+## Recipe 9: Data Mining Chemistry Formulas (Negative Lookahead & Unicode)
+This recipe demonstrates a real-world scenario: extracting valid chemical formulas (hydroxides) from an unstructured block of text.
+
+It highlights Sift's power in combining **Word Boundaries** to isolate terms, native **Unicode ranges** for chemical subscripts, and **Negative Lookahead** to strictly reject grammatical typos (like missing parentheses) and avoid partial matches.
+
+*(Note: This example assumes static imports for Sift methods like `exactly`, `oneOrMore`, `literal`, `negativeLookahead`, etc.)*
+
+```java
+// 1. Metal element: 1 uppercase letter optionally followed by 1 lowercase (e.g., Na, Ca, Fe)
+var metal = exactly(1).upperCaseLetters()
+        .followedBy(optional().lowerCaseLetters());
+
+// 2. Unicode subscripts: from ₀ to ₉ (one or more to support double digits like ₁₂)
+var subscripts = oneOrMore().range('₀', '₉');
+
+// 3. Simple OH group: must NOT be followed by a subscript to prevent partial matches like "CaOH₂"
+var simpleOH = exactly(1).of(literal("OH"))
+        .followedBy(negativeLookahead(subscripts));
+
+// 4. Complex OH group: requires parentheses and at least one subscript (e.g., "(OH)₂")
+var complexOH = exactly(1).of(literal("(OH)"))
+        .followedBy(subscripts);
+
+// 5. Logical OR: accepts either the simple or the complex hydroxide variant
+var hydroxideGroup = anyOf(simpleOH, complexOH);
+
+// 6. Final assembly: anchored to word boundaries to avoid matching inside other random words
+String hydroxideRegex = fromWordBoundary()
+        .followedBy(metal)
+        .followedBy(hydroxideGroup)
+        .shake();
+
+// 7. The "chemistry book" text to analyze, packed with valid targets and tricky false positives
+String text = "In this reaction, sodium reacts with water to form NaOH, " +
+        "while calcium forms Ca(OH)₂. Not to be confused with exclamations like OH! " +
+        "Iron(III) hydroxide is Fe(OH)₃. " +
+        "Typos like CaOH₂ (missing parentheses) are grammatically invalid and should be ignored. " +
+        "To stress-test the parser with double digits, a fictional Xy(OH)₁₂ would also match. " +
+        "Hydrogen H₂ is not a hydroxide.";
+
+// 8. Standard Java Regex extraction
+Pattern pattern = Pattern.compile(hydroxideRegex);
+Matcher matcher = pattern.matcher(text);
+
+while (matcher.find()) {
+    System.out.println(matcher.group());
+}
+
+// Console Output:
+// NaOH
+// Ca(OH)₂
+// Fe(OH)₃
+// Xy(OH)₁₂
+
+// Notice how "OH!", "CaOH₂" and "H₂" were completely ignored
+```

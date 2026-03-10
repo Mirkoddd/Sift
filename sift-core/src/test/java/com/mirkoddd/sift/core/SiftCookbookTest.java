@@ -18,14 +18,20 @@ package com.mirkoddd.sift.core;
 import static com.mirkoddd.sift.core.Sift.between;
 import static com.mirkoddd.sift.core.Sift.exactly;
 import static com.mirkoddd.sift.core.Sift.fromStart;
+import static com.mirkoddd.sift.core.Sift.fromWordBoundary;
 import static com.mirkoddd.sift.core.Sift.oneOrMore;
+import static com.mirkoddd.sift.core.Sift.optional;
+import static com.mirkoddd.sift.core.SiftPatterns.anyOf;
 import static com.mirkoddd.sift.core.SiftPatterns.literal;
+import static com.mirkoddd.sift.core.SiftPatterns.negativeLookahead;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,7 +42,6 @@ import com.mirkoddd.sift.core.dsl.CharacterConnector;
 import com.mirkoddd.sift.core.dsl.Connector;
 import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.Root;
-import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 import com.mirkoddd.sift.core.dsl.VariableCharacterConnector;
 import com.mirkoddd.sift.core.dsl.VariableConnector;
@@ -365,5 +370,57 @@ class SiftCookbookTest {
         java.util.regex.Matcher lazyMatcher = java.util.regex.Pattern.compile(lazyTagExtractor).matcher("<first>...<second>");
         assertTrue(lazyMatcher.find());
         assertEquals("<first>", lazyMatcher.group(0), "Lazy modifier should stop at the first closing bracket");
+    }
+
+    @Test
+    @DisplayName("Should extract only valid hydroxides while ignoring false positives")
+    void extractHydroxidesFromText() {
+
+        // 1. Metal element: 1 uppercase letter optionally followed by 1 lowercase (e.g., Na, Ca, Fe)
+        Connector<Fragment> metal = exactly(1).upperCaseLetters()
+                .followedBy(optional().lowerCaseLetters());
+
+        // 2. Unicode subscripts: from ₀ to ₉ (one or more to support double digits like ₁₂)
+        Connector<Fragment> subscripts = oneOrMore().range('₀', '₉');
+
+        // 3. Simple OH group: must NOT be followed by a subscript to prevent partial matches like "CaOH₂"
+        Connector<Fragment> simpleOH = exactly(1).of(literal("OH"))
+                .followedBy(negativeLookahead(subscripts));
+
+        // 4. Complex OH group: requires parentheses and at least one subscript (e.g., "(OH)₂")
+        Connector<Fragment> complexOH = exactly(1).of(literal("(OH)"))
+                .followedBy(subscripts);
+
+        // 5. Logical OR: accepts either the simple or the complex hydroxide variant
+        SiftPattern<Fragment> hydroxideGroup = anyOf(simpleOH, complexOH);
+
+        // 6. Final assembly: anchored to word boundaries to avoid matching inside other random words
+        String hydroxideRegex = fromWordBoundary()
+                .followedBy(metal)
+                .followedBy(hydroxideGroup)
+                .shake();
+
+        // 7. The "chemistry book" text to analyze, packed with valid targets and tricky false positives
+        String text =
+                "In this reaction, sodium reacts with water to form NaOH," +
+                "while calcium forms Ca(OH)₂. Not to be confused with exclamations like OH!" +
+                "Iron(III) hydroxide is Fe(OH)₃." +
+                "Typos like CaOH₂ (missing parentheses) are grammatically invalid and should be ignored." +
+                "To stress-test the parser with double digits, a fictional Xy(OH)₁₂ would also match." +
+                "Hydrogen H₂ is not a hydroxide. KOH should pass tho";
+
+        // 8. Standard Java Regex execution
+        Pattern pattern = Pattern.compile(hydroxideRegex);
+        Matcher matcher = pattern.matcher(text);
+
+        List<String> extractedMolecules = new ArrayList<>();
+        while (matcher.find()) {
+            extractedMolecules.add(matcher.group());
+        }
+
+        // 9. Validation: The expected list remains pristine, proving the parser's strict domain logic!
+        List<String> expected = Arrays.asList("NaOH", "Ca(OH)₂", "Fe(OH)₃", "Xy(OH)₁₂", "KOH");
+
+        assertEquals(expected, extractedMolecules, "Extraction failed: Regex matched incorrect patterns or missed valid ones");
     }
 }
