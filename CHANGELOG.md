@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.1.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.0.0...sift-v5.1.0) (2026-03-11)
+
+
+### Features
+
+* **dsl:** integrate Type-Safe lookaround assertions into builder chain ([0419cd3](https://github.com/Mirkoddd/Sift/commit/0419cd30260e2c32fd2654feb89b1ee19ca2a900))
+
 ## [5.0.0](https://github.com/Mirkoddd/Sift/compare/sift-v4.0.0...sift-v5.0.0) (2026-03-09)
 
 
