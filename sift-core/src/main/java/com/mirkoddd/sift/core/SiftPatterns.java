@@ -16,6 +16,7 @@
 package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.Assertion;
+import com.mirkoddd.sift.core.dsl.ConditionalThen;
 import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
@@ -128,7 +129,7 @@ public final class SiftPatterns {
         return memoize(() -> RegexSyntax.GROUP_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
 
-    //
+    // --- LOOKAROUND ASSERTIONS ---
 
     /**
      * Creates a <b>Positive Lookahead</b> assertion: {@code (?=pattern)}.
@@ -184,6 +185,54 @@ public final class SiftPatterns {
     public static SiftPattern<Assertion> negativeLookbehind(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
         return memoize(() -> RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
+    }
+
+    /**
+     * Starts a Type-Safe <b>Conditional Regex Block</b> based on a positive lookahead condition.
+     * <p>
+     * Emulates native conditional evaluation {@code (?(cond)true|false)} for Java Regex.
+     * If the specified pattern follows the current cursor position, the engine consumes the
+     * {@code Then} branch. Otherwise, it defaults to the {@code Else} branch.
+     *
+     * @param condition The pattern that must immediately follow to trigger the TRUE branch.
+     * @return The next builder state, strictly requiring the definition of the {@code Then} branch.
+     */
+    public static ConditionalThen ifFollowedBy(SiftPattern<Fragment> condition) {
+        Objects.requireNonNull(condition, "Condition pattern cannot be null");
+        return new ConditionalAssembler(positiveLookahead(condition), negativeLookahead(condition));
+    }
+
+    /**
+     * Starts a Type-Safe <b>Conditional Regex Block</b> based on a negative lookahead condition.
+     *
+     * @param condition The pattern that must NOT follow to trigger the TRUE branch.
+     * @return The next builder state, strictly requiring the definition of the {@code Then} branch.
+     */
+    public static ConditionalThen ifNotFollowedBy(SiftPattern<Fragment> condition) {
+        Objects.requireNonNull(condition, "Condition pattern cannot be null");
+        return new ConditionalAssembler(negativeLookahead(condition), positiveLookahead(condition));
+    }
+
+    /**
+     * Starts a Type-Safe <b>Conditional Regex Block</b> based on a positive lookbehind condition.
+     *
+     * @param condition The pattern that must immediately precede to trigger the TRUE branch.
+     * @return The next builder state, strictly requiring the definition of the {@code Then} branch.
+     */
+    public static ConditionalThen ifPrecededBy(SiftPattern<Fragment> condition) {
+        Objects.requireNonNull(condition, "Condition pattern cannot be null");
+        return new ConditionalAssembler(positiveLookbehind(condition), negativeLookbehind(condition));
+    }
+
+    /**
+     * Starts a Type-Safe <b>Conditional Regex Block</b> based on a negative lookbehind condition.
+     *
+     * @param condition The pattern that must NOT precede to trigger the TRUE branch.
+     * @return The next builder state, strictly requiring the definition of the {@code Then} branch.
+     */
+    public static ConditionalThen ifNotPrecededBy(SiftPattern<Fragment> condition) {
+        Objects.requireNonNull(condition, "Condition pattern cannot be null");
+        return new ConditionalAssembler(negativeLookbehind(condition), positiveLookbehind(condition));
     }
 
     /**
@@ -298,7 +347,7 @@ public final class SiftPatterns {
      * Memoizes a pattern generation using a supplier, making it generic so it can
      * safely produce both Fragments and Assertions without unchecked casts.
      */
-    private static <T extends SiftContext> SiftPattern<T> memoize(Supplier<String> generator) {
+    static <T extends SiftContext> SiftPattern<T> memoize(Supplier<String> generator) {
         return new MemoizedPattern<>(generator);
     }
 
