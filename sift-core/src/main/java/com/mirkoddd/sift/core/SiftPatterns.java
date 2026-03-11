@@ -22,6 +22,7 @@ import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -341,6 +342,69 @@ public final class SiftPatterns {
             sb.append(RegexSyntax.CLASS_CLOSE);
             return sb.toString();
         });
+    }
+
+    /**
+     * Initiates the creation of a safely nested recursive pattern.
+     * <p>
+     * This factory method returns a fluent {@link NestingAssembler} that guarantees
+     * structural symmetry by forcing the use of a valid {@link Delimiter} pair.
+     * </p>
+     *
+     * @param depth The maximum nesting depth to unroll (must be between 2 and 10).
+     * @return A {@link NestingAssembler} to configure the delimiter and content.
+     */
+    public static NestingAssembler nesting(int depth) {
+        return new NestingAssembler(depth);
+    }
+
+    /**
+     * Internal unrolling engine that emulates Regular Expression recursion.
+     * <p>
+     * Since Java's native {@link java.util.regex.Pattern} lacks support for true
+     * PCRE-style recursion (like {@code (?R)}), this method achieves a similar result
+     * by functionally unrolling the pattern definition from the inside out.
+     * </p>
+     * <p>
+     * <b>JVM Safety Bounds:</b> The depth is strictly clamped between 2 and 10.
+     * Compiling deeply nested regex strings grows exponentially and will quickly trigger
+     * a {@code StackOverflowError} within the JVM's regex compiler. A depth of 10 is
+     * mathematically vast for real-world structured data.
+     * </p>
+     *
+     * @param maxDepth   The maximum number of nesting levels to unroll (must be between 2 and 10).
+     * @param definition A functional block where the parameter represents the recursive
+     * call to the pattern itself (the 'self' reference).
+     * @return A deeply nested fragment capable of parsing recursive structures up to {@code maxDepth}.
+     * @throws IllegalArgumentException if {@code maxDepth} is outside the safe bounds [2, 10].
+     * @throws NullPointerException     if the {@code definition} function is null.
+     */
+    static SiftPattern<Fragment> recursive(
+            int maxDepth,
+            Function<SiftPattern<Fragment>, SiftPattern<Fragment>> definition) {
+
+        if (maxDepth < 2 || maxDepth > 10) {
+            throw new IllegalArgumentException(
+                    "Recursion depth must be strictly between 2 and 10 to ensure JVM stability and prevent StackOverflowErrors."
+            );
+        }
+        Objects.requireNonNull(definition, "Recursive definition cannot be null.");
+
+        // BASE CASE (The bottom of the Matryoshka):
+        // If the parsing engine attempts to go deeper than maxDepth, it hits this empty negative lookahead.
+        // In Regex mathematics, (?!) is a logical contradiction that is guaranteed to ALWAYS fail.
+        // This ensures the regex stops safely instead of breaking unexpectedly.
+        SiftPattern<Fragment> current = memoize(() -> "(?!)");
+
+        // UNROLLING (Inside-Out Injection):
+        // We build the nested structure by applying the function repeatedly.
+        // At each iteration, the previously built layer is injected as the 'self' parameter
+        // for the next layer up, effectively unrolling the recursion.
+        for (int i = 0; i < maxDepth; i++) {
+            current = definition.apply(current);
+        }
+
+        return current;
     }
 
     /**
