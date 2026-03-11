@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.2.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.1.0...sift-v5.2.0) (2026-03-11)
+
+
+### Features
+
+* **core:** implement type-safe conditional (If-Then-Else) regex DSL ([94927e2](https://github.com/Mirkoddd/Sift/commit/94927e29379a893c3c03ef0b7602adc0d7b0738c))
+
 ## [5.1.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.0.0...sift-v5.1.0) (2026-03-11)
 
 
