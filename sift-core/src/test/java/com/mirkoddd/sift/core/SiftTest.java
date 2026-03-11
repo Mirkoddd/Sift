@@ -1111,8 +1111,7 @@ class SiftTest {
         void positiveLookaheadTest() {
             String regex = fromAnywhere()
                     .character('q')
-                    .then()
-                    .of(positiveLookahead(literal("u")))
+                    .mustBeFollowedBy(literal("u"))
                     .shake();
 
             assertEquals("q(?=u)", regex);
@@ -1125,8 +1124,7 @@ class SiftTest {
         void negativeLookaheadTest() {
             String regex = fromStart()
                     .of(literal("foo"))
-                    .then()
-                    .of(negativeLookahead(literal("bar")))
+                    .notFollowedBy(literal("bar"))
                     .shake();
 
             assertEquals("^foo(?!bar)", regex);
@@ -1139,9 +1137,8 @@ class SiftTest {
         @DisplayName("Positive Lookbehind: Match 'apple' only if preceded by 'green '")
         void positiveLookbehindTest() {
             String regex = fromAnywhere()
-                    .of(positiveLookbehind(literal("green ")))
-                    .then()
                     .of(literal("apple"))
+                    .mustBePrecededBy(literal("green "))
                     .shake();
 
             assertEquals("(?<=green\\ )apple", regex);
@@ -1153,15 +1150,73 @@ class SiftTest {
         @DisplayName("Negative Lookbehind: Match 'cat' only if NOT preceded by 'super'")
         void negativeLookbehindTest() {
             String regex = fromAnywhere()
-                    .of(negativeLookbehind(literal("super")))
-                    .then()
                     .of(literal("cat"))
+                    .notPrecededBy(literal("super"))
                     .shake();
 
             assertEquals("(?<!super)cat", regex);
             assertRegexMatches(regex, "tomcat");
             assertRegexMatches(regex, "cat");
             assertRegexDoesNotMatch(regex, "supercat");
+        }
+
+        @Test
+        @DisplayName("Mixed Prepending & Lookarounds: The Ultimate Boss Fight")
+        void mixedLookaroundsTest() {
+            // We want to match the exact string "TEST_PASS" with very strict rules:
+            // 1. Must be structurally built by prepending "TEST_" to "PASS" (Tests precededBy Fragment)
+            // 2. Must NOT be preceded by "SKIP_" (Tests precededBy Assertion)
+            // 3. Must be followed by "_OK" (Tests followedBy Assertion)
+            // 4. Must NOT be followed by "_OK_BUT_SLOW" (Tests followedBy Assertion)
+
+            String regexSugar = fromAnywhere()
+                    .of(literal("PASS"))
+                    .precededBy(literal("TEST_"))             // 1. Structural prepend -> "TEST_PASS"
+                    .notPrecededBy(literal("SKIP_"))          // 2. Negative Lookbehind
+                    .mustBeFollowedBy(literal("_OK"))         // 3. Positive Lookahead
+                    .notFollowedBy(literal("_OK_BUT_SLOW"))   // 4. Negative Lookahead
+                    .shake();
+
+            // The engine correctly layers the prepends: the lookbehind goes BEFORE the "TEST_" prefix!
+            String expectedRegex = "(?<!SKIP_)TEST_PASS(?=_OK)(?!_OK_BUT_SLOW)";
+
+            assertEquals(expectedRegex, regexSugar, "Mixed prepending and lookarounds failed to assemble correctly");
+
+            // VALID MATCHES:
+            assertRegexMatches(regexSugar, "TEST_PASS_OK");
+            assertRegexMatches(regexSugar, "System_TEST_PASS_OK_fast");
+
+            // INVALID MATCHES (Structural & Lookbehind failures):
+            assertRegexDoesNotMatch(regexSugar, "UNIT_PASS_OK");      // Missing the structurally prepended "TEST_"
+            assertRegexDoesNotMatch(regexSugar, "SKIP_TEST_PASS_OK"); // Fails negative lookbehind
+
+            // INVALID MATCHES (Lookahead failures):
+            assertRegexDoesNotMatch(regexSugar, "TEST_PASS_FAIL");         // Fails positive lookahead
+            assertRegexDoesNotMatch(regexSugar, "TEST_PASS_OK_BUT_SLOW");  // Fails negative lookahead
+        }
+
+        @Test
+        @DisplayName("Quantifier notFollowedBy: Assertion immediately after start anchor")
+        void quantifierNotFollowedByTest() {
+            // Goal: Match any full line of text, as long as it does NOT start with "ERROR"
+
+            String regexSugar = fromStart()
+                    .notFollowedBy(literal("ERROR")) // Appended directly to the Start anchor!
+                    .then().zeroOrMore().anyCharacter()
+                    .andNothingElse()
+                    .shake();
+
+            // The negative lookahead must be attached immediately after the '^'
+            assertEquals("^(?!ERROR).*$", regexSugar);
+
+            // VALID MATCHES:
+            assertRegexMatches(regexSugar, "WARNING: Disk space low");
+            assertRegexMatches(regexSugar, "INFO: System booted successfully");
+            assertRegexMatches(regexSugar, "ERR: Just a typo, which is allowed");
+
+            // INVALID MATCHES (because they start with ERROR):
+            assertRegexDoesNotMatch(regexSugar, "ERROR: Out of memory");
+            assertRegexDoesNotMatch(regexSugar, "ERROR");
         }
     }
 

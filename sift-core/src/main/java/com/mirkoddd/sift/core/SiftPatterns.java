@@ -15,7 +15,9 @@
  */
 package com.mirkoddd.sift.core;
 
+import com.mirkoddd.sift.core.dsl.Assertion;
 import com.mirkoddd.sift.core.dsl.Fragment;
+import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.Objects;
@@ -135,9 +137,9 @@ public final class SiftPatterns {
      * the current position, but does <b>not</b> consume any characters.
      *
      * @param pattern The condition that must be met ahead.
-     * @return A lookahead fragment.
+     * @return A lookahead assertion.
      */
-    public static SiftPattern<Fragment> positiveLookahead(SiftPattern<Fragment> pattern) {
+    public static SiftPattern<Assertion> positiveLookahead(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
         return memoize(() -> RegexSyntax.POSITIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
@@ -149,9 +151,9 @@ public final class SiftPatterns {
      * the current position.
      *
      * @param pattern The condition that must NOT be met ahead.
-     * @return A negative lookahead fragment.
+     * @return A negative lookahead assertion.
      */
-    public static SiftPattern<Fragment> negativeLookahead(SiftPattern<Fragment> pattern) {
+    public static SiftPattern<Assertion> negativeLookahead(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
         return memoize(() -> RegexSyntax.NEGATIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
@@ -163,9 +165,9 @@ public final class SiftPatterns {
      * the current position.
      *
      * @param pattern The condition that must be met behind.
-     * @return A lookbehind fragment.
+     * @return A lookbehind assertion.
      */
-    public static SiftPattern<Fragment> positiveLookbehind(SiftPattern<Fragment> pattern) {
+    public static SiftPattern<Assertion> positiveLookbehind(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
         return memoize(() -> RegexSyntax.POSITIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
@@ -177,9 +179,9 @@ public final class SiftPatterns {
      * the current position.
      *
      * @param pattern The condition that must NOT be met behind.
-     * @return A negative lookbehind fragment.
+     * @return A negative lookbehind assertion.
      */
-    public static SiftPattern<Fragment> negativeLookbehind(SiftPattern<Fragment> pattern) {
+    public static SiftPattern<Assertion> negativeLookbehind(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
         return memoize(() -> RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
     }
@@ -293,14 +295,14 @@ public final class SiftPatterns {
     }
 
     /**
-     * Wraps a string generator in a memoized pattern to ensure the string building
-     * logic is executed only once, optimizing performance.
+     * Memoizes a pattern generation using a supplier, making it generic so it can
+     * safely produce both Fragments and Assertions without unchecked casts.
      */
-    private static SiftPattern<Fragment> memoize(Supplier<String> generator) {
-        return new MemoizedPattern(generator);
+    private static <T extends SiftContext> SiftPattern<T> memoize(Supplier<String> generator) {
+        return new MemoizedPattern<>(generator);
     }
 
-    private static final class MemoizedPattern extends BaseSiftPattern<Fragment> {
+    private static final class MemoizedPattern<T extends SiftContext> extends BaseSiftPattern<T> {
         private final Supplier<String> generator;
 
         private MemoizedPattern(Supplier<String> generator) {

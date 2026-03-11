@@ -16,10 +16,8 @@
 package com.mirkoddd.sift.core.dsl;
 
 /**
- * Represents a terminal regex root.
- * <p>
- * Roots contain absolute boundaries or global inline flags. To prevent logical errors
- * (e.g., nesting an end-of-line anchor in the middle of a string), the compiler
- * strictly prohibits embedding a {@code Root} inside another pattern.
+ * A marker interface for any SiftContext that can be embedded or chained
+ * inside another pattern (e.g., Fragments and Assertions).
+ * Excludes sealed patterns like Root.
  */
-public interface Root extends SiftContext { }
+public interface Composable extends SiftContext { }

@@ -15,6 +15,8 @@
  */
 package com.mirkoddd.sift.core.dsl;
 
+import com.mirkoddd.sift.core.SiftPatterns;
+
 /**
  * The continuation node in the Sift State-Machine DSL.
  * <p>
@@ -63,6 +65,16 @@ public interface Connector<Ctx extends SiftContext> extends SiftPattern<Ctx> {
     Connector<Ctx> followedBy(SiftPattern<Fragment> p1);
 
     /**
+     * Appends a zero-width assertion (like a lookahead) to the current sequence.
+     * <p>
+     * Assertions do not consume characters and cannot be quantified.
+     *
+     * @param assertion The assertion pattern to append.
+     * @return The current connector step for further chaining.
+     */
+    Connector<Ctx> followedByAssertion(SiftPattern<Assertion> assertion);
+
+    /**
      * Convenience overload for composing two patterns sequentially.
      *
      * @param p1 The first fragment pattern to append.
@@ -82,6 +94,79 @@ public interface Connector<Ctx extends SiftContext> extends SiftPattern<Ctx> {
      * @return The current connector step for further chaining.
      */
     Connector<Ctx> followedBy(Iterable<? extends SiftPattern<Fragment>> patterns);
+
+    /**
+     * Asserts that the current sequence is <b>not</b> followed by the given pattern.
+     * <p>
+     * This uses a Negative Lookahead {@code (?!...)} under the hood. It checks the upcoming
+     * characters to ensure the pattern does not match, but it <b>does not consume</b> them.
+     *
+     * @param pattern The condition that must NOT be met ahead.
+     * @return The current connector step for further chaining.
+     */
+    default Connector<Ctx> notFollowedBy(SiftPattern<Fragment> pattern) {
+        return this.followedByAssertion(SiftPatterns.negativeLookahead(pattern));
+    }
+
+    /**
+     * Asserts that the current sequence <b>must</b> be followed by the given pattern.
+     * <p>
+     * This uses a Positive Lookahead {@code (?=...)} under the hood. It checks the upcoming
+     * characters to ensure the pattern matches, but it <b>does not consume</b> them.
+     *
+     * @param pattern The condition that must be met ahead.
+     * @return The current connector step for further chaining.
+     */
+    default Connector<Ctx> mustBeFollowedBy(SiftPattern<Fragment> pattern) {
+        return this.followedByAssertion(SiftPatterns.positiveLookahead(pattern));
+    }
+
+    /**
+     * Prepends an existing, pre-compiled SiftPattern to the current sequence.
+     * <p>
+     * This method structurally inserts the given pattern <b>before</b> the current sequence,
+     * maintaining the existing generic context.
+     *
+     * @param p1 The fragment pattern to prepend.
+     * @return The current connector step for further chaining.
+     */
+    Connector<Ctx> precededBy(SiftPattern<Fragment> p1);
+
+    /**
+     * Prepends a zero-width assertion (like a lookbehind) to the current sequence.
+     * <p>
+     * Assertions do not consume characters and cannot be quantified.
+     *
+     * @param assertion The assertion pattern to prepend.
+     * @return The current connector step for further chaining.
+     */
+    Connector<Ctx> precededByAssertion(SiftPattern<Assertion> assertion);
+
+    /**
+     * Asserts that the current sequence is <b>not</b> preceded by the given pattern.
+     * <p>
+     * This uses a Negative Lookbehind {@code (?<!...)} under the hood. It checks the preceding
+     * characters to ensure the pattern does not match, but it <b>does not consume</b> them.
+     *
+     * @param pattern The condition that must NOT be met behind.
+     * @return A new connector with the lookbehind applied before the current sequence.
+     */
+    default Connector<Ctx> notPrecededBy(SiftPattern<Fragment> pattern) {
+        return this.precededByAssertion(SiftPatterns.negativeLookbehind(pattern));
+    }
+
+    /**
+     * Asserts that the current sequence <b>must</b> be preceded by the given pattern.
+     * <p>
+     * This uses a Positive Lookbehind {@code (?<=...)} under the hood. It checks the preceding
+     * characters to ensure the pattern matches, but it <b>does not consume</b> them.
+     *
+     * @param pattern The condition that must be met behind.
+     * @return A new connector with the lookbehind applied before the current sequence.
+     */
+    default Connector<Ctx> mustBePrecededBy(SiftPattern<Fragment> pattern) {
+        return this.precededByAssertion(SiftPatterns.positiveLookbehind(pattern));
+    }
 
     /**
      * Appends a Word Boundary {@code \b} to the sequence.

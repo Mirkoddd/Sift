@@ -15,7 +15,7 @@
  */
 package com.mirkoddd.sift.core;
 
-import com.mirkoddd.sift.core.dsl.Fragment;
+import com.mirkoddd.sift.core.dsl.Composable;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
 import java.util.Collections;
@@ -156,7 +156,7 @@ class PatternAssembler {
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
-    void addPattern(SiftPattern<Fragment> pattern) {
+    void addPattern(SiftPattern<? extends Composable> pattern) {
         flush();
         extractAndCheckGroupsAndRequirements(pattern, null);
 
@@ -173,6 +173,15 @@ class PatternAssembler {
             canModifyMain = false;
         }
         currentQuantifier = RegexSyntax.EMPTY;
+    }
+
+    void prependPattern(SiftPattern<? extends Composable> pattern) {
+        flush();
+        extractAndCheckGroupsAndRequirements(pattern, null);
+
+        String rawSubPattern = extractRawString(pattern);
+
+        mainPattern.insert(0, rawSubPattern);
     }
 
     private void extractAndCheckGroupsAndRequirements(SiftPattern<?> pattern, String wrapperGroupName) {

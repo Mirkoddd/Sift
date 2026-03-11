@@ -17,6 +17,7 @@ package com.mirkoddd.sift.core;
 
 import static com.mirkoddd.sift.core.Sift.between;
 import static com.mirkoddd.sift.core.Sift.exactly;
+import static com.mirkoddd.sift.core.Sift.fromAnywhere;
 import static com.mirkoddd.sift.core.Sift.fromStart;
 import static com.mirkoddd.sift.core.Sift.fromWordBoundary;
 import static com.mirkoddd.sift.core.Sift.oneOrMore;
@@ -24,6 +25,7 @@ import static com.mirkoddd.sift.core.Sift.optional;
 import static com.mirkoddd.sift.core.SiftPatterns.anyOf;
 import static com.mirkoddd.sift.core.SiftPatterns.literal;
 import static com.mirkoddd.sift.core.SiftPatterns.negativeLookahead;
+import static com.mirkoddd.sift.core.SiftPatterns.positiveLookahead;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.mirkoddd.sift.core.dsl.Assertion;
 import com.mirkoddd.sift.core.dsl.CharacterConnector;
 import com.mirkoddd.sift.core.dsl.Connector;
 import com.mirkoddd.sift.core.dsl.Fragment;
@@ -114,20 +117,20 @@ class SiftCookbookTest {
     @DisplayName("Recipe 2: Parsing Log Files (TSV Format with discrete semantic parts)")
     void testLogParserRecipe() {
         // Define discrete temporal components
-        CharacterConnector<Fragment> year = Sift.fromAnywhere().exactly(4).digits();
-        CharacterConnector<Fragment> month = Sift.fromAnywhere().exactly(2).digits();
-        CharacterConnector<Fragment> day = Sift.fromAnywhere().exactly(2).digits(); // same as month, but more readable
-        Connector<Fragment> dash = Sift.fromAnywhere().character('-'); // you could also use literal("-"), less verbose
+        CharacterConnector<Fragment> year = fromAnywhere().exactly(4).digits();
+        CharacterConnector<Fragment> month = fromAnywhere().exactly(2).digits();
+        CharacterConnector<Fragment> day = fromAnywhere().exactly(2).digits(); // same as month, but more readable
+        Connector<Fragment> dash = fromAnywhere().character('-'); // you could also use literal("-"), less verbose
 
         Connector<Fragment> dateBlock = year.followedBy(Arrays.asList(dash, month, dash, day));
 
         // Define structural components
-        Connector<Fragment> tab = Sift.fromAnywhere().tab();
-        Connector<Fragment> newline = Sift.fromAnywhere().newline();
+        Connector<Fragment> tab = fromAnywhere().tab();
+        Connector<Fragment> newline = fromAnywhere().newline();
 
         // Define payload components
-        Connector<Fragment> logLevel = Sift.fromAnywhere().oneOrMore().upperCaseLetters();
-        Connector<Fragment> message = Sift.fromAnywhere().oneOrMore().anyCharacter();
+        Connector<Fragment> logLevel = fromAnywhere().oneOrMore().upperCaseLetters();
+        Connector<Fragment> message = fromAnywhere().oneOrMore().anyCharacter();
 
         // Assemble the final pattern like a natural language sentence
         String logParserRegex = dateBlock
@@ -239,21 +242,21 @@ class SiftCookbookTest {
         char closeBracket = '>';
         String closingTagPrefix = "</";
 
-        VariableCharacterConnector<Fragment> tagName = Sift.fromAnywhere().oneOrMore().alphanumeric();
-        VariableConnector<Fragment> tagContent = Sift.fromAnywhere().oneOrMore().anyCharacter();
+        VariableCharacterConnector<Fragment> tagName = fromAnywhere().oneOrMore().alphanumeric();
+        VariableConnector<Fragment> tagContent = fromAnywhere().oneOrMore().anyCharacter();
 
         // 1. Defining Named Captures to extract specific data blocks
         NamedCapture groupTag = SiftPatterns.capture("tag", tagName);
         NamedCapture groupContent = SiftPatterns.capture("content", tagContent);
 
-        Connector<Fragment> openTag = Sift.fromAnywhere()
+        Connector<Fragment> openTag = fromAnywhere()
                 .character(openBracket)
                 .then().namedCapture(groupTag)
                 .then().character(closeBracket);
 
-        Connector<Fragment> content = Sift.fromAnywhere().namedCapture(groupContent);
+        Connector<Fragment> content = fromAnywhere().namedCapture(groupContent);
 
-        Connector<Fragment> closeTag = Sift.fromAnywhere()
+        Connector<Fragment> closeTag = fromAnywhere()
                 .of(literal(closingTagPrefix))
                 .then().backreference(groupTag)
                 .then().character(closeBracket);
@@ -292,19 +295,17 @@ class SiftCookbookTest {
         // Goal 1: Validate a complex password using Lookaheads
         // Must contain at least one uppercase, one digit, and be at least 8 chars long.
 
-        Connector<Fragment> requiresUppercase = Sift.fromAnywhere()
-                .of(SiftPatterns.positiveLookahead(
-                        Sift.fromAnywhere().zeroOrMore().anyCharacter().then().exactly(1).upperCaseLetters()
-                ));
+        SiftPattern<Fragment> hasUppercase = fromAnywhere()
+                .zeroOrMore().anyCharacter()
+                .then().exactly(1).upperCaseLetters();
 
-        Connector<Fragment> requiresDigit = Sift.fromAnywhere()
-                .of(SiftPatterns.positiveLookahead(
-                        Sift.fromAnywhere().zeroOrMore().anyCharacter().then().exactly(1).digits()
-                ));
+        SiftPattern<Fragment> hasDigit = fromAnywhere()
+                .zeroOrMore().anyCharacter()
+                .then().exactly(1).digits();
 
         String passwordPattern = fromStart()
-                .of(requiresUppercase)
-                .then().exactly(1).of(requiresDigit)
+                .mustBeFollowedBy(hasUppercase)
+                .mustBeFollowedBy(hasDigit)
                 .then().between(8, 64).anyCharacter()
                 .andNothingElse()
                 .shake();
@@ -331,6 +332,47 @@ class SiftCookbookTest {
 
         assertMatches(httpMethodPattern, "POST");
         assertDoesNotMatch(httpMethodPattern, "OPTIONS"); // Not in the allowed list
+    }
+
+    @Test
+    @DisplayName("Recipe 6 bis: Power User API: Explicitly building and injecting Assertions")
+    void explicitAssertionVariablesTest() {
+        // Goal: Validate the exact same complex password rule defined in Recipe 6, but using the
+        // low-level exposed API (followedByAssertion) instead of syntax sugar.
+
+        // 1. Define the base consumable fragments
+        SiftPattern<Fragment> hasUppercaseFragment = fromAnywhere()
+                .zeroOrMore().anyCharacter()
+                .then().exactly(1).upperCaseLetters();
+
+        SiftPattern<Fragment> hasDigitFragment = fromAnywhere()
+                .zeroOrMore().anyCharacter()
+                .then().exactly(1).digits();
+
+        // 2. Wrap the fragments into explicit Assertion variables using SiftPatterns
+        SiftPattern<Assertion> uppercaseAssertion = positiveLookahead(hasUppercaseFragment);
+        SiftPattern<Assertion> digitAssertion = positiveLookahead(hasDigitFragment);
+
+        // 3. Build the regex using the low-level structural methods
+        String explicitPattern = fromStart()
+                .followedByAssertion(uppercaseAssertion) // Injects (?=.*[A-Z])
+                .followedByAssertion(digitAssertion)     // Injects (?=.*[0-9])
+                .then().between(8, 64).anyCharacter()
+                .andNothingElse()
+                .shake();
+
+        String expectedRegex = "^(?=.*[A-Z])(?=.*[0-9]).{8,64}$";
+
+        assertEquals(expectedRegex, explicitPattern, "Explicit assertions must generate the exact same regex as the sugar methods");
+
+        // VALID MATCHES
+        assertMatches(explicitPattern, "ValidPass123");
+        assertMatches(explicitPattern, "1234567A");
+
+        // INVALID MATCHES
+        assertDoesNotMatch(explicitPattern, "nouppercase123"); // Missing uppercase
+        assertDoesNotMatch(explicitPattern, "NoDigitsHere");   // Missing digit
+        assertDoesNotMatch(explicitPattern, "Short1A");        // Under 8 chars
     }
 
     @Test
@@ -385,7 +427,7 @@ class SiftCookbookTest {
 
         // 3. Simple OH group: must NOT be followed by a subscript to prevent partial matches like "CaOH₂"
         Connector<Fragment> simpleOH = exactly(1).of(literal("OH"))
-                .followedBy(negativeLookahead(subscripts));
+                .notFollowedBy(subscripts);
 
         // 4. Complex OH group: requires parentheses and at least one subscript (e.g., "(OH)₂")
         Connector<Fragment> complexOH = exactly(1).of(literal("(OH)"))

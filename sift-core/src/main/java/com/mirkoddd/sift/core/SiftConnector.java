@@ -70,6 +70,16 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
 
     /** {@inheritDoc} */
     @Override
+    public Connector<Ctx> followedByAssertion(SiftPattern<Assertion> assertion) {
+        Objects.requireNonNull(assertion, "Assertion cannot be null");
+
+        PatternAssembler next = assembler.copy();
+        next.addPattern(assertion);
+        return new SiftConnector<>(next);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public Connector<Ctx> followedBy(SiftPattern<Fragment> p1, SiftPattern<Fragment> p2) {
         return followedBy(p1).followedBy(p2);
     }
@@ -85,6 +95,26 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
             current = current.followedBy(p);
         }
         return current;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Connector<Ctx> precededBy(SiftPattern<Fragment> p1) {
+        Objects.requireNonNull(p1, "Pattern cannot be null");
+
+        PatternAssembler next = assembler.copy();
+        next.prependPattern(p1);
+        return new SiftConnector<>(next);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Connector<Ctx> precededByAssertion(SiftPattern<Assertion> assertion) {
+        Objects.requireNonNull(assertion, "Assertion cannot be null");
+
+        PatternAssembler next = assembler.copy();
+        next.prependPattern(assertion);
+        return new SiftConnector<>(next);
     }
 
     /** {@inheritDoc} */

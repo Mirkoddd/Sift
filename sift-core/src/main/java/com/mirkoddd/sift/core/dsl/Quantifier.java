@@ -16,6 +16,7 @@
 package com.mirkoddd.sift.core.dsl;
 
 import com.mirkoddd.sift.core.NamedCapture;
+import com.mirkoddd.sift.core.SiftPatterns;
 
 /**
  * Defines <b>HOW MANY TIMES</b> the next element should appear, or injects structural elements.
@@ -107,6 +108,35 @@ public interface Quantifier<Ctx extends SiftContext> extends Type<Ctx, Connector
      * @throws IllegalArgumentException if min is negative, max is zero or negative, or if min is greater than max.
      */
     Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> between(int min, int max);
+
+    /**
+     * Injects a zero-width assertion immediately at this point in the sequence.
+     * Assertions do not consume characters and bypass the quantification step.
+     *
+     * @param assertion The assertion to inject.
+     * @return A connector to continue building the sequence.
+     */
+    Connector<Ctx> followedByAssertion(SiftPattern<Assertion> assertion);
+
+    /**
+     * Asserts that the current sequence <b>must</b> be followed by the given pattern.
+     *
+     * @param pattern The condition that must be met ahead.
+     * @return A connector to continue building the sequence.
+     */
+    default Connector<Ctx> mustBeFollowedBy(SiftPattern<Fragment> pattern) {
+        return this.followedByAssertion(SiftPatterns.positiveLookahead(pattern));
+    }
+
+    /**
+     * Asserts that the current sequence is <b>not</b> followed by the given pattern.
+     *
+     * @param pattern The condition that must NOT be met ahead.
+     * @return A connector to continue building the sequence.
+     */
+    default Connector<Ctx> notFollowedBy(SiftPattern<Fragment> pattern) {
+        return this.followedByAssertion(SiftPatterns.negativeLookahead(pattern));
+    }
 
     /**
      * Starts a named capturing group using the provided definition.

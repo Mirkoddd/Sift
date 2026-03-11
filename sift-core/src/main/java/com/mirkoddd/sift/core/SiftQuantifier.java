@@ -112,6 +112,15 @@ class SiftQuantifier<Ctx extends SiftContext> implements Quantifier<Ctx> {
 
     /** {@inheritDoc} */
     @Override
+    public Connector<Ctx> followedByAssertion(SiftPattern<Assertion> assertion) {
+        Objects.requireNonNull(assertion, "Assertion cannot be null");
+        PatternAssembler next = assembler.copy();
+        next.addPattern(assertion);
+        return new SiftConnector<>(next);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public Connector<Ctx> namedCapture(NamedCapture group) {
         Objects.requireNonNull(group, "NamedCapture cannot be null.");
         PatternAssembler next = assembler.copy();
