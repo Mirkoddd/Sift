@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.3.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.2.0...sift-v5.3.0) (2026-03-11)
+
+
+### Features
+
+* **core:** implement robust recursion engine for nested structures ([113f598](https://github.com/Mirkoddd/Sift/commit/113f598078416a9a136b9f486735ef5de2b22da2))
+
 ## [5.2.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.1.0...sift-v5.2.0) (2026-03-11)
 
 
