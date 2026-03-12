@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.5.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.4.0...sift-v5.5.0) (2026-03-12)
+
+
+### Features
+
+* **core:** implement advanced regex features and class intersections ([8567faf](https://github.com/Mirkoddd/Sift/commit/8567faf2e650eef96c14cde9b99e8c06e14e4cc5))
+
 ## [5.4.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.3.0...sift-v5.4.0) (2026-03-12)
 
 

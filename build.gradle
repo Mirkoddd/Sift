@@ -1,6 +1,6 @@
 allprojects {
     group = 'com.mirkoddd'
-    version = '5.4.0' // x-release-please-version
+    version = '5.5.0' // x-release-please-version
 
     repositories {
         mavenCentral()
