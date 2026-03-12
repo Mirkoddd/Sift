@@ -185,6 +185,24 @@ public interface Type<Ctx extends SiftContext, T extends Connector<Ctx>, C exten
     C lowerCaseLettersUnicode();
 
     /**
+     * Matches any Unicode caseless letter (e.g., Kanji, Arabic, Hebrew).
+     * <p>
+     * Equivalent to the regex {@code \p{Lo}} (Letter, Other).
+     *
+     * @return The specialized character class step to allow further class modifications.
+     */
+    C caselessLettersUnicode();
+
+    /**
+     * Matches any Unicode symbol character (e.g., currency signs, mathematical operators).
+     * <p>
+     * Equivalent to the regex {@code \p{S}}.
+     *
+     * @return The specialized character class step to allow further class modifications.
+     */
+    C symbolsUnicode();
+
+    /**
      * Matches any ASCII alphanumeric character (letters and digits).
      * <p>
      * Equivalent to the regex range {@code [a-zA-Z0-9]}.

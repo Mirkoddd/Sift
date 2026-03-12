@@ -154,6 +154,17 @@ class SiftQuantifier<Ctx extends SiftContext> implements Quantifier<Ctx> {
     @Override public CharacterConnector<Ctx> nonLettersUnicode() { return exactly(1).nonLettersUnicode(); }
     @Override public CharacterConnector<Ctx> upperCaseLettersUnicode() { return exactly(1).upperCaseLettersUnicode(); }
     @Override public CharacterConnector<Ctx> lowerCaseLettersUnicode() { return exactly(1).lowerCaseLettersUnicode(); }
+
+    @Override
+    public CharacterConnector<Ctx> caselessLettersUnicode() {
+        return exactly(1).caselessLettersUnicode();
+    }
+
+    @Override
+    public CharacterConnector<Ctx> symbolsUnicode() {
+        return exactly(1).symbolsUnicode();
+    }
+
     @Override public CharacterConnector<Ctx> alphanumeric() { return exactly(1).alphanumeric(); }
     @Override public CharacterConnector<Ctx> nonAlphanumeric() { return exactly(1).nonAlphanumeric(); }
     @Override public CharacterConnector<Ctx> alphanumericUnicode() { return exactly(1).alphanumericUnicode(); }

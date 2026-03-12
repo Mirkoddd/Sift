@@ -73,6 +73,8 @@ final class RegexSyntax {
     static final String NON_UNICODE_LETTERS = "\\P{L}";
     static final String UNICODE_LETTERS_UPPERCASE_ONLY = "\\p{Lu}";
     static final String UNICODE_LETTERS_LOWERCASE_ONLY = "\\p{Ll}";
+    public static final String UNICODE_LETTERS_CASELESS = "\\p{Lo}";
+    public static final String UNICODE_SYMBOLS = "\\p{S}";
     static final String UNICODE_ALPHANUMERIC = "\\p{L}\\p{Nd}"; // Stripped outer brackets
     static final String NON_UNICODE_ALPHANUMERIC = "^\\p{L}\\p{Nd}"; // Stripped outer brackets
     static final String UNICODE_WORD_CHARACTERS = "\\p{L}\\p{Nd}_"; // Stripped outer brackets

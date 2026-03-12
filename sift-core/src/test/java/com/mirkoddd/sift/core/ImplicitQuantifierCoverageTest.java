@@ -115,6 +115,10 @@ class ImplicitQuantifierCoverageTest {
                 Sift.fromStart().upperCaseLettersUnicode().shake(),
                 Sift.fromStart().exactly(1).upperCaseLettersUnicode().shake()
         );
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().caselessLettersUnicode().shake(),
+                Sift.fromStart().exactly(1).caselessLettersUnicode().shake()
+        );
     }
 
     @Test
@@ -200,6 +204,10 @@ class ImplicitQuantifierCoverageTest {
         assertImplicitEqualsExplicit(
                 Sift.fromStart().blankUnicode().shake(),
                 Sift.fromStart().exactly(1).blankUnicode().shake()
+        );
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().symbolsUnicode().shake(),
+                Sift.fromStart().exactly(1).symbolsUnicode().shake()
         );
     }
 

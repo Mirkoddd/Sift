@@ -192,6 +192,22 @@ abstract class BaseType<Ctx extends SiftContext, T extends Connector<Ctx>, C ext
 
     /** {@inheritDoc} */
     @Override
+    public C caselessLettersUnicode() {
+        PatternAssembler next = assembler.copy();
+        next.addClassRange(RegexSyntax.UNICODE_LETTERS_CASELESS);
+        return getCharacterClassConnector(next);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public C symbolsUnicode() {
+        PatternAssembler next = assembler.copy();
+        next.addClassRange(RegexSyntax.UNICODE_SYMBOLS);
+        return getCharacterClassConnector(next);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public C alphanumeric() {
         PatternAssembler next = assembler.copy();
         next.addClassRange(RegexSyntax.RANGE_ALPHANUMERIC);

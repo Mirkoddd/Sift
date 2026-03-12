@@ -22,9 +22,9 @@ import static com.mirkoddd.sift.core.Sift.fromStart;
 import static com.mirkoddd.sift.core.Sift.fromWordBoundary;
 import static com.mirkoddd.sift.core.Sift.oneOrMore;
 import static com.mirkoddd.sift.core.Sift.optional;
+import static com.mirkoddd.sift.core.Sift.zeroOrMore;
 import static com.mirkoddd.sift.core.SiftPatterns.anyOf;
 import static com.mirkoddd.sift.core.SiftPatterns.literal;
-import static com.mirkoddd.sift.core.SiftPatterns.negativeLookahead;
 import static com.mirkoddd.sift.core.SiftPatterns.positiveLookahead;
 
 import org.junit.jupiter.api.DisplayName;
@@ -464,5 +464,107 @@ class SiftCookbookTest {
         List<String> expected = Arrays.asList("NaOH", "Ca(OH)₂", "Fe(OH)₃", "Xy(OH)₁₂", "KOH");
 
         assertEquals(expected, extractedMolecules, "Extraction failed: Regex matched incorrect patterns or missed valid ones");
+    }
+
+    @Test
+    @DisplayName("Should validate international compound names with distinct rules for cased and caseless scripts")
+    void testInternationalCompoundNames() {
+        // --- RULE A: CASED NAMES (Western/Latin, Cyrillic, Greek, etc.) ---
+
+        // 1. Define the starting capital letter
+        CharacterConnector<Fragment> upperCaseLettersUnicode = exactly(1).upperCaseLettersUnicode();
+
+        // 2. Define a single word: a capital letter followed by up to 49 lowercase letters.
+        // Using withoutBacktracking() to optimize performance and prevent catastrophic backtracking.
+        SiftPattern<Fragment> casedWord = upperCaseLettersUnicode
+                .followedBy(between(0, 49).lowerCaseLettersUnicode().withoutBacktracking());
+
+        // 3. Define allowed separators for compound names (space or hyphen)
+        SiftPattern<Fragment> nameSeparators = anyOf(
+                exactly(1).character(' '),
+                exactly(1).character('-')
+        );
+
+        // 4. Define an extension: a separator followed by another properly cased word
+        SiftPattern<Fragment> casedExtension = exactly(1).of(nameSeparators)
+                .followedBy(casedWord);
+
+        // 5. Assemble the full cased name: a base word followed by any number of valid extensions
+        Connector<Fragment> casedName = Sift.fromAnywhere().of(casedWord)
+                .followedBy(zeroOrMore().of(casedExtension));
+
+        // --- RULE B: CASELESS NAMES (Kanji, Arabic, Hebrew, etc.) ---
+
+        // 1. Define a single caseless word (length 1 to 50)
+        SiftPattern<Fragment> caselessWord = between(1, 50).caselessLettersUnicode().withoutBacktracking();
+
+        // 2. Define an extension: a space followed by another caseless word (hyphens are rare here)
+        SiftPattern<Fragment> caselessExtension = exactly(1).character(' ')
+                .followedBy(caselessWord);
+
+        // 3. Assemble the full caseless name
+        Connector<Fragment> caselessName = Sift.fromAnywhere().of(caselessWord)
+                .followedBy(zeroOrMore().of(caselessExtension));
+
+        // --- COMBINED CONDITIONAL LOGIC ---
+
+        // If the name starts with an uppercase letter, apply the strict cased rules.
+        // Otherwise, assume it's a caseless script and apply the caseless rules.
+        SiftPattern<Fragment> name = SiftPatterns.ifFollowedBy(upperCaseLettersUnicode)
+                .thenUse(casedName)
+                .otherwiseUse(caselessName);
+
+        // Anchor to start and end to ensure the entire string is just the name
+        String regex = Sift.fromStart()
+                .of(name)
+                .andNothingElse()
+                .shake();
+
+        // --- TESTS ---
+        assertMatches(regex, "桜");               // Single caseless word (Kanji) - PASS
+        assertMatches(regex, "Günther");         // Single cased word (Latin with umlaut) - PASS
+        assertMatches(regex, "Gian Maria");      // Compound cased name with space - PASS
+        assertMatches(regex, "Jean-Luc");        // Compound cased name with hyphen - PASS
+
+        // Invalid formats rejected by strict structural rules
+        assertDoesNotMatch(regex, "Gian  Maria"); // Fails: Double space not allowed (Security!)
+        assertDoesNotMatch(regex, "Gian maria");  // Fails: Second word missing capital letter
+        assertDoesNotMatch(regex, " Gian");       // Fails: Cannot start with a space
+        assertDoesNotMatch(regex, "Gian ");       // Fails: Cannot end with a space
+    }
+
+    @Test
+    @DisplayName("Should validate strings containing Unicode symbols like currencies or mathematical operators")
+    void testUnicodeSymbols() {
+        // Goal: Match a generic price tag, mathematical notation, or symbol-based input.
+        // Format: [Symbol] [Optional Space] [Digits]
+
+        // 1. The symbol (Currency, Math, Dingbats, etc. -> \p{S})
+        CharacterConnector<Fragment> symbol = exactly(1).symbolsUnicode();
+
+        // 2. An optional space separator
+        Connector<Fragment> optionalSpace = optional().whitespace();
+
+        // 3. The numeric value
+        Connector<Fragment> amount = oneOrMore().digits();
+
+        String regex = Sift.fromStart()
+                .of(symbol)
+                .followedBy(optionalSpace)
+                .followedBy(amount)
+                .andNothingElse()
+                .shake();
+
+        // Valid symbol inputs
+        assertMatches(regex, "€ 100");   // Euro symbol (Currency)
+        assertMatches(regex, "¥5000");   // Yen symbol (No space)
+        assertMatches(regex, "$ 1");     // Dollar symbol (Currency)
+        assertMatches(regex, "∑ 42");    // Sum symbol (Mathematical)
+        assertMatches(regex, "♥ 2");     // Heart symbol (Miscellaneous/Dingbat)
+
+        // Invalid cases where standard letters are used instead of Unicode symbols
+        assertDoesNotMatch(regex, "EUR 100"); // 'E' is a letter, not a symbol (\p{S})
+        assertDoesNotMatch(regex, "USD 50");  // Fails on letters
+        assertDoesNotMatch(regex, "100");     // Missing the required symbol at the start
     }
 }
