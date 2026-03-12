@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.4.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.3.0...sift-v5.4.0) (2026-03-12)
+
+
+### Features
+
+* **core:** add caseless letters and symbols Unicode support ([bf769ff](https://github.com/Mirkoddd/Sift/commit/bf769ff285cd9d24ba6187079af75187d561e094))
+
 ## [5.3.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.2.0...sift-v5.3.0) (2026-03-11)
 
 
