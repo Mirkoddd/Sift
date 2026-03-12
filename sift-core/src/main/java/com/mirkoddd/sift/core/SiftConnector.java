@@ -135,6 +135,16 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
 
     /** {@inheritDoc} */
     @Override
+    public CharacterConnector<Ctx> intersecting(CharacterSubset subset) {
+        Objects.requireNonNull(subset, "CharacterSubset cannot be null");
+
+        PatternAssembler next = assembler.copy();
+        next.addClassIntersection(subset.getPattern());
+        return new SiftConnector<>(next);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public Connector<Ctx> wordBoundary() {
         PatternAssembler next = assembler.copy();
         next.addWordBoundary();

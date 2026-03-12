@@ -147,6 +147,20 @@ class PatternAssembler {
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
+    void addLinebreak() {
+        flush();
+        mainPattern.append(RegexSyntax.LINEBREAK).append(currentQuantifier);
+        canModifyMain = !currentQuantifier.isEmpty();
+        currentQuantifier = RegexSyntax.EMPTY;
+    }
+
+    void addClassIntersection(String intersectionClass) {
+        isBuildingClass = true;
+        pendingClass.append(RegexSyntax.CLASS_INTERSECTION);
+        pendingClass.append(intersectionClass);
+        pendingClass.append(RegexSyntax.CLASS_CLOSE);
+    }
+
     void addCharacter(char literal) {
         flush();
         StringBuilder esc = new StringBuilder();

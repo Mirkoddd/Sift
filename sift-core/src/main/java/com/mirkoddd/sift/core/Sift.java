@@ -101,6 +101,21 @@ public final class Sift {
     }
 
     /**
+     * Starts building a Regex anchored at the end of the previous match using {@code \G}.
+     * <p>
+     * This is particularly useful for iterative parsing with {@code Matcher.find()}, ensuring
+     * that the next match begins exactly where the last one ended, without skipping characters.
+     * Returns a <b>Root</b> context, meaning it cannot be embedded inside other patterns.
+     *
+     * @return The initial quantifier step to start the definition.
+     */
+    public static Quantifier<Root> fromPreviousMatchEnd() {
+        PatternAssembler assembler = new PatternAssembler();
+        assembler.addAnchor(RegexSyntax.PREVIOUS_MATCH_END);
+        return new SiftQuantifier<>(assembler);
+    }
+
+    /**
      * Convenience shortcut to start an unanchored Fragment matching exactly the specified number of times.
      *
      * @param count The exact number of repetitions.
@@ -203,6 +218,17 @@ public final class Sift {
             PatternAssembler assembler = new PatternAssembler(flags);
             assembler.addWordBoundary();
             return new SiftConnector<>(assembler);
+        }
+
+        /**
+         * Starts building a flagged Regex anchored at the end of the previous match using {@code \G}.
+         *
+         * @return The initial quantifier step.
+         */
+        public Quantifier<Root> fromPreviousMatchEnd() {
+            PatternAssembler assembler = new PatternAssembler(flags);
+            assembler.addAnchor(RegexSyntax.PREVIOUS_MATCH_END);
+            return new SiftQuantifier<>(assembler);
         }
 
         /**

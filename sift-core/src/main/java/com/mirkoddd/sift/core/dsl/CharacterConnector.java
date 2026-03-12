@@ -15,6 +15,8 @@
  */
 package com.mirkoddd.sift.core.dsl;
 
+import com.mirkoddd.sift.core.CharacterSubset;
+
 /**
  * A specialized {@link Connector} that safely exposes modifiers for character classes.
  * <p>
@@ -56,4 +58,14 @@ public interface CharacterConnector<Ctx extends SiftContext> extends Connector<C
      * @return The current builder step for further fluent chaining.
      */
     CharacterConnector<Ctx> excluding(char excluded, char... additionalExcluded);
+
+    /**
+     * Intersects the current character class with a predefined subset of characters.
+     * <p>
+     * Example: {@code .wordCharactersUnicode().intersecting(CharacterSubset.GREEK)}
+     *
+     * @param subset The type-safe set of characters to intersect with.
+     * @return The specialized character class step for further modifications.
+     */
+    CharacterConnector<Ctx> intersecting(CharacterSubset subset);
 }

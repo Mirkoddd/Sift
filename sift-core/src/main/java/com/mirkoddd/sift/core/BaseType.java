@@ -304,6 +304,22 @@ abstract class BaseType<Ctx extends SiftContext, T extends Connector<Ctx>, C ext
 
     /** {@inheritDoc} */
     @Override
+    public C whitespaceHorizontal() {
+        PatternAssembler next = assembler.copy();
+        next.addClassRange(RegexSyntax.HORIZONTAL_WHITESPACE);
+        return getCharacterClassConnector(next);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public C whitespaceVertical() {
+        PatternAssembler next = assembler.copy();
+        next.addClassRange(RegexSyntax.VERTICAL_WHITESPACE);
+        return getCharacterClassConnector(next);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public C range(char start, char end) {
         PatternAssembler next = assembler.copy();
         next.addCustomRange(start, end);
@@ -315,6 +331,14 @@ abstract class BaseType<Ctx extends SiftContext, T extends Connector<Ctx>, C ext
     public T newline() {
         PatternAssembler next = assembler.copy();
         next.addCharacter('\n');
+        return getNormalConnector(next);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public T linebreakUnicode() {
+        PatternAssembler next = assembler.copy();
+        next.addLinebreak();
         return getNormalConnector(next);
     }
 

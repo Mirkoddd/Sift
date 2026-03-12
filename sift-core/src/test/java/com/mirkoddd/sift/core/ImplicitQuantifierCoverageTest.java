@@ -209,6 +209,18 @@ class ImplicitQuantifierCoverageTest {
                 Sift.fromStart().symbolsUnicode().shake(),
                 Sift.fromStart().exactly(1).symbolsUnicode().shake()
         );
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().whitespaceHorizontal().shake(),
+                Sift.fromStart().exactly(1).whitespaceHorizontal().shake()
+        );
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().whitespaceVertical().shake(),
+                Sift.fromStart().exactly(1).whitespaceVertical().shake()
+        );
+        assertImplicitEqualsExplicit(
+                Sift.fromStart().linebreakUnicode().shake(),
+                Sift.fromStart().exactly(1).linebreakUnicode().shake()
+        );
     }
 
     @Test

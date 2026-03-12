@@ -175,6 +175,17 @@ class SiftQuantifier<Ctx extends SiftContext> implements Quantifier<Ctx> {
     @Override public CharacterConnector<Ctx> nonWordCharactersUnicode() { return exactly(1).nonWordCharactersUnicode(); }
     @Override public CharacterConnector<Ctx> whitespace() { return exactly(1).whitespace(); }
     @Override public CharacterConnector<Ctx> nonWhitespace() { return exactly(1).nonWhitespace(); }
+
+    @Override
+    public CharacterConnector<Ctx> whitespaceHorizontal() {
+        return exactly(1).whitespaceHorizontal();
+    }
+
+    @Override
+    public CharacterConnector<Ctx> whitespaceVertical() {
+        return exactly(1).whitespaceVertical();
+    }
+
     @Override public CharacterConnector<Ctx> whitespaceUnicode() { return exactly(1).whitespaceUnicode(); }
     @Override public CharacterConnector<Ctx> nonWhitespaceUnicode() { return exactly(1).nonWhitespaceUnicode(); }
     @Override public CharacterConnector<Ctx> range(char start, char end) { return exactly(1).range(start, end); }
@@ -225,5 +236,10 @@ class SiftQuantifier<Ctx extends SiftContext> implements Quantifier<Ctx> {
     @Override
     public CharacterConnector<Ctx> blankUnicode() {
         return exactly(1).blankUnicode();
+    }
+
+    @Override
+    public Connector<Ctx> linebreakUnicode() {
+        return exactly(1).linebreakUnicode();
     }
 }

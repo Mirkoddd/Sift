@@ -408,6 +408,44 @@ public final class SiftPatterns {
     }
 
     /**
+     * Applies specific regex flags ONLY to the provided pattern fragment.
+     * <p>
+     * Unlike global flags, these <b>Local Flags</b> do not affect the rest of the regex.
+     * Internally, it wraps the pattern in a special flag group: {@code (?flags:pattern)}.
+     * <p>
+     * Example:
+     * <pre>
+     * {@code
+     * SiftPattern<Fragment> partial = withFlags(literal("abc"), SiftGlobalFlag.CASE_INSENSITIVE);
+     * // Compiles to: (?i:abc)
+     * }
+     * </pre>
+     *
+     * @param pattern The fragment to apply the flags to.
+     * @param flags   The flags to enable for this fragment.
+     * @return A fragment with local flags applied.
+     */
+    public static SiftPattern<Fragment> withFlags(
+            SiftPattern<Fragment> pattern,
+            SiftGlobalFlag... flags) {
+
+        Objects.requireNonNull(pattern, "Pattern cannot be null");
+        Objects.requireNonNull(flags, "Flags cannot be null");
+
+        return memoize(() -> {
+            StringBuilder sb = new StringBuilder();
+            sb.append(RegexSyntax.INLINE_FLAG_OPEN);
+            for (SiftGlobalFlag flag : flags) {
+                sb.append(flag.getSymbol());
+            }
+            sb.append(RegexSyntax.INLINE_FLAG_SEPARATOR);
+            sb.append(pattern.shake());
+            sb.append(RegexSyntax.GROUP_CLOSE);
+            return sb.toString();
+        });
+    }
+
+    /**
      * Memoizes a pattern generation using a supplier, making it generic so it can
      * safely produce both Fragments and Assertions without unchecked casts.
      */

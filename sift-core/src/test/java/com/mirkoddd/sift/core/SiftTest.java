@@ -1366,4 +1366,157 @@ class SiftTest {
             assertFalse(assembler.isContainsAbsoluteAnchor());
         }
     }
+
+    @Nested
+    @DisplayName("Advanced Features (Intersection, Line breaks, Anchors)")
+    class AdvancedFeaturesTest {
+
+        @Test
+        @DisplayName("Should validate character class intersection (&&) and local inline flags")
+        void testIntersectionAndLocalFlags() {
+            // Target: Match 1 Greek letter followed by the word "sift" (case-insensitive)
+
+            // 1. Intersection: Must be a Word Character (\w) AND a Greek letter
+            CharacterConnector<Fragment> greekLetter = fromAnywhere().exactly(1).wordCharactersUnicode()
+                    .intersecting(CharacterSubset.GREEK);
+
+            // 2. Local Flag: The string "sift" is not sensitive to uppercase/lowercase
+            SiftPattern<Fragment> caseInsensitiveSift = SiftPatterns.withFlags(
+                    SiftPatterns.literal("sift"),
+                    SiftGlobalFlag.CASE_INSENSITIVE
+            );
+
+            String regex = fromStart()
+                    .of(greekLetter)
+                    .followedBy(caseInsensitiveSift)
+                    .andNothingElse()
+                    .shake();
+
+            assertEquals("^[\\p{L}\\p{Nd}_&&[\\p{IsGreek}]](?i:sift)$", regex);
+
+            assertRegexMatches(regex, "αSIFT");   // Greek letter + SIFT uppercase
+            assertRegexMatches(regex, "βsift");   // Greek letter + sift lowercase
+            assertRegexMatches(regex, "γSiFt");   // Greek letter + mixed case
+
+            assertRegexDoesNotMatch(regex, "aSIFT");  // 'a' is Latin, not Greek (Intersection fails)
+            assertRegexDoesNotMatch(regex, "αSIFTX"); // Too long, andNothingElse() blocks it
+        }
+
+        @Test
+        @DisplayName("Should filter word characters to strictly allow only ASCII letters")
+        void testRealWorldAsciiIntersection() {
+            // Real-world scenario: The \w token (word characters) natively includes digits (0-9)
+            // and underscores (_). We want to match pure alphabetical names only.
+            // By intersecting \w with ASCII_LETTERS, we use the intersection as a "sieve"
+            // to filter out the unwanted digits and underscores.
+            String regex = Sift.fromStart()
+                    .oneOrMore().wordCharacters()
+                    .intersecting(CharacterSubset.ASCII_LETTERS)
+                    .andNothingElse()
+                    .shake();
+
+            // Verify that the engine correctly structures the intersection syntax
+            // between a shorthand character class and an ASCII range
+            assertEquals("^[\\w&&[a-zA-Z]]+$", regex);
+
+            // VALID MATCHES: Pure alphabetical strings pass the intersection filter
+            assertRegexMatches(regex, "Sift");
+            assertRegexMatches(regex, "Mirko");
+
+            // INVALID MATCHES: Valid for \w, but strictly rejected by the ASCII_LETTERS intersection
+            assertRegexDoesNotMatch(regex, "User123"); // Fails because digits are filtered out
+            assertRegexDoesNotMatch(regex, "my_var");  // Fails because the underscore is filtered out
+
+            // INVALID MATCHES: Standard rejection (punctuation is neither \w nor a letter)
+            assertRegexDoesNotMatch(regex, "Mirko!");
+        }
+
+        @Test
+        @DisplayName("Should parse formats using horizontal whitespace and universal linebreaks")
+        void testAdvancedWhitespace() {
+            // Target: Match "Word [Space/Tab] Word [Universal Linebreak]"
+
+            SiftPattern<Fragment> word = fromAnywhere().oneOrMore().wordCharacters();
+            SiftPattern<Fragment> horizontalSpace = fromAnywhere().oneOrMore().whitespaceHorizontal();
+            SiftPattern<Fragment> lineBreak = fromAnywhere().exactly(1).linebreakUnicode();
+
+            String regex = fromStart()
+                    .of(word)
+                    .followedBy(horizontalSpace)
+                    .followedBy(word)
+                    .followedBy(lineBreak)
+                    .andNothingElse()
+                    .shake();
+
+            assertEquals("^[\\w]+[\\h]+[\\w]+\\R$", regex);
+
+            assertRegexMatches(regex, "Hello\tWorld\r\n"); // Horizontal Tab + CRLF (Windows)
+            assertRegexMatches(regex, "Sift Space\n");     // Horizontal Space + LF (Linux/Mac)
+
+            assertRegexDoesNotMatch(regex, "Hello\nWorld\n"); // \n in the middle is NOT horizontal space
+            assertRegexDoesNotMatch(regex, "HelloWorld\n");   // Missing horizontal space entirely
+        }
+
+        @Test
+        @DisplayName("addLinebreak() exhaustive branch coverage for internal state protections")
+        void testLinebreakModifierCoverage() {
+            String singleLinebreak = Sift.fromAnywhere()
+                    .exactly(1).linebreakUnicode()
+                    .shake();
+
+            assertEquals("\\R", singleLinebreak);
+
+            String possessiveLineBreaks = Sift.fromAnywhere()
+                    .oneOrMore().linebreakUnicode().withoutBacktracking()
+                    .shake();
+
+            assertEquals("\\R++", possessiveLineBreaks);
+        }
+
+        @Test
+        @DisplayName("Should strictly match consecutive tokens using the \\G anchor (Previous Match End)")
+        void testPreviousMatchEndAnchor() {
+            // Target: Extract sequential words WITHOUT skipping invalid characters in between.
+
+            String regex = Sift.fromPreviousMatchEnd()
+                    .oneOrMore().wordCharacters()
+                    .shake();
+
+            assertEquals("\\G[\\w]+", regex);
+
+            Pattern pattern = Pattern.compile(regex);
+
+            // The string contains a non-word character (the comma) in the middle
+            Matcher matcher = pattern.matcher("OneTwo,Three");
+
+            // First match: starts from the beginning and finds "OneTwo"
+            assertTrue(matcher.find());
+            assertEquals("OneTwo", matcher.group());
+
+            // Second match: should start EXACTLY where the first one ended (index 6).
+            // There is a comma there. Since we look for word characters, the match fails instantly.
+            // If we hadn't used \G, the engine would have skipped the comma and matched "Three".
+            assertFalse(matcher.find(), "The matcher should have stopped at the comma due to the \\G anchor");
+        }
+
+        @Test
+        @DisplayName("Should apply flags when starting from previous match end (\\G)")
+        void flagsFromPreviousMatchEnd() {
+            String regex = filteringWith(CASE_INSENSITIVE)
+                    .fromPreviousMatchEnd()
+                    .oneOrMore().letters()
+                    .shake();
+
+            assertEquals("(?i)\\G[a-zA-Z]+", regex);
+
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(regex);
+
+            java.util.regex.Matcher matcher = pattern.matcher("AbCd,EfGh");
+
+            assertTrue(matcher.find());
+            assertEquals("AbCd", matcher.group());
+
+            assertFalse(matcher.find(), "The matcher should fail at the comma due to the \\G anchor");
+        }
+    }
 }

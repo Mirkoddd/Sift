@@ -73,8 +73,8 @@ final class RegexSyntax {
     static final String NON_UNICODE_LETTERS = "\\P{L}";
     static final String UNICODE_LETTERS_UPPERCASE_ONLY = "\\p{Lu}";
     static final String UNICODE_LETTERS_LOWERCASE_ONLY = "\\p{Ll}";
-    public static final String UNICODE_LETTERS_CASELESS = "\\p{Lo}";
-    public static final String UNICODE_SYMBOLS = "\\p{S}";
+    static final String UNICODE_LETTERS_CASELESS = "\\p{Lo}";
+    static final String UNICODE_SYMBOLS = "\\p{S}";
     static final String UNICODE_ALPHANUMERIC = "\\p{L}\\p{Nd}"; // Stripped outer brackets
     static final String NON_UNICODE_ALPHANUMERIC = "^\\p{L}\\p{Nd}"; // Stripped outer brackets
     static final String UNICODE_WORD_CHARACTERS = "\\p{L}\\p{Nd}_"; // Stripped outer brackets
@@ -86,6 +86,20 @@ final class RegexSyntax {
     static final String UNICODE_PUNCTUATION = "\\p{P}";
     static final String BLANK = "\\p{Blank}";
     static final String UNICODE_BLANK = "\\p{Zs}\\t"; // Stripped outer brackets
+    static final String UNICODE_SCRIPT_GREEK = "\\p{IsGreek}";
+    static final String UNICODE_SCRIPT_CYRILLIC = "\\p{IsCyrillic}";
+    static final String UNICODE_SCRIPT_ARABIC = "\\p{IsArabic}";
+    static final String UNICODE_SCRIPT_HEBREW = "\\p{IsHebrew}";
+    static final String UNICODE_SCRIPT_HAN = "\\p{IsHan}";
+    static final String UNICODE_SCRIPT_HIRAGANA = "\\p{IsHiragana}";
+    static final String UNICODE_SCRIPT_KATAKANA = "\\p{IsKatakana}";
+    static final String UNICODE_SCRIPT_LATIN = "\\p{IsLatin}";
+    static final String PREVIOUS_MATCH_END = "\\G";
+    static final String LINEBREAK = "\\R";
+    static final String HORIZONTAL_WHITESPACE = "\\h";
+    static final String VERTICAL_WHITESPACE = "\\v";
+    static final String CLASS_INTERSECTION = "&&[";
+    static final String INLINE_FLAG_SEPARATOR = ":";
     private RegexSyntax() {
         // Prevent instantiation of utility class
     }

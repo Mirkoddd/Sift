@@ -296,6 +296,25 @@ public interface Type<Ctx extends SiftContext, T extends Connector<Ctx>, C exten
     C nonWhitespace();
 
     /**
+     * Matches any horizontal whitespace character (e.g., space, tab).
+     * <p>
+     * Equivalent to the regex {@code \h}.
+     * Unlike {@link #whitespace()}, this explicitly excludes vertical spacing like line feeds.
+     *
+     * @return The specialized character class step to allow further class modifications.
+     */
+    C whitespaceHorizontal();
+
+    /**
+     * Matches any vertical whitespace character (e.g., line feed, vertical tab).
+     * <p>
+     * Equivalent to the regex {@code \v}.
+     *
+     * @return The specialized character class step to allow further class modifications.
+     */
+    C whitespaceVertical();
+
+    /**
      * Matches any Unicode whitespace character (including non-breaking spaces, em-spaces, etc.).
      * <p>
      * Equivalent to the regex {@code \p{IsWhite_Space}}.
@@ -401,4 +420,16 @@ public interface Type<Ctx extends SiftContext, T extends Connector<Ctx>, C exten
      * @return The specialized character class step to allow further class modifications.
      */
     C blankUnicode();
+
+    /**
+     * Matches any Unicode line-break sequence.
+     * <p>
+     * Equivalent to the regex {@code \R}.
+     * This safely handles cross-platform line endings, matching {@code \r\n} (Windows)
+     * as a single token, as well as {@code \n} (Linux), {@code \r} (Mac), and various
+     * Unicode line separators (like Next Line, Line Separator, and Paragraph Separator).
+     *
+     * @return The standard connector step to continue building.
+     */
+    T linebreakUnicode();
 }
