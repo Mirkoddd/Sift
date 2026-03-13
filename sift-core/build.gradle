@@ -2,6 +2,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'signing'
+    id 'org.cyclonedx.bom' version '1.10.0'
 }
 
 java {
@@ -10,6 +11,16 @@ java {
     }
     withJavadocJar()
     withSourcesJar()
+}
+
+cyclonedxBom {
+    includeConfigs = ["runtimeClasspath"]
+    projectType = "library"
+    outputFormat = "all"
+}
+
+tasks.named('build') {
+    dependsOn('cyclonedxBom')
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -35,6 +46,17 @@ publishing {
         mavenJava(MavenPublication) {
             artifactId = 'sift-core'
             from components.java
+
+            artifact(layout.buildDirectory.file("reports/bom.xml")) {
+                classifier = 'bom'
+                extension = 'xml'
+                builtBy cyclonedxBom
+            }
+            artifact(layout.buildDirectory.file("reports/bom.json")) {
+                classifier = 'bom'
+                extension = 'json'
+                builtBy cyclonedxBom
+            }
 
             pom {
                 name = 'Sift Core'
