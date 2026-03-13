@@ -15,7 +15,20 @@
  */
 package com.mirkoddd.sift.core.dsl;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Represents a compiled regex component within a specific structural context.
@@ -107,5 +120,182 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
     @Deprecated
     default boolean matches(CharSequence input) {
         return containsMatchIn(input);
+    }
+
+    /**
+     * Extracts the first subsequence that matches the pattern.
+     *
+     * @param input The character sequence to search within.
+     * @return An {@link Optional} containing the matched string, or empty if not found.
+     */
+    default Optional<String> extractFirst(CharSequence input) {
+        if (input == null) return Optional.empty();
+        Matcher matcher = sieve().matcher(input);
+        return matcher.find() ? Optional.of(matcher.group()) : Optional.empty();
+    }
+
+    /**
+     * Extracts all subsequences that match the pattern.
+     *
+     * @param input The character sequence to search within.
+     * @return An unmodifiable list of all matched strings. Returns an empty list if none are found.
+     */
+    default List<String> extractAll(CharSequence input) {
+        if (input == null) return Collections.emptyList();
+        Matcher matcher = sieve().matcher(input);
+        List<String> results = new ArrayList<>();
+        while (matcher.find()) {
+            results.add(matcher.group());
+        }
+        return Collections.unmodifiableList(results);
+    }
+
+    /**
+     * Replaces the first subsequence of the input that matches the pattern with the given string.
+     *
+     * @param input       The character sequence to search within.
+     * @param replacement The replacement string.
+     * @return The resulting string with the first matching replacement applied.
+     */
+    default String replaceFirst(CharSequence input, String replacement) {
+        if (input == null) return "";
+        return sieve().matcher(input).replaceFirst(replacement);
+    }
+
+    /**
+     * Replaces every subsequence of the input that matches the pattern with the given string.
+     *
+     * @param input       The character sequence to search within.
+     * @param replacement The replacement string.
+     * @return The resulting string with replacements applied.
+     */
+    default String replaceAll(CharSequence input, String replacement) {
+        if (input == null) return "";
+        return sieve().matcher(input).replaceAll(replacement);
+    }
+
+    /**
+     * Extracts all explicitly named capture groups from the first match found in the input.
+     * <p>
+     * <b>Java 8 Compatibility Note:</b> Native extraction of group names is not supported
+     * by the {@code Matcher} API in early Java versions. This method safely parses the generated
+     * pattern string to discover the defined group names and maps them to their matched values.
+     *
+     * @param input The character sequence to search within.
+     * @return An unmodifiable map containing the group names as keys and their matched substrings as values.
+     */
+    default Map<String, String> extractGroups(CharSequence input) {
+        if (input == null) return Collections.emptyMap();
+
+        Pattern compiledPattern = sieve();
+        Matcher matcher = compiledPattern.matcher(input);
+
+        if (!matcher.find()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, String> extractedGroups = new HashMap<>();
+
+        // Safely extract group names from the pattern string: (?<GroupName>...)
+        Matcher nameExtractor = Pattern.compile("\\(\\?<([a-zA-Z][a-zA-Z0-9]*)>").matcher(compiledPattern.pattern());
+
+        while (nameExtractor.find()) {
+            String groupName = nameExtractor.group(1);
+            try {
+                String matchValue = matcher.group(groupName);
+                if (matchValue != null) {
+                    extractedGroups.put(groupName, matchValue);
+                }
+            } catch (IllegalArgumentException e) {
+                // Defensive catch: ignores malformed or uncaptured group names
+            }
+        }
+
+        return Collections.unmodifiableMap(extractedGroups);
+    }
+
+    /**
+     * Extracts all explicitly named capture groups from every match found in the input.
+     * <p>
+     * <b>Java 8 Compatibility Note:</b> Native extraction of group names is not supported
+     * by the {@code Matcher} API in early Java versions. This method safely parses the generated
+     * pattern string to discover the defined group names and maps them to their matched values
+     * for each successful match.
+     *
+     * @param input The character sequence to search within.
+     * @return An unmodifiable list of unmodifiable maps, where each map represents a single match
+     * and contains the group names as keys and their matched substrings as values.
+     * Returns an empty list if no matches are found.
+     */
+    default List<Map<String, String>> extractAllGroups(CharSequence input) {
+        if (input == null) return Collections.emptyList();
+
+        Pattern compiledPattern = sieve();
+        Matcher matcher = compiledPattern.matcher(input);
+        Matcher nameExtractor = Pattern.compile("\\(\\?<([a-zA-Z][a-zA-Z0-9]*)>")
+                .matcher(compiledPattern.pattern());
+
+        List<String> groupNames = new ArrayList<>();
+        while (nameExtractor.find()) {
+            groupNames.add(nameExtractor.group(1));
+        }
+
+        List<Map<String, String>> results = new ArrayList<>();
+        while (matcher.find()) {
+            Map<String, String> groups = new HashMap<>();
+            for (String name : groupNames) {
+                try {
+                    String value = matcher.group(name);
+                    if (value != null) groups.put(name, value);
+                } catch (IllegalArgumentException e) {
+                    // Defensive catch: ignores malformed or uncaptured group names
+                }
+            }
+            results.add(Collections.unmodifiableMap(groups));
+        }
+        return Collections.unmodifiableList(results);
+    }
+
+    /**
+     * Splits the given input sequence around matches of this pattern.
+     *
+     * @param input The character sequence to be split.
+     * @return A list of strings computed by splitting the input around matches.
+     */
+    default List<String> splitBy(CharSequence input) {
+        if (input == null) return Collections.emptyList();
+        return Arrays.asList(sieve().split(input));
+    }
+
+    /**
+     * Returns a lazy stream of match results.
+     * <p>
+     * Unlike {@link #extractAll(CharSequence)}, this method does not load all matches
+     * into memory at once. It evaluates the pattern lazily as the stream is consumed,
+     * making it ideal for processing massive text inputs or large files without triggering
+     * OutOfMemory errors.
+     *
+     * @param input The character sequence to search within.
+     * @return A sequential {@link Stream} of matched substrings.
+     */
+    default Stream<String> streamMatches(CharSequence input) {
+        if (input == null) return Stream.empty();
+
+        Matcher matcher = sieve().matcher(input);
+
+        // Custom Spliterator to provide lazy Matcher.find() evaluation in Java 8
+        Spliterator<String> lazySpliterator = new Spliterators.AbstractSpliterator<String>(
+                Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL) {
+            @Override
+            public boolean tryAdvance(Consumer<? super String> action) {
+                if (matcher.find()) {
+                    action.accept(matcher.group());
+                    return true;
+                }
+                return false;
+            }
+        };
+
+        return StreamSupport.stream(lazySpliterator, false);
     }
 }
