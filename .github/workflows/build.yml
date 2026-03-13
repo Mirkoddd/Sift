@@ -38,6 +38,15 @@ jobs:
           MATRIX_JAVA_VERSION: ${{ matrix.java }}
         run: ./gradlew build jacocoTestReport
 
+      - name: Upload SBOM artifacts
+        if: ${{ matrix.java == '17' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-reports
+          path: |
+            sift-core/build/reports/bom.*
+            sift-annotations/build/reports/bom.*
+
       - name: Generate Jacoco Badge
         if: ${{ matrix.java == '17' }}
         uses: cicirello/jacoco-badge-generator@v2
@@ -52,7 +61,7 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add .github/badges/
-        
+
           if [ -n "$(git status --porcelain)" ]; then
             git commit -m "chore: update coverage badge [skip ci]"
             git push
