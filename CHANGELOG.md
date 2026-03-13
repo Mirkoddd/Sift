@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.6.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.5.0...sift-v5.6.0) (2026-03-13)
+
+
+### Features
+
+* **core:** add comprehensive execution and extraction API to SiftPattern ([5815fc8](https://github.com/Mirkoddd/Sift/commit/5815fc8bbcc20481a725e1b05b3fc63c2e71e5d4))
+
 ## [5.5.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.4.0...sift-v5.5.0) (2026-03-12)
 
 
