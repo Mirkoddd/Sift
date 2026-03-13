@@ -1,154 +1,354 @@
 # Sift
-<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e931dfa9-02e9-406d-bde7-56f9e0000464"  alt=""/>[![sift-core](https://img.shields.io/maven-central/v/com.mirkoddd/sift-core?label=sift-core)](https://central.sonatype.com/artifact/com.mirkoddd/sift-core)
-[![sift-annotations](https://img.shields.io/maven-central/v/com.mirkoddd/sift-annotations?label=sift-annotations)](https://central.sonatype.com/artifact/com.mirkoddd/sift-annotations)
-[![Java 8+](https://img.shields.io/badge/Java-8+-blue.svg)](https://adoptium.net/) [![Tests](https://github.com/mirkoddd/Sift/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/mirkoddd/Sift/actions)
-[![Coverage](https://raw.githubusercontent.com/mirkoddd/Sift/main/.github/badges/jacoco.svg)](https://github.com/mirkoddd/Sift/actions)
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e931dfa9-02e9-406d-bde7-56f9e0000464" alt=""/>
+
+[![Java 8+](https://img.shields.io/badge/Java-8+-blue.svg)](https://adoptium.net/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![sift-core](https://javadoc.io/badge2/com.mirkoddd/sift-core/javadoc_sift--core.svg)](https://javadoc.io/doc/com.mirkoddd/sift-core)
-[![sift-annotations](https://javadoc.io/badge2/com.mirkoddd/sift-annotations/javadoc_sift--annotations.svg)](https://javadoc.io/doc/com.mirkoddd/sift-annotations)
 
-**The Type-Safe, SOLID, and Secure Regular Expression Builder for Java.**
+[![Tests](https://github.com/mirkoddd/Sift/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/mirkoddd/Sift/actions)
+[![Coverage](https://raw.githubusercontent.com/mirkoddd/Sift/main/.github/badges/jacoco.svg)](https://github.com/mirkoddd/Sift/actions)
 
-Writing raw Regular Expressions in Java is error-prone, hard to read, and difficult to maintain. Sift solves this by providing a fluent, state-machine-driven Domain Specific Language (DSL) that guarantees valid syntax at compile time.
-
-Build your rules step-by-step, filter out the noise, and when your pattern is ready, just `.shake()` the sieve!
+**The Type-Safe Regex Builder for Java. If it compiles, it works.**
 
 ---
 
-## 📖 The Sift Cookbook
-Looking for real-world examples? Check out the **[Sift Cookbook](COOKBOOK.md)**!
-It contains advanced recipes demonstrating Sift's true power: parsing TSV logs, validating UUIDs/IPs, data extraction with named captures, lookarounds, and ReDoS mitigation techniques.
+## The Problem
+
+You've seen this before. Someone writes a regex, it works, and six months later nobody — including the author — can read it:
+
+```java
+// What does this even do?
+Pattern p = Pattern.compile("^(?=[\\p{Lu}])[\\p{L}\\p{Nd}_]{3,15}+[0-9]?$");
+```
+
+You add a character class, break the balance of brackets, and find out at runtime. You copy a regex from Stack Overflow, miss an escape, and watch it fail silently in production. You duplicate the same validation pattern across DTOs and forget to update one of them.
+
+**There is a better way.**
 
 ---
 
-# Quick Start
+## The Solution
 
-Add Sift to your project dependencies:
+Sift is a fluent DSL that turns regex construction into readable, self-documenting Java code. Its state machine enforces grammatical correctness at **compile time** — if your pattern compiles, it is structurally valid.
 
-**Maven:**
-
-```XML
-<dependency>
-    <groupId>com.mirkoddd</groupId>
-    <artifactId>sift-core</artifactId>
-    <version>latest-version</version>
-</dependency>
-<dependency>
-    <groupId>com.mirkoddd</groupId>
-    <artifactId>sift-annotations</artifactId>
-    <version>latest-version</version>
-</dependency>
-```    
-
-**Gradle:**
-
-```Groovy
-// Replace <latest-version> with the version shown in the Maven Central badge above
-
-// Core Engine: Fluent API for Regex generation (Zero external dependencies)
-implementation 'com.mirkoddd:sift-core:<latest-version>'
-
-// Optional: Integration with Jakarta Validation / Hibernate Validator
-implementation 'com.mirkoddd:sift-annotations:<latest-version>'
- ```   
-## Compatibility
-
-Sift is compiled targeting **Java 8 bytecode** for maximum compatibility across all environments, including legacy Spring Boot 2.x servers and Android devices.
-
-However, the internal codebase and test suite utilize modern **Java 17** features. If you plan to clone the repository and build it from source, ensure you have JDK 17 or higher installed.
-
-# Key Features
-
-* **Compile-Time Structural Guarantees:** Sift is not just fluent — it enforces a strict Type-State machine. Invalid regex constructions are impossible to express in the DSL. Entire classes of runtime errors are eliminated before your code even compiles.
-* **Modular "LEGO Brick" Composition:** Build unanchored, reusable intermediate patterns using `Sift.fromAnywhere()` and seamlessly compose them into larger, strict boundaries.
-* **Immutable & Thread-Safe Builders:** Every Sift pattern is built in a controlled, predictable flow using copy-on-write states and double-checked locking. No hidden shared state, no side effects. Safe to use in concurrent environments.
-* **Advanced Regex & Lazy Evaluation:** Sift fully supports advanced engine features like Named Capturing Groups, Lookarounds, and Backreferences. Sift uniquely features **Lazy Validation** for backreferences, allowing you to compose separated blocks and cross-reference them safely before final assembly.
-* **100% Native Regex Output:** Sift generates pure Java-compatible regular expressions. No wrappers, no runtime interpreters, no performance penalties. Call `.sieve()` to get a compiled `java.util.regex.Pattern`.
-* **Semantic Over Symbolic:** Express intent using meaningful method names instead of cryptic symbols. Write `.atLeast(3).digits()` instead of `{3,}[0-9]` and make your code self-documenting.
-* **Self-Contained Global Flags:** Apply Case-Insensitive, Multiline, or DotAll modes effortlessly via `Sift.filteringWith(...)`. Sift uses inline flags (e.g., `(?i)`), making the resulting string 100% portable across databases or JSON payloads.
-* **ASCII by Default, Global Ready:** Standard methods like `letters()` or `digits()` default strictly to ASCII (`[a-zA-Z]`, `[0-9]`), preventing unexpected matches with foreign alphabets. Need internationalization? Switch explicitly to the `...Unicode()` counterparts.
-* **ReDoS Mitigation Tools:** Sift helps you write safer patterns without memorizing obscure syntax by exposing possessive quantifiers via `.withoutBacktracking()` and lazy modifiers via `.asFewAsPossible()`.
-* **Zero Dependencies:** The `sift-core` engine is pure Java. It doesn't pull in any bloated transitive dependencies, keeping your final artifact size incredibly small.
-
-# Usage Examples
-
-### 1. Fluent, Type-Safe Regex Generation
-
-Forget about counting backslashes or memorizing obscure symbols. Sift guides your hand using your IDE's auto-completion.
-
-```Java    
-// Goal: Match an international username securely
+```java
+// The same pattern, written with Sift:
 String regex = Sift.fromStart()
-    .exactly(1).upperCaseLettersUnicode() // Must start with an uppercase letter
+    .exactly(1).upperCaseLettersUnicode()   // Must start with an uppercase letter
     .then()
-    .between(3, 15).wordCharactersUnicode().withoutBacktracking() // Secure against ReDoS
+    .between(3, 15).wordCharactersUnicode().withoutBacktracking() // ReDoS-safe
     .then()
-    .optional().digits() // May end with an ASCII number
+    .optional().digits()                    // May end with a digit
     .andNothingElse()
-    .shake(); 
+    .shake();
 
 // Result: ^[\p{Lu}][\p{L}\p{Nd}_]{3,15}+[0-9]?$
 ```
 
-### 2. Modular Composition (The LEGO Brick Approach)
+Your IDE guides every step. Wrong transitions simply do not exist as methods.
 
-Break down complex patterns into highly readable, reusable semantic variables.
+---
 
-```Java
-// Define the basic building blocks using fromAnywhere().
-// This ensures these blocks don't carry a '^' anchor, allowing them
-// to be safely placed in the middle or end of our final chain.
-var anywhere = Sift.fromAnywhere();
-var hex8 = anywhere.exactly(8).hexDigits();
-var hex4 = anywhere.exactly(4).hexDigits();
-var hex12 = anywhere.exactly(12).hexDigits();
-var separator = anywhere.character('-');
+## Installation
+[![sift-core](https://img.shields.io/maven-central/v/com.mirkoddd/sift-core?label=sift-core)](https://central.sonatype.com/artifact/com.mirkoddd/sift-core)
+[![sift-annotations](https://img.shields.io/maven-central/v/com.mirkoddd/sift-annotations?label=sift-annotations)](https://central.sonatype.com/artifact/com.mirkoddd/sift-annotations)
 
-// Compose reusable intermediate blocks
-var hex4andSeparator = hex4.followedBy(separator);
+**Gradle:**
+```groovy
+// Core engine — zero external dependencies
+implementation 'com.mirkoddd:sift-core:<latest>'
 
-// Let's define the actual regex:
-String actualUuidRegex = hex8
-        .followedBy(
-                separator,
-                hex4andSeparator,
-                hex4andSeparator,
-                hex4andSeparator,
-                hex12)
-        .shake();
-
-
-// Result: [0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}
-// Matches: 123e4567-e89b-12d3-a456-426614174000
-// From UUID Validator test in SiftCookbookTest.java
+// Optional: Jakarta Validation / Hibernate Validator integration
+implementation 'com.mirkoddd:sift-annotations:<latest>'
 ```
 
-### 3. Seamless Jakarta Validation
+**Maven:**
+```xml
+<dependency>
+    <groupId>com.mirkoddd</groupId>
+    <artifactId>sift-core</artifactId>
+    <version>latest</version>
+</dependency>
 
-Stop duplicating regex logic in your DTOs. Centralize your rules and reuse them elegantly with `@SiftMatch`.
+<!-- Optional: Jakarta Validation / Hibernate Validator integration -->
+<dependency>
+    <groupId>com.mirkoddd</groupId>
+    <artifactId>sift-annotations</artifactId>
+    <version>latest</version>
+</dependency>
+```
 
-```Java
-// 1. Define your reusable rule (e.g., matching "PROMO123")
+> Sift targets **Java 8 bytecode** for maximum compatibility — including legacy Spring Boot 2.x and Android.
+
+---
+
+## Core Concepts
+
+### Entry Points
+
+| Method | Generates | Use when |
+|---|---|---|
+| `Sift.fromStart()` | `^...` | Validating an entire string |
+| `Sift.fromAnywhere()` | `...` | Building reusable fragments or searching within text |
+| `Sift.fromWordBoundary()` | `\b...` | Matching whole words |
+| `Sift.fromPreviousMatchEnd()` | `\G...` | Iterative parsing |
+| `Sift.filteringWith(flag)` | `(?i)...` | Global flags (case-insensitive, multiline, dotall) |
+
+### Terminal Methods
+
+| Method | Effect |
+|---|---|
+| `.shake()` | Returns the raw regex `String` |
+| `.sieve()` | Returns a compiled `java.util.regex.Pattern` |
+| `.andNothingElse()` | Appends `$` and seals the pattern |
+
+---
+
+## Examples
+
+### 1. Modular Composition — The LEGO Brick Approach
+
+The real power of Sift is the ability to name your building blocks and compose them. Every `Sift.fromAnywhere()` call returns a reusable `SiftPattern<Fragment>` that can be embedded anywhere without carrying unwanted anchors.
+
+```java
+// Define named building blocks
+SiftPattern<Fragment> year     = Sift.fromAnywhere().exactly(4).digits();
+SiftPattern<Fragment> month    = Sift.fromAnywhere().exactly(2).digits();
+SiftPattern<Fragment> day      = Sift.fromAnywhere().exactly(2).digits();
+SiftPattern<Fragment> dash     = Sift.fromAnywhere().character('-');
+
+// Compose them into a date block
+SiftPattern<Fragment> dateBlock = year.followedBy(dash, month, dash, day);
+
+// Embed inside a larger pattern
+String logRegex = Sift.fromStart()
+    .of(dateBlock)
+    .followedBy(' ')
+    .then().oneOrMore().anyCharacter()
+    .andNothingElse()
+    .shake();
+
+// Result: ^[0-9]{4}-[0-9]{2}-[0-9]{2} .+$
+```
+
+> **Root vs Fragment:** Patterns built with `fromStart()` or closed with `andNothingElse()` become `SiftPattern<Root>` — they are sealed and cannot be embedded. Attempting to embed a `Root` pattern causes a **compile-time error**. Sift uses the Java type system itself as a safety net.
+
+---
+
+### 2. Data Extraction — Beyond Pattern Matching
+
+Sift patterns are not just validators. They are fully equipped extraction tools.
+
+```java
+// Define a structured pattern with named groups
+NamedCapture yearGroup  = SiftPatterns.capture("year",  Sift.exactly(4).digits());
+NamedCapture monthGroup = SiftPatterns.capture("month", Sift.exactly(2).digits());
+NamedCapture dayGroup   = SiftPatterns.capture("day",   Sift.exactly(2).digits());
+
+SiftPattern<?> datePattern = Sift.fromStart()
+    .namedCapture(yearGroup)
+    .followedBy('-')
+    .then().namedCapture(monthGroup)
+    .followedBy('-')
+    .then().namedCapture(dayGroup)
+    .andNothingElse();
+
+// Extract structured data directly — no Matcher boilerplate
+Map<String, String> fields = datePattern.extractGroups("2026-03-13");
+// → { "year": "2026", "month": "03", "day": "13" }
+
+// Extract all matches from a larger text
+List<String> prices = Sift.fromAnywhere()
+    .oneOrMore().digits()
+    .sieve()
+    .extractAll("Order: 3 items at 25 and 40 euros");
+// → ["3", "25", "40"]
+
+// Stream results lazily for large inputs
+Sift.fromAnywhere().oneOrMore().lettersUnicode()
+    .streamMatches(largeText)
+    .filter(word -> word.length() > 5)
+    .forEach(System.out::println);
+```
+
+**Full extraction API:**
+
+| Method | Returns | Description |
+|---|---|---|
+| `containsMatchIn(input)` | `boolean` | Is there at least one match? |
+| `matchesEntire(input)` | `boolean` | Does the entire string match? |
+| `extractFirst(input)` | `Optional<String>` | First match, or empty |
+| `extractAll(input)` | `List<String>` | All matches |
+| `extractGroups(input)` | `Map<String, String>` | Named groups from first match |
+| `extractAllGroups(input)` | `List<Map<String, String>>` | Named groups from all matches |
+| `replaceFirst(input, replacement)` | `String` | Replace first match |
+| `replaceAll(input, replacement)` | `String` | Replace all matches |
+| `splitBy(input)` | `List<String>` | Split around matches |
+| `streamMatches(input)` | `Stream<String>` | Lazy stream of all matches |
+
+---
+
+### 3. Jakarta Validation Integration
+
+Stop duplicating regex logic across your DTOs. Define a rule once, reuse it everywhere with `@SiftMatch`.
+
+```java
+// 1. Define a reusable rule
 public class PromoCodeRule implements SiftRegexProvider {
+    @Override
     public String getRegex() {
         return Sift.fromStart()
-                .atLeast(4).letters()
-                .then()
-                .exactly(3).digits()
-                .andNothingElse()
-                .shake();
+            .atLeast(4).letters()
+            .then()
+            .exactly(3).digits()
+            .andNothingElse()
+            .shake();
     }
 }
 
-// 2. Apply it to your models with Type-Safe Flags
+// 2. Apply it declaratively — pattern is compiled once at bootstrap
 public record ApplyPromoRequest(
-        @SiftMatch(
-                value = PromoCodeRule.class,
-                flags = {SiftMatchFlag.CASE_INSENSITIVE}, // Allows "promo123" to pass
-                message = "Invalid promo code format"
-        )
-        String promoCode
+    @SiftMatch(
+        value   = PromoCodeRule.class,
+        flags   = { SiftMatchFlag.CASE_INSENSITIVE },
+        message = "Invalid promo code format"
+    )
+    String promoCode
 ) {}
 ```
 
-*Sift compiles the Pattern only once during initialization, ensuring zero performance overhead during validation.*
+---
+
+### 4. ReDoS Mitigation
+
+Sift makes performance-safe patterns easy to express without memorizing obscure syntax.
+
+```java
+// Possessive quantifier — prevents catastrophic backtracking
+Sift.fromAnywhere()
+    .oneOrMore().wordCharacters().withoutBacktracking(); // generates \w++
+
+// Atomic group — locks a sub-pattern once matched
+SiftPattern<Fragment> safe = Sift.fromAnywhere()
+    .oneOrMore().digits()
+    .preventBacktracking(); // wraps in (?>...)
+
+// Lazy quantifier — matches as few characters as possible
+Sift.fromAnywhere()
+    .oneOrMore().anyCharacter().asFewAsPossible(); // generates .+?
+```
+
+---
+### 5. Lookarounds — Zero-Width Assertions
+
+Lookarounds let you match based on what surrounds a position without consuming those characters. Sift exposes them as readable methods directly on `Connector`, so they flow naturally in the chain.
+```java
+// Positive lookahead — match "file" only if followed by ".pdf"
+SiftPattern<Fragment> pdfFile = Sift.fromAnywhere()
+    .oneOrMore().wordCharacters()
+    .mustBeFollowedBy(SiftPatterns.literal(".pdf"));
+
+// Negative lookahead — match a number NOT followed by "%"
+SiftPattern<Fragment> absoluteValue = Sift.fromAnywhere()
+    .oneOrMore().digits()
+    .notFollowedBy(SiftPatterns.literal("%"));
+
+// Positive lookbehind — match digits only if preceded by "$"
+SiftPattern<Fragment> dollarAmount = Sift.fromAnywhere()
+    .oneOrMore().digits()
+    .mustBePrecededBy(SiftPatterns.literal("$"));
+
+// Negative lookbehind — match "port" NOT preceded by "pass"
+SiftPattern<Fragment> networkPort = Sift.fromAnywhere()
+    .of(SiftPatterns.literal("port"))
+    .notPrecededBy(SiftPatterns.literal("pass"));
+```
+
+All four lookaround types are available both on `Connector` — for inline chaining — and as standalone factories in `SiftPatterns` for use in composition with `followedByAssertion()` and `precededByAssertion()`.
+
+---
+
+### 6. Ready-Made Patterns — SiftCatalog
+
+`SiftCatalog` provides a curated set of production-ready, ReDoS-safe patterns for common formats. All patterns are `Fragment`-typed — they compose cleanly with your own Sift chains.
+
+```java
+// Use standalone
+boolean valid = SiftCatalog.email().matchesEntire("user@example.com");
+
+// Or embed inside a larger pattern
+String regex = Sift.fromStart()
+    .of(SiftCatalog.uuid())
+    .followedBy('/')
+    .then().of(SiftCatalog.isoDate())
+    .andNothingElse()
+    .shake();
+```
+
+Available patterns: `uuid()`, `ipv4()`, `macAddress()`, `email()`, `webUrl()`, `isoDate()`.
+
+---
+
+### 7. Recursive & Nested Structures
+
+Parse arbitrarily deep balanced structures with `SiftPatterns.nesting()`.
+
+```java
+// Match nested parentheses: ((a)(b))
+SiftPattern<Fragment> nested = SiftPatterns.nesting(5)
+    .using(Delimiter.PARENTHESES)
+    .containing(Sift.fromAnywhere().oneOrMore().lettersUnicode());
+
+nested.containsMatchIn("((hello)(world))"); // true
+```
+
+---
+
+### 8. Conditional Patterns
+
+Sift exposes regex conditional logic — `if/then/else` branches — as a fully type-safe fluent API via `SiftPatterns`.
+```java
+// Match a price: if preceded by "USD" consume digits only,
+// otherwise consume digits followed by a currency symbol
+SiftPattern<Fragment> price = SiftPatterns
+    .ifPrecededBy(SiftPatterns.literal("USD"))
+    .thenUse(Sift.fromAnywhere().oneOrMore().digits())
+    .otherwiseUse(
+        Sift.fromAnywhere().oneOrMore().digits()
+            .followedBy(Sift.fromAnywhere().character('€'))
+    );
+
+// Else-if chaining is also supported
+SiftPattern<Fragment> format = SiftPatterns
+    .ifFollowedBy(SiftPatterns.literal("px"))
+    .thenUse(Sift.fromAnywhere().oneOrMore().digits())
+    .otherwiseIfFollowedBy(SiftPatterns.literal("%"))
+    .thenUse(Sift.fromAnywhere().between(1, 3).digits())
+    .otherwiseNothing(); // No else branch — engine moves forward silently
+```
+
+The state machine enforces the correct declaration order at compile time: `ifXxx` → `thenUse` → `otherwiseUse` / `otherwiseIfFollowedBy` / `otherwiseNothing`. An incomplete conditional is not expressible.
+
+---
+
+## Why Sift?
+
+| | Raw Java Regex | Sift |
+|---|---|---|
+| Syntax errors | Discovered at runtime | Impossible to express |
+| Readability | Cryptic symbols | Self-documenting method names |
+| Reusability | Copy-paste | Named `SiftPattern` fragments |
+| Thread safety | Manual | Guaranteed — all patterns are immutable |
+| ReDoS protection | Requires expert knowledge | Built-in API |
+| Jakarta Validation | Manual `@Pattern` duplication | `@SiftMatch` + `SiftRegexProvider` |
+| Dependencies | — | Zero (sift-core) |
+
+---
+
+## Going Further
+
+- **[Sift Cookbook](COOKBOOK.md)** — Advanced recipes: TSV log parsing, UUID validation, lookarounds, data extraction with named captures, conditional patterns, and more.
+- **[Javadoc — sift-core](https://javadoc.io/doc/com.mirkoddd/sift-core)**
+- **[Javadoc — sift-annotations](https://javadoc.io/doc/com.mirkoddd/sift-annotations)**
+- **[Changelog](CHANGELOG.md)**
+- **[Contributing](CONTRIBUTING.md)**
+
