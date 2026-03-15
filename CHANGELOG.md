@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.0.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.6.0...sift-v6.0.0) (2026-03-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **core:** The terminal method `.sieve()` now returns a `SiftCompiledPattern` abstraction instead of a `java.util.regex.Pattern`.
+
+### Code Refactoring
+
+* **core:** decouple regex compilation to support pluggable engines ([25c9ff7](https://github.com/Mirkoddd/Sift/commit/25c9ff7672b8708f4f373ea98a49cf1b791649fc))
+
 ## [5.6.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.5.0...sift-v5.6.0) (2026-03-13)
 
 
