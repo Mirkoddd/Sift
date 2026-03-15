@@ -1,7 +1,5 @@
 # Sift
-<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e931dfa9-02e9-406d-bde7-56f9e0000464" alt=""/>
-
-[![Java 8+](https://img.shields.io/badge/Java-8+-blue.svg)](https://adoptium.net/)
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=e931dfa9-02e9-406d-bde7-56f9e0000464" alt=""/>[![Java 8+](https://img.shields.io/badge/Java-8+-blue.svg)](https://adoptium.net/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 [![Tests](https://github.com/mirkoddd/Sift/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/mirkoddd/Sift/actions)
@@ -98,7 +96,8 @@ implementation 'com.mirkoddd:sift-annotations:<latest>'
 | Method | Effect |
 |---|---|
 | `.shake()` | Returns the raw regex `String` |
-| `.sieve()` | Returns a compiled `java.util.regex.Pattern` |
+| `.sieve()` | Compiles with the default JDK engine → `SiftCompiledPattern` |
+| `.sieveWith(engine)` | Compiles with a custom engine → `SiftCompiledPattern` |
 | `.andNothingElse()` | Appends `$` and seals the pattern |
 
 ---
@@ -236,9 +235,38 @@ SiftPattern<Fragment> safe = Sift.fromAnywhere()
 Sift.fromAnywhere()
     .oneOrMore().anyCharacter().asFewAsPossible(); // generates .+?
 ```
+---
+### 5. Alternative Regex Engines
+
+By default, Sift compiles patterns using the standard `java.util.regex` engine via `.sieve()`.
+For use cases where the JDK engine is not suitable — such as environments requiring
+linear-time guarantees or GraalVM native images — Sift exposes a `SiftEngine` SPI that
+accepts any compatible backend.
+```java
+// Default — uses java.util.regex internally
+SiftCompiledPattern pattern = Sift.fromAnywhere()
+    .oneOrMore().digits()
+    .sieve();
+
+// Custom engine — e.g. RE2J for linear-time, ReDoS-immune matching
+SiftCompiledPattern pattern = Sift.fromAnywhere()
+    .oneOrMore().digits()
+    .sieveWith(new Re2jEngine()); // sift-engine-re2j module
+```
+
+Sift tracks the advanced features used during pattern construction as a `Set<RegexFeature>`
+and passes it to the engine at compile time. If an engine doesn't support a requested
+feature — for example, RE2J does not support lookarounds or backreferences — it throws
+`UnsupportedOperationException` immediately, before any input is processed.
+
+Available engine modules:
+- `sift-core` — includes `JdkEngine` (default, zero dependencies)
+- `sift-engine-re2j` — RE2J backend *(coming soon)*
+- `sift-engine-graalvm` — GraalVM Regex backend *(coming soon)*
 
 ---
-### 5. Lookarounds — Zero-Width Assertions
+
+### 6. Lookarounds — Zero-Width Assertions
 
 Lookarounds let you match based on what surrounds a position without consuming those characters. Sift exposes them as readable methods directly on `Connector`, so they flow naturally in the chain.
 ```java
@@ -267,7 +295,7 @@ All four lookaround types are available both on `Connector` — for inline chain
 
 ---
 
-### 6. Ready-Made Patterns — SiftCatalog
+### 7. Ready-Made Patterns — SiftCatalog
 
 `SiftCatalog` provides a curated set of production-ready, ReDoS-safe patterns for common formats. All patterns are `Fragment`-typed — they compose cleanly with your own Sift chains.
 
@@ -288,7 +316,7 @@ Available patterns: `uuid()`, `ipv4()`, `macAddress()`, `email()`, `webUrl()`, `
 
 ---
 
-### 7. Recursive & Nested Structures
+### 8. Recursive & Nested Structures
 
 Parse arbitrarily deep balanced structures with `SiftPatterns.nesting()`.
 
@@ -303,7 +331,7 @@ nested.containsMatchIn("((hello)(world))"); // true
 
 ---
 
-### 8. Conditional Patterns
+### 9. Conditional Patterns
 
 Sift exposes regex conditional logic — `if/then/else` branches — as a fully type-safe fluent API via `SiftPatterns`.
 ```java
@@ -337,9 +365,10 @@ The state machine enforces the correct declaration order at compile time: `ifXxx
 | Syntax errors | Discovered at runtime | Impossible to express |
 | Readability | Cryptic symbols | Self-documenting method names |
 | Reusability | Copy-paste | Named `SiftPattern` fragments |
-| Thread safety | Manual | Guaranteed — all patterns are immutable |
+| Thread safety | Manual | Guaranteed, all patterns are immutable |
 | ReDoS protection | Requires expert knowledge | Built-in API |
 | Jakarta Validation | Manual `@Pattern` duplication | `@SiftMatch` + `SiftRegexProvider` |
+| Regex engine | JDK only | Pluggable (JDK, RE2J, GraalVM, etc...) |
 | Dependencies | — | Zero (sift-core) |
 
 ---
