@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Mirko Dimartino
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.CharacterConnector;
@@ -7,10 +22,8 @@ import com.mirkoddd.sift.core.dsl.SiftPattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
 
 import static com.mirkoddd.sift.core.Sift.exactly;
 import static com.mirkoddd.sift.core.SiftPatterns.ifFollowedBy;
@@ -95,11 +108,7 @@ class SiftConditionalsTest {
         Connector<Fragment> extractionPattern = Sift.fromWordBoundary()
                 .followedBy(serialRule);
 
-        Matcher matcher = extractionPattern.sieve().matcher(text);
-        List<String> results = new ArrayList<>();
-        while (matcher.find()) {
-            results.add(matcher.group());
-        }
+        List<String> results = extractionPattern.extractAll(text);
 
         // Ensures the emulated conditionals actually work at runtime within the Java Regex engine.
         List<String> expectedResults = Arrays.asList("A123", "BXYZ", "C---");

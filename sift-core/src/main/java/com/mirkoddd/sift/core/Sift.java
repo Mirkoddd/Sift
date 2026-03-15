@@ -16,6 +16,7 @@
 package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.*;
+import com.mirkoddd.sift.core.engine.RegexFeature;
 
 import java.util.Objects;
 
@@ -111,6 +112,7 @@ public final class Sift {
      */
     public static Quantifier<Root> fromPreviousMatchEnd() {
         PatternAssembler assembler = new PatternAssembler();
+        assembler.registerFeature(RegexFeature.PREVIOUS_MATCH_ANCHOR);
         assembler.addAnchor(RegexSyntax.PREVIOUS_MATCH_END);
         return new SiftQuantifier<>(assembler);
     }
@@ -227,6 +229,7 @@ public final class Sift {
          */
         public Quantifier<Root> fromPreviousMatchEnd() {
             PatternAssembler assembler = new PatternAssembler(flags);
+            assembler.registerFeature(RegexFeature.PREVIOUS_MATCH_ANCHOR);
             assembler.addAnchor(RegexSyntax.PREVIOUS_MATCH_END);
             return new SiftQuantifier<>(assembler);
         }

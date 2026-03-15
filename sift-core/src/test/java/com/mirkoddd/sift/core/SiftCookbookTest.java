@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,6 +49,7 @@ import com.mirkoddd.sift.core.dsl.Root;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 import com.mirkoddd.sift.core.dsl.VariableCharacterConnector;
 import com.mirkoddd.sift.core.dsl.VariableConnector;
+import com.mirkoddd.sift.core.engine.SiftCompiledPattern;
 
 /**
  * Validates the real-world examples provided in the COOKBOOK.md file.
@@ -275,18 +277,19 @@ class SiftCookbookTest {
         // 4. Using Sift's built-in utility for a quick boolean match check
         assertTrue(htmlTagPattern.matchesEntire(input));
 
-        // 5. Using .sieve() to retrieve the fully compiled java.util.regex.Pattern.
+        // 5. Using .sieve() to retrieve the fully compiled engine-agnostic pattern.
         // This automatically applies the SiftGlobalFlag under the hood.
-        Pattern pattern = htmlTagPattern.sieve();
-        java.util.regex.Matcher matcher = pattern.matcher(input);
+        SiftCompiledPattern compiledPattern = htmlTagPattern.sieve();
 
-        // 6. Data extraction using standard Java Matcher API powered by Sift
-        assertTrue(matcher.find(), "The pattern should find a match");
-        assertEquals("TITLE", matcher.group("tag"), "Should extract the exact opening tag");
-        assertEquals("My Awesome Cookbook", matcher.group("content"), "Should extract the inner payload");
+        // 6. Data extraction using Sift's null-safe extraction API (No more raw JDK Matchers!)
+        Map<String, String> extractedData = compiledPattern.extractGroups(input);
+
+        assertFalse(extractedData.isEmpty(), "The pattern should find a match");
+        assertEquals("TITLE", extractedData.get("tag"), "Should extract the exact opening tag");
+        assertEquals("My Awesome Cookbook", extractedData.get("content"), "Should extract the inner payload");
 
         // Proof that backreference works: a mismatched closing tag will fail
-        assertFalse(pattern.matcher("<TITLE>My Awesome Cookbook</H1>").find());
+        assertFalse(compiledPattern.containsMatchIn("<TITLE>My Awesome Cookbook</H1>"));
     }
 
     @Test

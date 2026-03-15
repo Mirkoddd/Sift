@@ -1,5 +1,7 @@
 package com.mirkoddd.sift.core;
 
+import com.mirkoddd.sift.core.engine.RegexFeature;
+
 import java.util.Set;
 
 /**
@@ -9,4 +11,5 @@ import java.util.Set;
 interface PatternMetadata {
     Set<String> getInternalRegisteredGroups();
     Set<String> getInternalRequiredBackreferences();
+    Set<RegexFeature> getInternalUsedFeatures();
 }

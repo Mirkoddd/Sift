@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.Root;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
+import com.mirkoddd.sift.core.engine.SiftCompiledPattern;
 
 class SiftPatternsTest {
 
@@ -214,14 +215,14 @@ class SiftPatternsTest {
         SiftPattern<Root> patternInterface =
                 Sift.fromStart().exactly(3).digits();
 
-        java.util.regex.Pattern compiled = patternInterface.sieve();
+        SiftCompiledPattern compiled = patternInterface.sieve();
 
-        assertNotNull(compiled, "The interface method should return a valid Pattern");
-        assertEquals("^[0-9]{3}", compiled.pattern());
+        assertNotNull(compiled, "The interface method should return a valid Compiled Pattern");
+        assertEquals("^[0-9]{3}", compiled.getRawRegex());
     }
 
     @Test
-    @DisplayName("SiftPattern default sieve() should compile the result of shake()")
+    @DisplayName("BaseSiftPattern execution methods should correctly delegate to the default engine")
     void testDefaultSieveImplementation() {
         BaseSiftPattern<Fragment> fakePattern = new BaseSiftPattern<Fragment>() {
             @Override
@@ -230,10 +231,10 @@ class SiftPatternsTest {
             }
         };
 
-        java.util.regex.Pattern compiled = fakePattern.sieve();
+        SiftCompiledPattern compiled = fakePattern.sieve();
 
-        assertNotNull(compiled, "The sieve() should return a valid Pattern");
-        assertEquals("[a-z]+", compiled.pattern(), "The compiled pattern should match the shake() output");
+        assertNotNull(compiled, "sieve() should return a valid SiftCompiledPattern");
+        assertEquals("[a-z]+", compiled.getRawRegex(), "The compiled pattern should match the shake() output");
 
         assertTrue(fakePattern.matchesEntire("abc"), "matchesEntire() should correctly match valid strings");
         assertTrue(fakePattern.containsMatchIn("123abc456"), "containsMatchIn() should correctly find valid substrings");
@@ -244,7 +245,8 @@ class SiftPatternsTest {
     }
 
     @Test
-    void shouldMemoizeShakeAndSieveResults() {
+    @DisplayName("shake() result should be aggressively memoized and thread-safe")
+    void shouldMemoizeShakeResult() {
         SiftPattern<Fragment> memoizedPattern = SiftPatterns.literal("cache-test");
 
         String firstShake = memoizedPattern.shake();
@@ -252,12 +254,6 @@ class SiftPatternsTest {
 
         assertEquals("cache-test", firstShake);
         assertSame(firstShake, secondShake, "shake() should return the exact same String instance from cache.");
-
-        Pattern firstSieve = memoizedPattern.sieve();
-        Pattern secondSieve = memoizedPattern.sieve();
-
-        assertEquals("cache-test", firstSieve.pattern());
-        assertSame(firstSieve, secondSieve, "sieve() should return the exact same Pattern instance from cache.");
     }
 
     @Test
@@ -298,7 +294,6 @@ class SiftPatternsTest {
 
     @Test
     @DisplayName("Semantic matching methods should correctly evaluate inputs, handle nulls, and support StringBuilders")
-    @SuppressWarnings("deprecation")
     void testPatternMatchingConvenienceMethods() {
         SiftPattern<Root> pattern = Sift.fromStart().exactly(3).digits().andNothingElse();
 
@@ -322,13 +317,7 @@ class SiftPatternsTest {
                 "Should return true when the exact sequence is contained within a larger string");
         assertFalse(partialPattern.containsMatchIn("ab12cd"),
                 "Should return false when the sequence is broken");
-
-        // Deprecated matches() compatibility tests
-        assertEquals(partialPattern.containsMatchIn("abc123def"), partialPattern.matches("abc123def"),
-                "Deprecated matches() must behave identically to containsMatchIn() for valid matching inputs");
-        assertEquals(partialPattern.containsMatchIn("ab12cd"), partialPattern.matches("ab12cd"),
-                "Deprecated matches() must behave identically to containsMatchIn() for failing inputs");
-        assertEquals(partialPattern.containsMatchIn(null), partialPattern.matches(null),
-                "Deprecated matches() must behave identically to containsMatchIn() for null inputs");
+        assertFalse(partialPattern.containsMatchIn(null),
+                "Should gracefully return false when the input is null, avoiding NullPointerException");
     }
 }

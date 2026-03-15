@@ -40,6 +40,8 @@ import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.Root;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 import com.mirkoddd.sift.core.dsl.VariableConnector;
+import com.mirkoddd.sift.core.engine.SiftCompiledPattern;
+import com.mirkoddd.sift.core.engine.SiftEngine;
 
 /**
  * Test suite for Sift library.
@@ -377,22 +379,18 @@ class SiftTest {
         }
 
         @Test
-        @DisplayName("sieve() should return a cached compiled Pattern that correctly matches the input")
-        void testSieveReturnsCachedPattern() {
+        @DisplayName("sieve() should return a CompiledPattern that correctly matches the input")
+        void testSieveReturnsCompiledPattern() {
             SiftPattern<Root> pattern = Sift.fromStart().exactly(3).digits();
 
-            java.util.regex.Pattern firstPattern = pattern.sieve();
+            SiftCompiledPattern compiledPattern = pattern.sieve();
 
-            assertNotNull(firstPattern);
-            assertEquals("^[0-9]{3}", firstPattern.pattern());
+            assertNotNull(compiledPattern);
+            assertEquals("^[0-9]{3}", compiledPattern.getRawRegex());
 
-            assertTrue(firstPattern.matcher("123").matches());
-            assertFalse(firstPattern.matcher("12").matches());
-            assertFalse(firstPattern.matcher("abc").matches());
-
-            java.util.regex.Pattern secondPattern = pattern.sieve();
-
-            assertSame(firstPattern, secondPattern);
+            assertTrue(compiledPattern.matchesEntire("123"));
+            assertFalse(compiledPattern.matchesEntire("12"));
+            assertFalse(compiledPattern.matchesEntire("abc"));
         }
 
         @Test
@@ -420,8 +418,8 @@ class SiftTest {
         }
 
         @Test
-        @DisplayName("shake() should perform fail-fast validation the moment a malformed pattern is injected")
-        void testShakeFailFastValidation() {
+        @DisplayName("Engine compilation should perform fail-fast validation when a malformed pattern is compiled")
+        void testEngineFailFastValidation() {
             BaseSiftPattern<Fragment> malformedPattern = new BaseSiftPattern<Fragment>() {
                 @Override
                 protected String buildRegex() {
@@ -430,11 +428,51 @@ class SiftTest {
             };
 
             IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
-                    Sift.fromStart().of(malformedPattern)
+                    Sift.fromStart().of(malformedPattern).sieve()
             );
 
-            assertTrue(exception.getMessage().contains("Sift generated an invalid regex pattern"));
+            assertTrue(exception.getMessage().contains("Sift generated an invalid regex syntax"));
             assertInstanceOf(java.util.regex.PatternSyntaxException.class, exception.getCause());
+        }
+
+        @Test
+        @DisplayName("PatternAssembler should safely merge custom external patterns that lack PatternMetadata")
+        void testExternalPatternWithoutMetadataBranchCoverage() {
+            // Simulating a third-party plugin: a custom class that only implements
+            // the public SiftPattern interface, completely ignoring internal metadata.
+            SiftPattern<Fragment> alienPattern = new SiftPattern<Fragment>() {
+                @Override
+                public String shake() {
+                    return "alien-regex";
+                }
+
+                @Override
+                public SiftCompiledPattern sieveWith(SiftEngine engine) {
+                    return engine.compile(shake(), java.util.Collections.emptySet());
+                }
+
+                @Override
+                public SiftPattern<Fragment> preventBacktracking() {
+                    return this; // Simplified for the scope of this test
+                }
+
+                @Override
+                public Object ___internal_lock___() {
+                    return new Object();
+                }
+            };
+
+            // By injecting 'alienPattern' via .of(), PatternAssembler will trigger
+            // getIncomingGroups, getIncomingBackreferences, and getIncomingFeatures.
+            // The 'instanceof PatternMetadata' check will evaluate to FALSE in all three methods!
+            String regex = Sift.fromStart()
+                    .of(alienPattern)
+                    .andNothingElse()
+                    .shake();
+
+            // We verify that the assembly succeeds and returns the expected raw string,
+            // proving that the Collections.emptySet() fallback branches work flawlessly.
+            assertEquals("^alien-regex$", regex);
         }
     }
 
@@ -779,11 +817,11 @@ class SiftTest {
         @Test
         @DisplayName("asFewAsPossible() exhaustive branch coverage for internal state protections")
         void testLazyModifierEdgeCasesAndProtections() {
-            PatternAssembler assembler1 = new PatternAssembler();
-            assembler1.addClassRange("0-9");
-            assembler1.setQuantifier("?");
-            assembler1.applyLazyModifier();
-            assertEquals("[0-9]??", assembler1.build());
+            PatternAssembler assembler = new PatternAssembler();
+            assembler.addClassRange("0-9");
+            assembler.setQuantifier("?");
+            assembler.applyLazyModifier();
+            assertEquals("[0-9]??", assembler.build());
 
             PatternAssembler assembler2 = new PatternAssembler();
             assembler2.addClassRange("0-9");
@@ -837,7 +875,7 @@ class SiftTest {
         }
 
         @Test
-        void shouldMemoizeShakeAndSieveForPreventBacktracking() {
+        void shouldMemoizeShakeForPreventBacktracking() {
             SiftPattern<Fragment> basePattern = SiftPatterns.literal("atomic");
             SiftPattern<Fragment> atomicPattern = basePattern.preventBacktracking();
 
@@ -846,12 +884,6 @@ class SiftTest {
 
             assertEquals("(?>atomic)", firstShake);
             assertSame(firstShake, secondShake);
-
-            Pattern firstSieve = atomicPattern.sieve();
-            Pattern secondSieve = atomicPattern.sieve();
-
-            assertEquals("(?>atomic)", firstSieve.pattern());
-            assertSame(firstSieve, secondSieve);
         }
     }
 

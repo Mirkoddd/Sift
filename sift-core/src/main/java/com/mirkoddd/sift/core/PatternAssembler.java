@@ -17,14 +17,17 @@ package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.Composable;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
+import com.mirkoddd.sift.core.engine.RegexFeature;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Internal Buffer and String manipulator for Regex generation.
- * Handles the low-level string concatenation, character escaping, and class flushing.
+ * Handles the low-level string concatenation, character escaping, class flushing,
+ * and tracking of advanced regex features for cross-engine compatibility.
  */
 class PatternAssembler {
 
@@ -46,6 +49,7 @@ class PatternAssembler {
     private final Set<String> registeredGroups = new HashSet<>();
     private final Set<String> requiredBackreferences = new HashSet<>();
     private boolean containsAbsoluteAnchor = false;
+    private final EnumSet<RegexFeature> usedFeatures = EnumSet.noneOf(RegexFeature.class);
 
     PatternAssembler() {
     }
@@ -56,6 +60,7 @@ class PatternAssembler {
             mainPattern.append(flag.getSymbol());
         }
         mainPattern.append(RegexSyntax.GROUP_CLOSE);
+        registerFeature(RegexFeature.INLINE_FLAGS);
     }
 
     Set<String> getRegisteredGroups() {
@@ -68,6 +73,14 @@ class PatternAssembler {
 
     public boolean isContainsAbsoluteAnchor() {
         return containsAbsoluteAnchor;
+    }
+
+    Set<RegexFeature> getUsedFeatures() {
+        return Collections.unmodifiableSet(usedFeatures);
+    }
+
+    void registerFeature(RegexFeature feature) {
+        this.usedFeatures.add(feature);
     }
 
     void setQuantifier(String quantifier) {
@@ -125,6 +138,8 @@ class PatternAssembler {
 
         extractAndCheckGroupsAndRequirements(group.getPattern(), group.getName());
 
+        registerFeature(RegexFeature.NAMED_CAPTURE);
+
         mainPattern.append(RegexSyntax.NAMED_GROUP_OPEN)
                 .append(group.getName())
                 .append(RegexSyntax.NAMED_GROUP_NAME_CLOSE)
@@ -134,6 +149,8 @@ class PatternAssembler {
 
     void addBackreference(NamedCapture group) {
         requiredBackreferences.add(group.getName());
+
+        registerFeature(RegexFeature.BACKREFERENCE);
 
         mainPattern.append(RegexSyntax.NAMED_BACKREFERENCE_OPEN)
                 .append(group.getName())
@@ -214,6 +231,8 @@ class PatternAssembler {
         }
 
         requiredBackreferences.addAll(getIncomingBackreferences(pattern));
+
+        usedFeatures.addAll(getIncomingFeatures(pattern));
     }
 
     private static Set<String> getIncomingGroups(SiftPattern<?> pattern) {
@@ -226,6 +245,13 @@ class PatternAssembler {
     private static Set<String> getIncomingBackreferences(SiftPattern<?> pattern) {
         if (pattern instanceof PatternMetadata) {
             return ((PatternMetadata) pattern).getInternalRequiredBackreferences();
+        }
+        return Collections.emptySet();
+    }
+
+    private static Set<RegexFeature> getIncomingFeatures(SiftPattern<?> pattern) {
+        if (pattern instanceof PatternMetadata) {
+            return ((PatternMetadata) pattern).getInternalUsedFeatures();
         }
         return Collections.emptySet();
     }
@@ -308,6 +334,7 @@ class PatternAssembler {
         clone.registeredGroups.addAll(this.registeredGroups);
         clone.requiredBackreferences.addAll(this.requiredBackreferences);
         clone.containsAbsoluteAnchor = this.containsAbsoluteAnchor;
+        clone.usedFeatures.addAll(this.usedFeatures);
         return clone;
     }
 

@@ -16,6 +16,7 @@
 package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.*;
+import com.mirkoddd.sift.core.engine.RegexFeature;
 
 import java.util.Objects;
 import java.util.Set;
@@ -74,6 +75,7 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
         Objects.requireNonNull(assertion, "Assertion cannot be null");
 
         PatternAssembler next = assembler.copy();
+        next.registerFeature(RegexFeature.LOOKAHEAD);
         next.addPattern(assertion);
         return new SiftConnector<>(next);
     }
@@ -113,6 +115,7 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
         Objects.requireNonNull(assertion, "Assertion cannot be null");
 
         PatternAssembler next = assembler.copy();
+        next.registerFeature(RegexFeature.LOOKBEHIND);
         next.prependPattern(assertion);
         return new SiftConnector<>(next);
     }
@@ -175,5 +178,10 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
     @Override
     public Set<String> getInternalRequiredBackreferences() {
         return assembler.getRequiredBackreferences();
+    }
+
+    @Override
+    public Set<RegexFeature> getInternalUsedFeatures() {
+        return assembler.getUsedFeatures();
     }
 }

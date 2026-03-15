@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Mirko Dimartino
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.mirkoddd.sift.core;
 
 import static com.mirkoddd.sift.core.Sift.exactly;
@@ -7,16 +22,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
+import com.mirkoddd.sift.core.engine.JdkEngine;
+import com.mirkoddd.sift.core.engine.SiftCompiledPattern;
 
 @DisplayName("SiftPattern Execution & Extraction Tests")
 class SiftPatternExecutionTest {
@@ -211,7 +227,7 @@ class SiftPatternExecutionTest {
     }
 
     @Nested
-    @DisplayName("Null Safety (Defensive Programming)")
+    @DisplayName("Null Safety & Edge Cases")
     class NullSafetyTests {
 
         @Test
@@ -221,12 +237,10 @@ class SiftPatternExecutionTest {
 
             assertEquals(Optional.empty(), pattern.extractFirst(null));
             assertTrue(pattern.extractAll(null).isEmpty());
-            assertEquals("", pattern.replaceFirst(null, "replacement"));
-            assertEquals("", pattern.replaceAll(null, "replacement"));
+            assertNull(pattern.replaceFirst(null, "replacement"));
+            assertNull(pattern.replaceAll(null, "replacement"));
             assertTrue(pattern.extractGroups(null).isEmpty());
             assertTrue(pattern.extractAllGroups(null).isEmpty());
-
-            // New null safety assertions
             assertTrue(pattern.splitBy(null).isEmpty());
             assertEquals(0L, pattern.streamMatches(null).count());
         }
@@ -234,72 +248,26 @@ class SiftPatternExecutionTest {
         @Test
         @DisplayName("extractGroups() should gracefully handle false-positive group names (IllegalArgumentException)")
         void testExtractGroupsIllegalArgumentExceptionCoverage() {
-            // Create an anonymous SiftPattern to simulate the edge case.
-            // The pattern literally contains "(?<fake>)" protected by \Q...\E (Quote)
-            // so that it is NOT a real capture group for the Java engine.
-            SiftPattern<?> edgeCasePattern = new SiftPattern<SiftContext>() {
-                @Override
-                public Object ___internal_lock___() {
-                    return null; // Not relevant for this test
-                }
-
-                @Override
-                public String shake() {
-                    return "\\Q(?<fake>)\\E";
-                }
-
-                @Override
-                public Pattern sieve() {
-                    return Pattern.compile(shake());
-                }
-
-                @Override
-                public SiftPattern<SiftContext> preventBacktracking() {
-                    return this; // Not relevant for this test
-                }
-            };
-
-            // Pass a string containing exactly the literal text
-            Map<String, String> groups = edgeCasePattern.extractGroups("prefix (?<fake>) suffix");
+            // Test the engine directly with an edge-case raw regex string
+            SiftCompiledPattern edgeCasePattern = JdkEngine.INSTANCE.compile("\\Q(?<fake>)\\E", Collections.emptySet());
 
             // The catch block must intercept the exception, ignore the false-positive group
             // and return an empty map, without crashing the application.
+            Map<String, String> groups = edgeCasePattern.extractGroups("prefix (?<fake>) suffix");
+
             assertTrue(groups.isEmpty(), "The map should be empty, ignoring the false-positive group");
         }
 
         @Test
         @DisplayName("extractGroups() should ignore groups that are optional and not present in the match (matchValue == null)")
         void testExtractGroupsWithUnmatchedOptionalGroup() {
-            // Create a pattern with one mandatory group and one optional group.
-            // Simulated syntax: ^(?<req>[a-z]+)(?<opt>[0-9]+)?$
-            SiftPattern<?> pattern = new SiftPattern<SiftContext>() {
-                @Override
-                public Object ___internal_lock___() {
-                    return null; // Not relevant for this test
-                }
-
-                @Override
-                public String shake() {
-                    return "^(?<req>[a-z]+)(?<opt>[0-9]+)?$";
-                }
-
-                @Override
-                public Pattern sieve() {
-                    return Pattern.compile(shake());
-                }
-
-                @Override
-                public SiftPattern<SiftContext> preventBacktracking() {
-                    return this; // Not relevant for this test
-                }
-            };
+            // Test the engine directly with an optional capture group
+            SiftCompiledPattern pattern = JdkEngine.INSTANCE.compile("^(?<req>[a-z]+)(?<opt>[0-9]+)?$", Collections.emptySet());
 
             // Pass a string that matches the "req" group but NOT the optional "opt" group
             Map<String, String> groups = pattern.extractGroups("abc");
 
-            // The "req" group must be present.
-            // The "opt" group returned null, so the if (matchValue != null)
-            // evaluated to false and the key was not inserted into the map.
+            // The "opt" group returned null, so the key was not inserted into the map.
             assertEquals(1, groups.size());
             assertEquals("abc", groups.get("req"));
             assertFalse(groups.containsKey("opt"), "The optional group should not be in the map");
@@ -308,16 +276,7 @@ class SiftPatternExecutionTest {
         @Test
         @DisplayName("extractAllGroups() should gracefully handle false-positive group names (IllegalArgumentException)")
         void testExtractAllGroupsIllegalArgumentExceptionCoverage() {
-            SiftPattern<?> edgeCasePattern = new SiftPattern<SiftContext>() {
-                @Override
-                public Object ___internal_lock___() { return null; }
-                @Override
-                public String shake() { return "\\Q(?<fake>)\\E"; }
-                @Override
-                public Pattern sieve() { return Pattern.compile(shake()); }
-                @Override
-                public SiftPattern<SiftContext> preventBacktracking() { return this; }
-            };
+            SiftCompiledPattern edgeCasePattern = JdkEngine.INSTANCE.compile("\\Q(?<fake>)\\E", Collections.emptySet());
 
             List<Map<String, String>> results = edgeCasePattern.extractAllGroups("prefix (?<fake>) suffix");
 
@@ -328,16 +287,7 @@ class SiftPatternExecutionTest {
         @Test
         @DisplayName("extractAllGroups() should ignore groups that are optional and not present in the match (matchValue == null)")
         void testExtractAllGroupsWithUnmatchedOptionalGroup() {
-            SiftPattern<?> pattern = new SiftPattern<SiftContext>() {
-                @Override
-                public Object ___internal_lock___() { return null; }
-                @Override
-                public String shake() { return "(?<req>[a-z]+)(?<opt>[0-9]+)?"; }
-                @Override
-                public Pattern sieve() { return Pattern.compile(shake()); }
-                @Override
-                public SiftPattern<SiftContext> preventBacktracking() { return this; }
-            };
+            SiftCompiledPattern pattern = JdkEngine.INSTANCE.compile("(?<req>[a-z]+)(?<opt>[0-9]+)?", Collections.emptySet());
 
             // Matches "abc" (no digits) and "def12" (with digits)
             List<Map<String, String>> results = pattern.extractAllGroups("abc def12");

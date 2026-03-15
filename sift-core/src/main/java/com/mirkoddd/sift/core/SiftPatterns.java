@@ -20,8 +20,12 @@ import com.mirkoddd.sift.core.dsl.ConditionalThen;
 import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftContext;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
+import com.mirkoddd.sift.core.engine.RegexFeature;
 
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -143,7 +147,11 @@ public final class SiftPatterns {
      */
     public static SiftPattern<Assertion> positiveLookahead(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
-        return memoize(() -> RegexSyntax.POSITIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
+        return memoize(
+                () -> RegexSyntax.POSITIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE,
+                RegexFeature.LOOKAHEAD,
+                pattern
+        );
     }
 
     /**
@@ -157,7 +165,11 @@ public final class SiftPatterns {
      */
     public static SiftPattern<Assertion> negativeLookahead(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookahead pattern cannot be null");
-        return memoize(() -> RegexSyntax.NEGATIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
+        return memoize(
+                () -> RegexSyntax.NEGATIVE_LOOKAHEAD_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE,
+                RegexFeature.LOOKAHEAD,
+                pattern
+        );
     }
 
     /**
@@ -171,7 +183,11 @@ public final class SiftPatterns {
      */
     public static SiftPattern<Assertion> positiveLookbehind(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
-        return memoize(() -> RegexSyntax.POSITIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
+        return memoize(
+                () -> RegexSyntax.POSITIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE,
+                RegexFeature.LOOKBEHIND,
+                pattern
+        );
     }
 
     /**
@@ -185,7 +201,11 @@ public final class SiftPatterns {
      */
     public static SiftPattern<Assertion> negativeLookbehind(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "Lookbehind pattern cannot be null");
-        return memoize(() -> RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE);
+        return memoize(
+                () -> RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN + pattern.shake() + RegexSyntax.GROUP_CLOSE,
+                RegexFeature.LOOKBEHIND,
+                pattern
+        );
     }
 
     /**
@@ -404,7 +424,7 @@ public final class SiftPatterns {
             current = definition.apply(current);
         }
 
-        return current;
+        return memoize(current::shake, RegexFeature.RECURSION, current);
     }
 
     /**
@@ -432,37 +452,80 @@ public final class SiftPatterns {
         Objects.requireNonNull(pattern, "Pattern cannot be null");
         Objects.requireNonNull(flags, "Flags cannot be null");
 
-        return memoize(() -> {
-            StringBuilder sb = new StringBuilder();
-            sb.append(RegexSyntax.INLINE_FLAG_OPEN);
-            for (SiftGlobalFlag flag : flags) {
-                sb.append(flag.getSymbol());
-            }
-            sb.append(RegexSyntax.INLINE_FLAG_SEPARATOR);
-            sb.append(pattern.shake());
-            sb.append(RegexSyntax.GROUP_CLOSE);
-            return sb.toString();
-        });
+        return memoize(
+                () -> {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(RegexSyntax.INLINE_FLAG_OPEN);
+                    for (SiftGlobalFlag flag : flags) {
+                        sb.append(flag.getSymbol());
+                    }
+                    sb.append(RegexSyntax.INLINE_FLAG_SEPARATOR);
+                    sb.append(pattern.shake());
+                    sb.append(RegexSyntax.GROUP_CLOSE);
+                    return sb.toString();
+                },
+                RegexFeature.INLINE_FLAGS,
+                pattern
+        );
     }
 
     /**
-     * Memoizes a pattern generation using a supplier, making it generic so it can
-     * safely produce both Fragments and Assertions without unchecked casts.
+     * Memoize a pattern generation using a supplier.
+     * This overload is intended for simple patterns that do not introduce new
+     * advanced regex features (e.g., literals, simple groups).
+     *
+     * @param <T>       The structural context of the pattern.
+     * @param generator A supplier providing the raw regex string.
+     * @return A memoized SiftPattern.
      */
     static <T extends SiftContext> SiftPattern<T> memoize(Supplier<String> generator) {
-        return new MemoizedPattern<>(generator);
+        return new MemoizedPattern<>(generator, null, null);
+    }
+
+    /**
+     * Memoize a pattern generation while tracking its advanced regex features and
+     * enabling feature propagation from a nested pattern.
+     *
+     * @param <T>       The structural context of the pattern.
+     * @param generator A supplier providing the raw regex string.
+     * @param feature   The advanced feature introduced by this specific node (e.g., LOOKAHEAD).
+     * @param inner     An optional inner pattern to extract and propagate existing features from.
+     * @return A memoized SiftPattern with full metadata support.
+     */
+    static <T extends SiftContext> SiftPattern<T> memoize(Supplier<String> generator, RegexFeature feature, SiftPattern<?> inner) {
+        return new MemoizedPattern<>(generator, java.util.EnumSet.of(feature), inner);
     }
 
     private static final class MemoizedPattern<T extends SiftContext> extends BaseSiftPattern<T> {
         private final Supplier<String> generator;
+        private final Set<RegexFeature> features;
+        private final SiftPattern<?> inner;
 
-        private MemoizedPattern(Supplier<String> generator) {
+        private MemoizedPattern(Supplier<String> generator, Set<RegexFeature> features, SiftPattern<?> inner) {
             this.generator = generator;
+            this.features = features != null ? features : Collections.emptySet();
+            this.inner = inner;
         }
 
         @Override
         protected String buildRegex() {
             return generator.get();
+        }
+
+        @Override
+        protected Set<RegexFeature> buildFeatures() {
+            if (inner == null && features.isEmpty()) {
+                return Collections.emptySet();
+            }
+
+            Set<RegexFeature> totalFeatures = EnumSet.noneOf(RegexFeature.class);
+            totalFeatures.addAll(features);
+
+            if (inner instanceof PatternMetadata) {
+                totalFeatures.addAll(((PatternMetadata) inner).getInternalUsedFeatures());
+            }
+
+            return Collections.unmodifiableSet(totalFeatures);
         }
     }
 }

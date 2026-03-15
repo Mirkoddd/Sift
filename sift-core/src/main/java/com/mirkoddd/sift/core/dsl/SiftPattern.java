@@ -15,20 +15,15 @@
  */
 package com.mirkoddd.sift.core.dsl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import com.mirkoddd.sift.core.engine.JdkEngine;
+import com.mirkoddd.sift.core.engine.SiftCompiledPattern;
+import com.mirkoddd.sift.core.engine.SiftEngine;
+
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * Represents a compiled regex component within a specific structural context.
@@ -55,14 +50,23 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
     String shake();
 
     /**
-     * Compiles this pattern into a standard {@link java.util.regex.Pattern}.
-     * <p>
-     * Use this for high-performance matching. Implementations use internal caching
-     * to ensure the compilation happens only once.
+     * Compiles the constructed pattern using a custom execution engine.
+     * This allows swapping the default JDK regex engine with third-party
+     * alternatives (like RE2J for ReDoS protection).
      *
-     * @return A compiled and ready-to-use Regex Pattern.
+     * @param engine The specific engine adapter to use.
+     * @return The compiled, executable pattern.
      */
-    Pattern sieve();
+    SiftCompiledPattern sieveWith(SiftEngine engine);
+
+    /**
+     * Compiles the constructed pattern using the default JDK execution engine.
+     *
+     * @return The compiled, executable pattern.
+     */
+    default SiftCompiledPattern sieve() {
+        return sieveWith(JdkEngine.INSTANCE);
+    }
 
     /**
      * Wraps this pattern in an <b>Atomic Group</b> {@code (?>...)}.
@@ -78,48 +82,35 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
     /**
      * Checks if the pattern can be found anywhere within the input sequence.
      * <p>
-     * <b>Semantics:</b> This strictly delegates to {@link java.util.regex.Matcher#find()}.
-     * It returns {@code true} if the input contains at least one subsequence that matches the pattern.
+     * <b>Semantics:</b> This strictly delegates to {@link java.util.regex.Matcher#find()}
+     * via the default execution engine. It returns {@code true} if the input contains
+     * at least one subsequence that matches the pattern.
      *
      * @param input The character sequence to search within.
      * @return {@code true} if any part of the input matches this pattern.
      */
     default boolean containsMatchIn(CharSequence input) {
         if (input == null) return false;
-        return sieve().matcher(input).find();
+        return sieve().containsMatchIn(input);
     }
 
     /**
      * Checks if the entire input sequence matches the pattern exactly.
      * <p>
-     * <b>Semantics:</b> This strictly delegates to {@link java.util.regex.Matcher#matches()}.
-     * It returns {@code true} only if the pattern matches the sequence from start to finish.
+     * <b>Semantics:</b> This strictly delegates to {@link java.util.regex.Matcher#matches()}
+     * via the default execution engine. It returns {@code true} only if the pattern
+     * matches the sequence from start to finish.
+     * <p>
+     * <b>Performance Note:</b> This convenience method compiles the regex on the fly.
+     * If you are validating inputs inside a tight loop, it is highly recommended to call
+     * {@link #sieve()} once and reuse the resulting {@link SiftCompiledPattern} instead.
      *
      * @param input The character sequence to validate.
      * @return {@code true} if the entire sequence matches this pattern.
      */
     default boolean matchesEntire(CharSequence input) {
         if (input == null) return false;
-        return sieve().matcher(input).matches();
-    }
-
-    /**
-     * Performs a substring search (grep-style) on the provided input.
-     *
-     * @param input The character sequence to search within.
-     * @return {@code true} if any part of the input matches this pattern.
-     * @deprecated The name {@code matches} is semantically misleading in Java as it implies
-     * strict full-string validation (like {@link String#matches(String)}).
-     * <p>
-     * <b>Migration guide:</b>
-     * <ul>
-     * <li>Use {@link #containsMatchIn(CharSequence)} for partial matching (Matcher.find).</li>
-     * <li>Use {@link #matchesEntire(CharSequence)} for strict validation (Matcher.matches).</li>
-     * </ul>
-     */
-    @Deprecated
-    default boolean matches(CharSequence input) {
-        return containsMatchIn(input);
+        return sieve().matchesEntire(input);
     }
 
     /**
@@ -130,8 +121,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      */
     default Optional<String> extractFirst(CharSequence input) {
         if (input == null) return Optional.empty();
-        Matcher matcher = sieve().matcher(input);
-        return matcher.find() ? Optional.of(matcher.group()) : Optional.empty();
+        return sieve().extractFirst(input);
     }
 
     /**
@@ -142,85 +132,67 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      */
     default List<String> extractAll(CharSequence input) {
         if (input == null) return Collections.emptyList();
-        Matcher matcher = sieve().matcher(input);
-        List<String> results = new ArrayList<>();
-        while (matcher.find()) {
-            results.add(matcher.group());
-        }
-        return Collections.unmodifiableList(results);
+        return sieve().extractAll(input);
     }
 
     /**
      * Replaces the first subsequence of the input that matches the pattern with the given string.
+     * <p>
+     * <b>Null-Safety:</b> If the provided input is {@code null}, this method safely returns
+     * {@code null} without throwing an exception, preserving the original absence of data.
+     * <p>
+     * <b>Performance Note:</b> This convenience method compiles the regex on the fly.
+     * If you are processing inputs inside a tight loop, it is highly recommended to call
+     * {@link #sieve()} once and reuse the resulting {@link SiftCompiledPattern} instead.
      *
-     * @param input       The character sequence to search within.
+     * @param input       The character sequence to search within, may be null.
      * @param replacement The replacement string.
-     * @return The resulting string with the first matching replacement applied.
+     * @return The resulting string with the first matching replacement applied, or {@code null} if the input was null.
      */
     default String replaceFirst(CharSequence input, String replacement) {
-        if (input == null) return "";
-        return sieve().matcher(input).replaceFirst(replacement);
+        if (input == null) return null;
+        return sieve().replaceFirst(input, replacement);
     }
 
     /**
      * Replaces every subsequence of the input that matches the pattern with the given string.
+     * <p>
+     * <b>Null-Safety:</b> If the provided input is {@code null}, this method safely returns
+     * {@code null} without throwing an exception, preserving the original absence of data.
+     * <p>
+     * <b>Performance Note:</b> This convenience method compiles the regex on the fly.
+     * If you are processing inputs inside a tight loop, it is highly recommended to call
+     * {@link #sieve()} once and reuse the resulting {@link SiftCompiledPattern} instead.
      *
-     * @param input       The character sequence to search within.
+     * @param input       The character sequence to search within, may be null.
      * @param replacement The replacement string.
-     * @return The resulting string with replacements applied.
+     * @return The resulting string with replacements applied, or {@code null} if the input was null.
      */
     default String replaceAll(CharSequence input, String replacement) {
-        if (input == null) return "";
-        return sieve().matcher(input).replaceAll(replacement);
+        if (input == null) return null;
+        return sieve().replaceAll(input, replacement);
     }
 
     /**
      * Extracts all explicitly named capture groups from the first match found in the input.
      * <p>
-     * <b>Java 8 Compatibility Note:</b> Native extraction of group names is not supported
-     * by the {@code Matcher} API in early Java versions. This method safely parses the generated
-     * pattern string to discover the defined group names and maps them to their matched values.
+     * <b>Java 8 Compatibility Note:</b> Native extraction of group names is safely handled
+     * by the underlying engine, ensuring backwards compatibility even when standard API
+     * support is lacking.
      *
      * @param input The character sequence to search within.
      * @return An unmodifiable map containing the group names as keys and their matched substrings as values.
      */
     default Map<String, String> extractGroups(CharSequence input) {
         if (input == null) return Collections.emptyMap();
-
-        Pattern compiledPattern = sieve();
-        Matcher matcher = compiledPattern.matcher(input);
-
-        if (!matcher.find()) {
-            return Collections.emptyMap();
-        }
-
-        Map<String, String> extractedGroups = new HashMap<>();
-
-        // Safely extract group names from the pattern string: (?<GroupName>...)
-        Matcher nameExtractor = Pattern.compile("\\(\\?<([a-zA-Z][a-zA-Z0-9]*)>").matcher(compiledPattern.pattern());
-
-        while (nameExtractor.find()) {
-            String groupName = nameExtractor.group(1);
-            try {
-                String matchValue = matcher.group(groupName);
-                if (matchValue != null) {
-                    extractedGroups.put(groupName, matchValue);
-                }
-            } catch (IllegalArgumentException e) {
-                // Defensive catch: ignores malformed or uncaptured group names
-            }
-        }
-
-        return Collections.unmodifiableMap(extractedGroups);
+        return sieve().extractGroups(input);
     }
 
     /**
      * Extracts all explicitly named capture groups from every match found in the input.
      * <p>
-     * <b>Java 8 Compatibility Note:</b> Native extraction of group names is not supported
-     * by the {@code Matcher} API in early Java versions. This method safely parses the generated
-     * pattern string to discover the defined group names and maps them to their matched values
-     * for each successful match.
+     * <b>Java 8 Compatibility Note:</b> Native extraction of group names is safely handled
+     * by the underlying engine, ensuring backwards compatibility.
      *
      * @param input The character sequence to search within.
      * @return An unmodifiable list of unmodifiable maps, where each map represents a single match
@@ -229,31 +201,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      */
     default List<Map<String, String>> extractAllGroups(CharSequence input) {
         if (input == null) return Collections.emptyList();
-
-        Pattern compiledPattern = sieve();
-        Matcher matcher = compiledPattern.matcher(input);
-        Matcher nameExtractor = Pattern.compile("\\(\\?<([a-zA-Z][a-zA-Z0-9]*)>")
-                .matcher(compiledPattern.pattern());
-
-        List<String> groupNames = new ArrayList<>();
-        while (nameExtractor.find()) {
-            groupNames.add(nameExtractor.group(1));
-        }
-
-        List<Map<String, String>> results = new ArrayList<>();
-        while (matcher.find()) {
-            Map<String, String> groups = new HashMap<>();
-            for (String name : groupNames) {
-                try {
-                    String value = matcher.group(name);
-                    if (value != null) groups.put(name, value);
-                } catch (IllegalArgumentException e) {
-                    // Defensive catch: ignores malformed or uncaptured group names
-                }
-            }
-            results.add(Collections.unmodifiableMap(groups));
-        }
-        return Collections.unmodifiableList(results);
+        return sieve().extractAllGroups(input);
     }
 
     /**
@@ -264,7 +212,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      */
     default List<String> splitBy(CharSequence input) {
         if (input == null) return Collections.emptyList();
-        return Arrays.asList(sieve().split(input));
+        return sieve().splitBy(input);
     }
 
     /**
@@ -280,22 +228,6 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      */
     default Stream<String> streamMatches(CharSequence input) {
         if (input == null) return Stream.empty();
-
-        Matcher matcher = sieve().matcher(input);
-
-        // Custom Spliterator to provide lazy Matcher.find() evaluation in Java 8
-        Spliterator<String> lazySpliterator = new Spliterators.AbstractSpliterator<String>(
-                Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL) {
-            @Override
-            public boolean tryAdvance(Consumer<? super String> action) {
-                if (matcher.find()) {
-                    action.accept(matcher.group());
-                    return true;
-                }
-                return false;
-            }
-        };
-
-        return StreamSupport.stream(lazySpliterator, false);
+        return sieve().streamMatches(input);
     }
 }

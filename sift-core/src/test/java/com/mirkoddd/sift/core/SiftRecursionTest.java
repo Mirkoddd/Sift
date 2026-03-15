@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Mirko Dimartino
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.CharacterConnector;
@@ -6,7 +21,7 @@ import com.mirkoddd.sift.core.dsl.SiftPattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.regex.Matcher;
+import java.util.Optional;
 
 import static com.mirkoddd.sift.core.Sift.exactly;
 import static com.mirkoddd.sift.core.SiftPatterns.anyOf;
@@ -29,16 +44,16 @@ class SiftNestingTest {
         System.out.println("Generated Nested Regex (Depth 3): \n" + mathExpression.shake());
 
         // --- Happy Paths ---
-        assertTrue(mathExpression.sieve().matcher("(A)").matches(), "Failed on Level 1 (A)");
-        assertTrue(mathExpression.sieve().matcher("(A(B)C)").matches(), "Failed on Level 2 (A(B)C)");
-        assertTrue(mathExpression.sieve().matcher("(A(B(C))D)").matches(), "Failed on Level 3 (A(B(C))D)");
+        assertTrue(mathExpression.matchesEntire("(A)"), "Failed on Level 1 (A)");
+        assertTrue(mathExpression.matchesEntire("(A(B)C)"), "Failed on Level 2 (A(B)C)");
+        assertTrue(mathExpression.matchesEntire("(A(B(C))D)"), "Failed on Level 3 (A(B(C))D)");
 
         // --- Extraction ---
         String textToExtract = "Some prefix text (A(B)C) and some suffix";
-        Matcher extractionMatcher = mathExpression.sieve().matcher(textToExtract);
+        Optional<String> extracted = mathExpression.extractFirst(textToExtract);
 
-        assertTrue(extractionMatcher.find());
-        assertEquals("(A(B)C)", extractionMatcher.group(), "Partial match error! It stopped at the first closing parenthesis.");
+        assertTrue(extracted.isPresent(), "Partial match error! Could not find the pattern.");
+        assertEquals("(A(B)C)", extracted.get(), "Partial match error! It stopped at the first closing parenthesis.");
     }
 
     @Test
@@ -51,11 +66,11 @@ class SiftNestingTest {
                 .using(customBlock)
                 .containing(exactly(1).upperCaseLetters());
 
-        assertTrue(commentParser.sieve().matcher("/*A*/").matches(), "Failed on Level 1 Custom Delimiter");
-        assertTrue(commentParser.sieve().matcher("/*A/*B*/C*/").matches(), "Failed on Level 2 Custom Delimiter");
+        assertTrue(commentParser.matchesEntire("/*A*/"), "Failed on Level 1 Custom Delimiter");
+        assertTrue(commentParser.matchesEntire("/*A/*B*/C*/"), "Failed on Level 2 Custom Delimiter");
 
         // Fails correctly if custom delimiters are mismatched
-        assertFalse(commentParser.sieve().matcher("/*A/*B*/").matches(), "Should fail on missing custom closing delimiter");
+        assertFalse(commentParser.matchesEntire("/*A/*B*/"), "Should fail on missing custom closing delimiter");
     }
 
     @Test
@@ -66,10 +81,10 @@ class SiftNestingTest {
                 .containing(exactly(1).upperCaseLetters());
 
         // Edge case 1: Missing the final closing parenthesis
-        assertFalse(mathExpression.sieve().matcher("(A(B)").matches(), "Should fail on missing closing parenthesis");
+        assertFalse(mathExpression.matchesEntire("(A(B)"), "Should fail on missing closing parenthesis");
 
         // Edge case 2: Mixed or incorrect delimiter
-        assertFalse(mathExpression.sieve().matcher("(A(B)]").matches(), "Should fail on mixed delimiters");
+        assertFalse(mathExpression.matchesEntire("(A(B)]"), "Should fail on mixed delimiters");
     }
 
     @Test
@@ -80,11 +95,11 @@ class SiftNestingTest {
                 .using(Delimiter.PARENTHESES)
                 .containing(exactly(1).upperCaseLetters());
 
-        assertTrue(shallowExpression.sieve().matcher("(A(B)C)").matches(), "Level 2 should pass");
+        assertTrue(shallowExpression.matchesEntire("(A(B)C)"), "Level 2 should pass");
 
         // Edge case 3: The text goes down to depth 3.
         // Our Base Case (?!) must cause the match to fail cleanly without throwing runtime errors.
-        assertFalse(shallowExpression.sieve().matcher("(A(B(C))D)").matches(), "Should safely fail when exceeding max depth");
+        assertFalse(shallowExpression.matchesEntire("(A(B(C))D)"), "Should safely fail when exceeding max depth");
     }
 
     @Test
@@ -111,8 +126,13 @@ class SiftNestingTest {
         assertThrows(NullPointerException.class, () -> Delimiter.custom("/*", null));
 
         // 5. Null checks for Builder methods
-        assertThrows(NullPointerException.class, () -> nesting(3).using(null));
-        assertThrows(NullPointerException.class, () -> nesting(3).using(Delimiter.PARENTHESES).containing(null));
+        assertThrows(NullPointerException.class, () -> {
+            Object ignored = nesting(3).using(null);
+        });
+
+        assertThrows(NullPointerException.class, () -> {
+            Object ignored = nesting(3).using(Delimiter.PARENTHESES).containing(null);
+        });
     }
 
     @Test
@@ -136,16 +156,16 @@ class SiftNestingTest {
         System.out.println("\nGenerated JSON Regex (Depth 4): \n" + jsonParser.shake());
 
         String flatJson = "{\n  \"name\": \"Mirko\",\n  \"age\": 39\n}";
-        assertTrue(jsonParser.sieve().matcher(flatJson).matches(), "Failed on Flat JSON");
+        assertTrue(jsonParser.matchesEntire(flatJson), "Failed on Flat JSON");
 
         String nestedJson = "{\"user\": {\"name\": \"Mirko\", \"role\": \"admin\"}, \"status\": 200}";
-        assertTrue(jsonParser.sieve().matcher(nestedJson).matches(), "Failed on Nested JSON (Depth 2)");
+        assertTrue(jsonParser.matchesEntire(nestedJson), "Failed on Nested JSON (Depth 2)");
 
         String deepJson = "{\"data\": {\"users\": {\"first\": {\"id\": 1}}}}";
-        assertTrue(jsonParser.sieve().matcher(deepJson).matches(), "Failed on Deep JSON (Depth 4)");
+        assertTrue(jsonParser.matchesEntire(deepJson), "Failed on Deep JSON (Depth 4)");
 
         String invalidJson = "{\"user\": {\"name\": \"Mirko\"}";
-        assertFalse(jsonParser.sieve().matcher(invalidJson).matches(), "Should correctly fail on missing closing brace");
+        assertFalse(jsonParser.matchesEntire(invalidJson), "Should correctly fail on missing closing brace");
     }
 
     @Test
@@ -188,17 +208,18 @@ class SiftNestingTest {
                 "}";
 
         // 4. Verify that the regex engine parses the composed structure
-        assertTrue(complexJsonParser.sieve().matcher(realWorldPayload).matches(),
+        assertTrue(complexJsonParser.matchesEntire(realWorldPayload),
                 "Failed to parse the composed JSON structure");
 
         // 5. Real-world extraction scenario: Fishing the JSON array out of a dirty log string.
         String dirtyLogText = "Server response: 200 OK - Payload: [ { \"id\": 1 }, { \"id\": 2 } ] - Connection closed.";
-        Matcher extractionMatcher = jsonArray.sieve().matcher(dirtyLogText);
 
-        assertTrue(extractionMatcher.find(), "Failed to extract the JSON array from the dirty log");
-        assertEquals("[ { \"id\": 1 }, { \"id\": 2 } ]", extractionMatcher.group(),
+        Optional<String> extractedJson = jsonArray.extractFirst(dirtyLogText);
+
+        assertTrue(extractedJson.isPresent(), "Failed to extract the JSON array from the dirty log");
+        assertEquals("[ { \"id\": 1 }, { \"id\": 2 } ]", extractedJson.get(),
                 "Did not cleanly extract the nested array structure");
 
-        System.out.println("Cleanly extracted from dirty log: " + extractionMatcher.group());
+        System.out.println("Cleanly extracted from dirty log: " + extractedJson.get());
     }
 }
