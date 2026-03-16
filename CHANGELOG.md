@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.1.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.0.0...sift-v6.1.0) (2026-03-16)
+
+
+### Features
+
+* **re2j:** implement RE2J engine ([6c8dcfa](https://github.com/Mirkoddd/Sift/commit/6c8dcfa73c266a3542df08498c776244445a5974))
+
 ## [6.0.0](https://github.com/Mirkoddd/Sift/compare/sift-v5.6.0...sift-v6.0.0) (2026-03-15)
 
 
