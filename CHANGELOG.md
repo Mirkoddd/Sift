@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.2.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.1.0...sift-v6.2.0) (2026-03-16)
+
+
+### Features
+
+* **graalvm:** introduce GraalVM TRegex execution backend ([9ebdf7c](https://github.com/Mirkoddd/Sift/commit/9ebdf7cd8da4151055f9b8b91b539df81f20c43d))
+
+
+### Bug Fixes
+
+* **graalvm:** remove platform dependency to fix CycloneDX BOM generation ([a8c8d75](https://github.com/Mirkoddd/Sift/commit/a8c8d754b35a2fe1c1f89e023f922de1bcd78651))
+
 ## [6.1.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.0.0...sift-v6.1.0) (2026-03-16)
 
 
