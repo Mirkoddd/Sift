@@ -31,13 +31,13 @@ Sift is a fluent DSL that turns regex construction into readable, self-documenti
 ```java
 // The same pattern, written with Sift:
 String regex = Sift.fromStart()
-    .exactly(1).upperCaseLettersUnicode()   // Must start with an uppercase letter
-    .then()
-    .between(3, 15).wordCharactersUnicode().withoutBacktracking() // ReDoS-safe
-    .then()
-    .optional().digits()                    // May end with a digit
-    .andNothingElse()
-    .shake();
+                .exactly(1).upperCaseLettersUnicode()   // Must start with an uppercase letter
+                .then()
+                .between(3, 15).wordCharactersUnicode().withoutBacktracking() // ReDoS-safe
+                .then()
+                .optional().digits()                    // May end with a digit
+                .andNothingElse()
+                .shake();
 
 // Result: ^[\p{Lu}][\p{L}\p{Nd}_]{3,15}+[0-9]?$
 ```
@@ -50,6 +50,9 @@ Your IDE guides every step. Wrong transitions simply do not exist as methods.
 [![sift-core](https://img.shields.io/maven-central/v/com.mirkoddd/sift-core?label=sift-core)](https://central.sonatype.com/artifact/com.mirkoddd/sift-core)
 [![sift-annotations](https://img.shields.io/maven-central/v/com.mirkoddd/sift-annotations?label=sift-annotations)](https://central.sonatype.com/artifact/com.mirkoddd/sift-annotations)
 
+[![sift-engine-re2j](https://img.shields.io/maven-central/v/com.mirkoddd/sift-engine-re2j?label=sift-engine-re2j)](https://central.sonatype.com/artifact/com.mirkoddd/sift-engine-re2j)
+[![sift-engine-graalvm](https://img.shields.io/maven-central/v/com.mirkoddd/sift-engine-graalvm?label=sift-engine-graalvm)](https://central.sonatype.com/artifact/com.mirkoddd/sift-engine-graalvm)
+
 **Gradle:**
 ```groovy
 // Core engine — zero external dependencies
@@ -57,6 +60,14 @@ implementation 'com.mirkoddd:sift-core:<latest>'
 
 // Optional: Jakarta Validation / Hibernate Validator integration
 implementation 'com.mirkoddd:sift-annotations:<latest>'
+
+
+// Optional: Engine RE2J
+implementation 'com.mirkoddd:sift-engine-re2j:<latest>'
+
+
+// Optional: Engine GraalVM
+implementation 'com.mirkoddd:sift-engine-graalvm:<latest>'
 ```
 
 **Maven:**
@@ -71,6 +82,22 @@ implementation 'com.mirkoddd:sift-annotations:<latest>'
 <dependency>
     <groupId>com.mirkoddd</groupId>
     <artifactId>sift-annotations</artifactId>
+    <version>latest</version>
+</dependency>
+
+
+<!-- Optional: Engine GraalVM -->
+<dependency>
+    <groupId>com.mirkoddd</groupId>
+    <artifactId>sift-engine-graalvm</artifactId>
+    <version>latest</version>
+</dependency>
+
+
+<!-- Optional: Engine RE2J -->
+<dependency>
+    <groupId>com.mirkoddd</groupId>
+    <artifactId>sift-engine-re2j</artifactId>
     <version>latest</version>
 </dependency>
 ```
@@ -245,13 +272,13 @@ accepts any compatible backend.
 ```java
 // Default — uses java.util.regex internally
 SiftCompiledPattern pattern = Sift.fromAnywhere()
-    .oneOrMore().digits()
-    .sieve();
+                .oneOrMore().digits()
+                .sieve();
 
 // Custom engine — e.g. RE2J for linear-time, ReDoS-immune matching
 SiftCompiledPattern pattern = Sift.fromAnywhere()
-    .oneOrMore().digits()
-    .sieveWith(new Re2jEngine()); // sift-engine-re2j module
+        .oneOrMore().digits()
+        .sieveWith(Re2jEngine.INSTANCE); // sift-engine-re2j module
 ```
 
 Sift tracks the advanced features used during pattern construction as a `Set<RegexFeature>`
@@ -272,23 +299,23 @@ Lookarounds let you match based on what surrounds a position without consuming t
 ```java
 // Positive lookahead — match "file" only if followed by ".pdf"
 SiftPattern<Fragment> pdfFile = Sift.fromAnywhere()
-    .oneOrMore().wordCharacters()
-    .mustBeFollowedBy(SiftPatterns.literal(".pdf"));
+                .oneOrMore().wordCharacters()
+                .mustBeFollowedBy(SiftPatterns.literal(".pdf"));
 
 // Negative lookahead — match a number NOT followed by "%"
 SiftPattern<Fragment> absoluteValue = Sift.fromAnywhere()
-    .oneOrMore().digits()
-    .notFollowedBy(SiftPatterns.literal("%"));
+        .oneOrMore().digits()
+        .notFollowedBy(SiftPatterns.literal("%"));
 
 // Positive lookbehind — match digits only if preceded by "$"
 SiftPattern<Fragment> dollarAmount = Sift.fromAnywhere()
-    .oneOrMore().digits()
-    .mustBePrecededBy(SiftPatterns.literal("$"));
+        .oneOrMore().digits()
+        .mustBePrecededBy(SiftPatterns.literal("$"));
 
 // Negative lookbehind — match "port" NOT preceded by "pass"
 SiftPattern<Fragment> networkPort = Sift.fromAnywhere()
-    .of(SiftPatterns.literal("port"))
-    .notPrecededBy(SiftPatterns.literal("pass"));
+        .of(SiftPatterns.literal("port"))
+        .notPrecededBy(SiftPatterns.literal("pass"));
 ```
 
 All four lookaround types are available both on `Connector` — for inline chaining — and as standalone factories in `SiftPatterns` for use in composition with `followedByAssertion()` and `precededByAssertion()`.
@@ -305,11 +332,11 @@ boolean valid = SiftCatalog.email().matchesEntire("user@example.com");
 
 // Or embed inside a larger pattern
 String regex = Sift.fromStart()
-    .of(SiftCatalog.uuid())
-    .followedBy('/')
-    .then().of(SiftCatalog.isoDate())
-    .andNothingElse()
-    .shake();
+        .of(SiftCatalog.uuid())
+        .followedBy('/')
+        .then().of(SiftCatalog.isoDate())
+        .andNothingElse()
+        .shake();
 ```
 
 Available patterns: `uuid()`, `ipv4()`, `macAddress()`, `email()`, `webUrl()`, `isoDate()`.
@@ -323,8 +350,8 @@ Parse arbitrarily deep balanced structures with `SiftPatterns.nesting()`.
 ```java
 // Match nested parentheses: ((a)(b))
 SiftPattern<Fragment> nested = SiftPatterns.nesting(5)
-    .using(Delimiter.PARENTHESES)
-    .containing(Sift.fromAnywhere().oneOrMore().lettersUnicode());
+                .using(Delimiter.PARENTHESES)
+                .containing(Sift.fromAnywhere().oneOrMore().lettersUnicode());
 
 nested.containsMatchIn("((hello)(world))"); // true
 ```
@@ -338,20 +365,20 @@ Sift exposes regex conditional logic — `if/then/else` branches — as a fully 
 // Match a price: if preceded by "USD" consume digits only,
 // otherwise consume digits followed by a currency symbol
 SiftPattern<Fragment> price = SiftPatterns
-    .ifPrecededBy(SiftPatterns.literal("USD"))
-    .thenUse(Sift.fromAnywhere().oneOrMore().digits())
-    .otherwiseUse(
-        Sift.fromAnywhere().oneOrMore().digits()
-            .followedBy(Sift.fromAnywhere().character('€'))
-    );
+                .ifPrecededBy(SiftPatterns.literal("USD"))
+                .thenUse(Sift.fromAnywhere().oneOrMore().digits())
+                .otherwiseUse(
+                        Sift.fromAnywhere().oneOrMore().digits()
+                                .followedBy(Sift.fromAnywhere().character('€'))
+                );
 
 // Else-if chaining is also supported
 SiftPattern<Fragment> format = SiftPatterns
-    .ifFollowedBy(SiftPatterns.literal("px"))
-    .thenUse(Sift.fromAnywhere().oneOrMore().digits())
-    .otherwiseIfFollowedBy(SiftPatterns.literal("%"))
-    .thenUse(Sift.fromAnywhere().between(1, 3).digits())
-    .otherwiseNothing(); // No else branch — engine moves forward silently
+        .ifFollowedBy(SiftPatterns.literal("px"))
+        .thenUse(Sift.fromAnywhere().oneOrMore().digits())
+        .otherwiseIfFollowedBy(SiftPatterns.literal("%"))
+        .thenUse(Sift.fromAnywhere().between(1, 3).digits())
+        .otherwiseNothing(); // No else branch — engine moves forward silently
 ```
 
 The state machine enforces the correct declaration order at compile time: `ifXxx` → `thenUse` → `otherwiseUse` / `otherwiseIfFollowedBy` / `otherwiseNothing`. An incomplete conditional is not expressible.
