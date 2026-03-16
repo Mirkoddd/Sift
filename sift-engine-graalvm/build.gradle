@@ -1,0 +1,129 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'signing'
+    id 'org.cyclonedx.bom' version '1.10.0'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    withJavadocJar()
+    withSourcesJar()
+}
+
+cyclonedxBom {
+    includeConfigs = ["runtimeClasspath"]
+    projectType = "library"
+    outputFormat = "all"
+}
+
+tasks.named('build') {
+    dependsOn('cyclonedxBom')
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release.set(17)
+}
+
+dependencies {
+    api project(':sift-core')
+
+    implementation platform('org.graalvm.polyglot:polyglot:23.1.2')
+    implementation 'org.graalvm.polyglot:polyglot'
+    implementation 'org.graalvm.polyglot:js:23.1.2'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+
+    systemProperty 'polyglotimpl.DisableClassPathIsolation', 'true'
+    systemProperty 'polyglot.engine.WarnInterpreterOnly', 'false'
+
+    def ciVersionStr = System.getenv("MATRIX_JAVA_VERSION")
+    def ciVersion = ciVersionStr ? ciVersionStr.toInteger() : 17
+
+    if (ciVersion < 17) {
+        enabled = false
+        println "Skipping GraalVM tests on Java ${ciVersion} (GraalVM module requires Java 17+)"
+    } else {
+        javaLauncher = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(ciVersion)
+        }
+    }
+
+    testLogging {
+        showStandardStreams = true
+        exceptionFormat = 'full'
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'sift-engine-graalvm'
+            from components.java
+
+            artifact(layout.buildDirectory.file("reports/bom.xml")) {
+                classifier = 'bom'
+                extension = 'xml'
+                builtBy cyclonedxBom
+            }
+
+            artifact(layout.buildDirectory.file("reports/bom.json")) {
+                classifier = 'bom'
+                extension = 'json'
+                builtBy cyclonedxBom
+            }
+
+            pom {
+                name = 'Sift Engine GraalVM'
+                description = 'Sift Engine GraalVM powered by Sift Fluent Regex Builder.'
+                url = 'https://github.com/mirkoddd/Sift'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'mirko_ddd'
+                        name = 'Mirko Dimartino'
+                        email = 'mirkoddd@gmail.com'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/mirkoddd/Sift.git'
+                    developerConnection = 'scm:git:ssh://github.com:mirkoddd/Sift.git'
+                    url = 'https://github.com/mirkoddd/Sift'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "Staging"
+            url = rootProject.layout.buildDirectory.dir("central-bundle")
+        }
+    }
+}
+
+signing {
+    def signingKey = findProperty("signingKey")
+    def signingPassword = findProperty("signingPassword")
+
+    if (signingKey != null) {
+        useInMemoryPgpKeys(signingKey.toString(), signingPassword.toString())
+    }
+
+    sign publishing.publications.mavenJava
+}

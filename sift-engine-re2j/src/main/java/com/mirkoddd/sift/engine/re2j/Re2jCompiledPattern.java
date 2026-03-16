@@ -29,7 +29,7 @@ import java.util.stream.StreamSupport;
  * This class guarantees thread-safe execution (as long as a new {@link Matcher}
  * is spawned for every operation, which is standard behavior).
  */
-class Re2jCompiledPattern implements SiftCompiledPattern {
+final class Re2jCompiledPattern implements SiftCompiledPattern {
 
     private final Pattern pattern;
     private final String rawRegex;

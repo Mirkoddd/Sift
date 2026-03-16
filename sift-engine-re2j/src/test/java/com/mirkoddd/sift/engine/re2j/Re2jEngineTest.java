@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -312,5 +313,42 @@ class Re2jEngineTest {
         assertEquals("42", groups.get("myGroup"));
 
         assertNull(groups.get("fake"));
+    }
+
+    @Test
+    @DisplayName("Should be thread-safe when used concurrently by multiple threads")
+    void testThreadSafety() throws InterruptedException {
+        SiftCompiledPattern pattern = Sift.oneOrMore().digits().sieveWith(Re2jEngine.INSTANCE);
+        int threadCount = 100;
+
+        java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(10);
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(threadCount);
+        java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+        for (int i = 0; i < threadCount; i++) {
+            final int threadId = i;
+            executor.submit(() -> {
+                try {
+                    String input = "ThreadData " + threadId + " and " + (threadId + 1000);
+                    List<String> matches = pattern.extractAll(input);
+
+                    if (matches.size() == 2
+                            && matches.get(0).equals(String.valueOf(threadId))
+                            && matches.get(1).equals(String.valueOf(threadId + 1000))) {
+                        successCount.incrementAndGet();
+                    }
+                } catch (Exception e) {
+                    System.err.println("RE2J Concurrency fail on thread " + threadId + ": " + e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        boolean isZeroReached = latch.await(5, TimeUnit.SECONDS);
+        System.out.println("Countdown success = " + isZeroReached);
+        executor.shutdown();
+
+        assertEquals(threadCount, successCount.get(), "Concurrency issue detected: RE2J Matcher state leaked between threads");
     }
 }
