@@ -30,8 +30,7 @@ tasks.withType(JavaCompile).configureEach {
 dependencies {
     api project(':sift-core')
 
-    implementation platform('org.graalvm.polyglot:polyglot:23.1.2')
-    implementation 'org.graalvm.polyglot:polyglot'
+    implementation 'org.graalvm.polyglot:polyglot:23.1.2'
     implementation 'org.graalvm.polyglot:js:23.1.2'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
