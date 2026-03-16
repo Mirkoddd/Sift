@@ -52,9 +52,8 @@ abstract class BaseSiftPattern<Ctx extends SiftContext> implements SiftPattern<C
         if (cachedRegex == null) {
             synchronized (this) {
                 if (cachedRegex == null) {
-                    Set<RegexFeature> computedFeatures = Collections.unmodifiableSet(buildFeatures());
                     String computedRegex = buildRegex();
-                    this.cachedFeatures = computedFeatures;
+                    this.cachedFeatures = Collections.unmodifiableSet(buildFeatures());
                     this.cachedRegex = computedRegex;
                 }
             }
@@ -65,7 +64,7 @@ abstract class BaseSiftPattern<Ctx extends SiftContext> implements SiftPattern<C
     @Override
     public final SiftCompiledPattern sieveWith(SiftEngine engine) {
         shake();
-        return engine.compile(cachedRegex, cachedFeatures);
+        return engine.compile(cachedRegex, getInternalUsedFeatures());
     }
 
     @Override

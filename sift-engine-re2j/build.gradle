@@ -1,0 +1,112 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'signing'
+    id 'org.cyclonedx.bom' version '1.10.0'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    withJavadocJar()
+    withSourcesJar()
+}
+
+cyclonedxBom {
+    includeConfigs = ["runtimeClasspath"]
+    projectType = "library"
+    outputFormat = "all"
+}
+
+tasks.named('build') {
+    dependsOn('cyclonedxBom')
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release.set(8)
+}
+
+dependencies {
+    api project(':sift-core')
+
+    implementation 'com.google.re2j:re2j:1.7'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+
+    javaLauncher = javaToolchains.launcherFor {
+        def ciVersion = System.getenv("MATRIX_JAVA_VERSION")
+        languageVersion = JavaLanguageVersion.of(ciVersion ? ciVersion.toInteger() : 17)
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'sift-engine-re2j'
+            from components.java
+
+            artifact(layout.buildDirectory.file("reports/bom.xml")) {
+                classifier = 'bom'
+                extension = 'xml'
+                builtBy cyclonedxBom
+            }
+
+            artifact(layout.buildDirectory.file("reports/bom.json")) {
+                classifier = 'bom'
+                extension = 'json'
+                builtBy cyclonedxBom
+            }
+
+            pom {
+                name = 'Sift Engine RE2J'
+                description = 'Sift Engine RE2J powered by Sift Fluent Regex Builder.'
+                url = 'https://github.com/mirkoddd/Sift'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'mirko_ddd'
+                        name = 'Mirko Dimartino'
+                        email = 'mirkoddd@gmail.com'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/mirkoddd/Sift.git'
+                    developerConnection = 'scm:git:ssh://github.com:mirkoddd/Sift.git'
+                    url = 'https://github.com/mirkoddd/Sift'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "Staging"
+            url = rootProject.layout.buildDirectory.dir("central-bundle")
+        }
+    }
+}
+
+signing {
+    def signingKey = findProperty("signingKey")
+    def signingPassword = findProperty("signingPassword")
+
+    if (signingKey != null) {
+        useInMemoryPgpKeys(signingKey.toString(), signingPassword.toString())
+    }
+
+    sign publishing.publications.mavenJava
+}

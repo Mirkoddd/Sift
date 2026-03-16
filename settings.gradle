@@ -6,3 +6,4 @@ rootProject.name = 'Sift'
 
 include ':sift-core'
 include ':sift-annotations'
+include ':sift-engine-re2j'

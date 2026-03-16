@@ -27,7 +27,7 @@ subprojects {
     def genVersionTask = tasks.register("generateVersionClass") {
 
         def basePackage = "com.mirkoddd.sift"
-        def moduleName = project.name.replace("sift-", "")
+        def moduleName = project.name.replace("sift-", "").replace("-", ".")
         def fullPackage = "${basePackage}.${moduleName}"
 
         def packagePath = fullPackage.replace(".", "/")
