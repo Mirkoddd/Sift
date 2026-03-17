@@ -315,7 +315,6 @@ class SiftTest {
 
         @Test
         @DisplayName("Should skip possessive modifier if quantifier already ends with + (Coverage Booster)")
-        @SuppressWarnings("unchecked")
         void coverageDuplicatePossessiveCondition() {
             VariableConnector<Fragment> step1 = Sift.fromAnywhere().zeroOrMore().digits();
             Connector<Fragment> step2 = step1.withoutBacktracking();
@@ -395,6 +394,7 @@ class SiftTest {
 
         @Test
         @DisplayName("equals() and hashCode() should evaluate structural identity based on the regex")
+        @SuppressWarnings("EqualsWithItself, ConstantConditions")
         void testPatternIdentity() {
             SiftPattern<Root> patternA = Sift.fromStart().optional().letters();
             SiftPattern<Root> patternB = Sift.fromStart().optional().letters();
@@ -404,8 +404,9 @@ class SiftTest {
             assertEquals(patternA.hashCode(), patternB.hashCode());
             assertNotEquals(patternA, patternDifferent);
             assertEquals(patternA, patternA);
-            assertNotEquals(patternA, null);
-            assertNotEquals(patternA, "^[a-zA-Z]??");
+
+            boolean isPAEqualsNull = patternA.equals(null);
+            assertFalse(isPAEqualsNull);
         }
 
         @Test
@@ -427,8 +428,11 @@ class SiftTest {
                 }
             };
 
-            IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
-                    Sift.fromStart().of(malformedPattern).sieve()
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                        try (SiftCompiledPattern ignore = Sift.fromStart().of(malformedPattern).sieve()) {
+                            fail("Should not reach this point");
+                        }
+                    }
             );
 
             assertTrue(exception.getMessage().contains("Sift generated an invalid regex syntax"));
@@ -1365,9 +1369,8 @@ class SiftTest {
         @Test
         @DisplayName("range() should throw an exception if the boundaries are inverted")
         void testInvalidCustomRange() {
-            assertThrows(IllegalArgumentException.class, () -> {
-                Sift.fromStart().range('z', 'a');
-            });
+            assertThrows(IllegalArgumentException.class, () ->
+                    Sift.fromStart().range('z', 'a'));
         }
     }
 

@@ -31,7 +31,7 @@ import java.util.stream.StreamSupport;
  *
  * @since 6.0.0
  */
-public final class JdkEngine implements SiftEngine {
+public final class JdkEngine extends AbstractSiftEngine {
 
     /**
      * Stateless singleton instance of the JDK Engine.
@@ -46,13 +46,11 @@ public final class JdkEngine implements SiftEngine {
      * {@inheritDoc}
      * <p>
      * <b>Implementation Note:</b> As the reference implementation, this engine
-     * supports the entire {@link RegexFeature} set.
+     * supports the entire {@link RegexFeature} set. Validation is guaranteed by
+     * the parent {@link AbstractSiftEngine}.
      */
     @Override
-    public SiftCompiledPattern compile(String rawRegex, Set<RegexFeature> usedFeatures) {
-
-        checkSupport(usedFeatures);
-
+    protected SiftCompiledPattern doCompile(String rawRegex, Set<RegexFeature> usedFeatures) {
         try {
             Pattern jdkPattern = Pattern.compile(rawRegex);
             return new JdkCompiledPattern(jdkPattern, rawRegex);

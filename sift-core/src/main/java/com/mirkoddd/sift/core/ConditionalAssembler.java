@@ -20,6 +20,7 @@ import com.mirkoddd.sift.core.dsl.ConditionalElse;
 import com.mirkoddd.sift.core.dsl.ConditionalThen;
 import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
+import com.mirkoddd.sift.core.engine.RegexFeature;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -83,22 +84,26 @@ final class ConditionalAssembler implements ConditionalThen, ConditionalElse {
     }
 
     private SiftPattern<Fragment> assembleConditionalPattern(SiftPattern<Fragment> falseBranch) {
-        return SiftPatterns.memoize(() -> {
-            StringBuilder sb = new StringBuilder();
-            sb.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN);
+        return SiftPatterns.memoize(
+                () -> {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN);
 
-            sb.append(trueCondition.shake());
-            sb.append(thenPattern.shake());
+                    sb.append(trueCondition.shake());
+                    sb.append(thenPattern.shake());
 
-            sb.append(RegexSyntax.OR);
+                    sb.append(RegexSyntax.OR);
 
-            sb.append(falseCondition.shake());
-            if (falseBranch != null) {
-                sb.append(falseBranch.shake());
-            }
+                    sb.append(falseCondition.shake());
+                    if (falseBranch != null) {
+                        sb.append(falseBranch.shake());
+                    }
 
-            sb.append(RegexSyntax.GROUP_CLOSE);
-            return sb.toString();
-        });
+                    sb.append(RegexSyntax.GROUP_CLOSE);
+                    return sb.toString();
+                },
+                RegexFeature.CONDITIONAL,
+                thenPattern
+        );
     }
 }

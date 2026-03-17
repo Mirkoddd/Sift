@@ -249,58 +249,62 @@ class SiftPatternExecutionTest {
         @DisplayName("extractGroups() should gracefully handle false-positive group names (IllegalArgumentException)")
         void testExtractGroupsIllegalArgumentExceptionCoverage() {
             // Test the engine directly with an edge-case raw regex string
-            SiftCompiledPattern edgeCasePattern = JdkEngine.INSTANCE.compile("\\Q(?<fake>)\\E", Collections.emptySet());
+            try (SiftCompiledPattern edgeCasePattern = JdkEngine.INSTANCE.compile("\\Q(?<fake>)\\E", Collections.emptySet())) {
 
-            // The catch block must intercept the exception, ignore the false-positive group
-            // and return an empty map, without crashing the application.
-            Map<String, String> groups = edgeCasePattern.extractGroups("prefix (?<fake>) suffix");
+                // The catch block must intercept the exception, ignore the false-positive group
+                // and return an empty map, without crashing the application.
+                Map<String, String> groups = edgeCasePattern.extractGroups("prefix (?<fake>) suffix");
 
-            assertTrue(groups.isEmpty(), "The map should be empty, ignoring the false-positive group");
+                assertTrue(groups.isEmpty(), "The map should be empty, ignoring the false-positive group");
+            }
         }
 
         @Test
         @DisplayName("extractGroups() should ignore groups that are optional and not present in the match (matchValue == null)")
         void testExtractGroupsWithUnmatchedOptionalGroup() {
             // Test the engine directly with an optional capture group
-            SiftCompiledPattern pattern = JdkEngine.INSTANCE.compile("^(?<req>[a-z]+)(?<opt>[0-9]+)?$", Collections.emptySet());
+            try (SiftCompiledPattern pattern = JdkEngine.INSTANCE.compile("^(?<req>[a-z]+)(?<opt>[0-9]+)?$", Collections.emptySet())) {
 
-            // Pass a string that matches the "req" group but NOT the optional "opt" group
-            Map<String, String> groups = pattern.extractGroups("abc");
+                // Pass a string that matches the "req" group but NOT the optional "opt" group
+                Map<String, String> groups = pattern.extractGroups("abc");
 
-            // The "opt" group returned null, so the key was not inserted into the map.
-            assertEquals(1, groups.size());
-            assertEquals("abc", groups.get("req"));
-            assertFalse(groups.containsKey("opt"), "The optional group should not be in the map");
+                // The "opt" group returned null, so the key was not inserted into the map.
+                assertEquals(1, groups.size());
+                assertEquals("abc", groups.get("req"));
+                assertFalse(groups.containsKey("opt"), "The optional group should not be in the map");
+            }
         }
 
         @Test
         @DisplayName("extractAllGroups() should gracefully handle false-positive group names (IllegalArgumentException)")
         void testExtractAllGroupsIllegalArgumentExceptionCoverage() {
-            SiftCompiledPattern edgeCasePattern = JdkEngine.INSTANCE.compile("\\Q(?<fake>)\\E", Collections.emptySet());
+            try (SiftCompiledPattern edgeCasePattern = JdkEngine.INSTANCE.compile("\\Q(?<fake>)\\E", Collections.emptySet())) {
 
-            List<Map<String, String>> results = edgeCasePattern.extractAllGroups("prefix (?<fake>) suffix");
+                List<Map<String, String>> results = edgeCasePattern.extractAllGroups("prefix (?<fake>) suffix");
 
-            assertEquals(1, results.size(), "Should find one match based on the literal string");
-            assertTrue(results.get(0).isEmpty(), "The map for the match should be empty, ignoring the false-positive group");
+                assertEquals(1, results.size(), "Should find one match based on the literal string");
+                assertTrue(results.get(0).isEmpty(), "The map for the match should be empty, ignoring the false-positive group");
+            }
         }
 
         @Test
         @DisplayName("extractAllGroups() should ignore groups that are optional and not present in the match (matchValue == null)")
         void testExtractAllGroupsWithUnmatchedOptionalGroup() {
-            SiftCompiledPattern pattern = JdkEngine.INSTANCE.compile("(?<req>[a-z]+)(?<opt>[0-9]+)?", Collections.emptySet());
+            try (SiftCompiledPattern pattern = JdkEngine.INSTANCE.compile("(?<req>[a-z]+)(?<opt>[0-9]+)?", Collections.emptySet())) {
 
-            // Matches "abc" (no digits) and "def12" (with digits)
-            List<Map<String, String>> results = pattern.extractAllGroups("abc def12");
+                // Matches "abc" (no digits) and "def12" (with digits)
+                List<Map<String, String>> results = pattern.extractAllGroups("abc def12");
 
-            assertEquals(2, results.size());
+                assertEquals(2, results.size());
 
-            // First match: only 'req' is present
-            assertEquals("abc", results.get(0).get("req"));
-            assertFalse(results.get(0).containsKey("opt"));
+                // First match: only 'req' is present
+                assertEquals("abc", results.get(0).get("req"));
+                assertFalse(results.get(0).containsKey("opt"));
 
-            // Second match: both 'req' and 'opt' are present
-            assertEquals("def", results.get(1).get("req"));
-            assertEquals("12", results.get(1).get("opt"));
+                // Second match: both 'req' and 'opt' are present
+                assertEquals("def", results.get(1).get("req"));
+                assertEquals("12", results.get(1).get("opt"));
+            }
         }
     }
 }

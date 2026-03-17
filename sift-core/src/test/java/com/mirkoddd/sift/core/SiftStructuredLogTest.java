@@ -37,7 +37,7 @@ class SiftStructuredParsingTest {
     // 1. DATA & MODEL
     // =================================================================================
     // Converted Text Block to Java 8 string concatenation
-    private final String SERVER_LOGS =
+    private static final String SERVER_LOGS =
             "[INFO] [2026-02-18] System: Booting up services... OK.\n" +
                     "[INFO] [2026-02-18] User: 'Mirko' -> {Action: Login} - IP: 192.168.1.1\n" +
                     "[WARN] [2026-02-18] Disk: Usage at 85%.\n" +
@@ -82,9 +82,9 @@ class SiftStructuredParsingTest {
          * Matches the log header structure: [LEVEL] [TIMESTAMP]
          * Encapsulates the brackets and spacing.
          */
-        static SiftPattern<Fragment> header(String level, SiftPattern<Fragment> timestampPattern) {
+        static SiftPattern<Fragment> header(SiftPattern<Fragment> timestampPattern) {
             return fromAnywhere()
-                    .of(literal("[" + level + "]"))
+                    .of(literal("[" + "INFO" + "]"))
                     .followedBy(literal(" ["))
                     .followedBy(timestampPattern)
                     .followedBy(literal("]"));
@@ -116,10 +116,10 @@ class SiftStructuredParsingTest {
     // =================================================================================
     // 3. PARSING ENGINE
     // =================================================================================
-    private List<LogEntry> parse(String text, SiftPattern<Fragment> pattern) {
+    private List<LogEntry> parse(SiftPattern<Fragment> pattern) {
         List<LogEntry> list = new ArrayList<>();
         Pattern regex = Pattern.compile(pattern.shake());
-        Matcher matcher = regex.matcher(text);
+        Matcher matcher = regex.matcher(SiftStructuredParsingTest.SERVER_LOGS);
 
         while (matcher.find()) {
             list.add(new LogEntry(matcher.group(1), matcher.group(2), matcher.group(3)));
@@ -149,7 +149,7 @@ class SiftStructuredParsingTest {
         // No more ugly literals floating around in the main logic.
 
         // 1. Header: [INFO] [DATE] -> Capture Date
-        SiftPattern<Fragment> headerPart = LogGrammar.header("INFO", capture(datePattern));
+        SiftPattern<Fragment> headerPart = LogGrammar.header(capture(datePattern));
 
         // 2. User: User: 'NAME' -> Capture Name
         SiftPattern<Fragment> userPart = LogGrammar.userField(capture(wordPattern));
@@ -165,7 +165,7 @@ class SiftStructuredParsingTest {
                 .followedBy(actionPart);
 
         // --- EXECUTION ---
-        List<LogEntry> entries = parse(SERVER_LOGS, logParser);
+        List<LogEntry> entries = parse(logParser);
 
         // --- VERIFICATION ---
         entries.forEach(System.out::println);

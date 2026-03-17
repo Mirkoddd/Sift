@@ -39,24 +39,6 @@ import static com.mirkoddd.sift.core.SiftPatterns.*;
 @DisplayName("Real World: Log Mining & Extraction")
 class SiftLogMiningTest {
 
-    // =================================================================================
-    // 1. THE WALL OF TEXT
-    // =================================================================================
-    // Simulates a messy server log file with mixed formats and noise.
-    // Converted to Java 8 compliant string concatenation.
-    private final String SERVER_LOGS =
-            "[INFO] [2026-02-18] System: Booting up services... OK.\n" +
-                    "[INFO] [2026-02-18] User: 'Mirko' -> {Action: Login} - IP: 192.168.1.1\n" +
-                    "[WARN] [2026-02-18] Disk: Usage at 85%.\n" +
-                    "garbage_data_noise_#$@#$\n" +
-                    "[ERR] [2026-02-18] User: 'HackBot' -> {Action: Inject} - BLOCKED\n" +
-                    "[INFO] [2026-02-18] User: 'Alice' -> {Action: Upload} - File: data.csv\n" +
-                    "[DEBUG] Connection established.\n" +
-                    "[INFO] [2026-02-18] User: 'Bob' -> {Action: Logout}\n";
-
-    // =================================================================================
-    // 2. THE GRAMMAR (The "Business Language")
-    // =================================================================================
     /**
      * Encapsulates domain-specific syntax.
      * This adheres to the Open/Closed Principle: we extend the language vocabulary
@@ -75,26 +57,22 @@ class SiftLogMiningTest {
         }
     }
 
-    // =================================================================================
-    // 3. THE GREP TOOL (Extraction Utility)
-    // =================================================================================
     /**
      * Scans the provided text for substrings that match the SiftPattern.
      * <p>
      * Note: We use matcher.find() (substring search) instead of matches() (full validation).
      *
-     * @param text The unstructured text to scan.
      * @param siftPattern The pattern defining the "needle" we are looking for.
      * @return A list of all matching substrings found.
      */
-    private List<String> grep(String text, SiftPattern<?> siftPattern) {
+    private List<String> grep(SiftPattern<?> siftPattern) {
         List<String> results = new ArrayList<>();
 
         // We do not enforce anchors (^ or $) because we are searching INSIDE the text.
         String regex = siftPattern.shake();
 
         Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(text);
+        Matcher matcher = pattern.matcher("[INFO] [2026-02-18] System: Booting up services... OK.\n[INFO] [2026-02-18] User: 'Mirko' -> {Action: Login} - IP: 192.168.1.1\n[WARN] [2026-02-18] Disk: Usage at 85%.\ngarbage_data_noise_#$@#$\n[ERR] [2026-02-18] User: 'HackBot' -> {Action: Inject} - BLOCKED\n[INFO] [2026-02-18] User: 'Alice' -> {Action: Upload} - File: data.csv\n[DEBUG] Connection established.\n[INFO] [2026-02-18] User: 'Bob' -> {Action: Logout}\n");
 
         while (matcher.find()) {
             results.add(matcher.group());
@@ -102,9 +80,6 @@ class SiftLogMiningTest {
         return results;
     }
 
-    // =================================================================================
-    // 4. THE USE CASES
-    // =================================================================================
     @Test
     @DisplayName("Should extract only User Actions from the wall of text")
     void mineUserActions() {
@@ -126,7 +101,7 @@ class SiftLogMiningTest {
                 .followedBy(arrow)
                 .followedBy(validAction);
 
-        List<String> matches = grep(SERVER_LOGS, userActionQuery);
+        List<String> matches = grep(userActionQuery);
 
         matches.forEach(System.out::println);
 
@@ -155,7 +130,7 @@ class SiftLogMiningTest {
                 .followedBy(arrow)
                 .followedBy(loginAction);
 
-        List<String> matches = grep(SERVER_LOGS, loginQuery);
+        List<String> matches = grep(loginQuery);
 
         matches.forEach(System.out::println);
 

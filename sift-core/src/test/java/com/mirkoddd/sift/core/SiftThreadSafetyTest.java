@@ -21,6 +21,7 @@ import com.mirkoddd.sift.core.dsl.Connector;
 import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.Root;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
+import com.mirkoddd.sift.core.engine.SiftCompiledPattern;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SiftThreadSafetyTest {
@@ -122,11 +124,16 @@ class SiftThreadSafetyTest {
                         builder.shake();
 
                         memoized.shake();
-                        memoized.sieve();
 
                         atomic.shake();
-                        atomic.sieve();
 
+                        try (
+                                SiftCompiledPattern compiledMemoized = memoized.sieve();
+                                SiftCompiledPattern compiledAtomic = atomic.sieve()
+                        ) {
+                            assertNotNull(compiledMemoized.getRawRegex());
+                            assertNotNull(compiledAtomic.getRawRegex());
+                        }
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     } finally {

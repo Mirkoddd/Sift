@@ -63,25 +63,21 @@ class SiftPatternsTest {
     @Test
     @DisplayName("Should throw exception when group name is null")
     void groupNameNullFailure() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            SiftPatterns.capture(null, literal("abc"));
-        }, "Should not allow null group names");
+        assertThrows(IllegalArgumentException.class, () ->
+                SiftPatterns.capture(null, literal("abc")), "Should not allow null group names");
     }
 
     @Test
     @DisplayName("Should throw exception when group name is invalid (starts with digit or has symbols)")
     void groupNameInvalidFailure() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            SiftPatterns.capture("123group", literal("abc"));
-        });
+        assertThrows(IllegalArgumentException.class, () ->
+                SiftPatterns.capture("123group", literal("abc")));
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            SiftPatterns.capture("group-name", literal("abc"));
-        });
+        assertThrows(IllegalArgumentException.class, () ->
+                SiftPatterns.capture("group-name", literal("abc")));
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            SiftPatterns.capture("", literal("abc"));
-        });
+        assertThrows(IllegalArgumentException.class, () ->
+                SiftPatterns.capture("", literal("abc")));
     }
 
     @Test
@@ -96,7 +92,7 @@ class SiftPatternsTest {
 
     @Test
     @DisplayName("Equals and HashCode should follow strict Value Object rules")
-    @SuppressWarnings("EqualsWithItself")
+    @SuppressWarnings("EqualsWithItself, ConstantConditions")
     void groupNameEquality() {
         GroupName group1 = GroupName.of("myGroup");
         GroupName group2 = GroupName.of("myGroup");
@@ -114,9 +110,11 @@ class SiftPatternsTest {
 
         assertNotNull(group1, "A valid GroupName should never be equal to null");
 
-        assertFalse(group1.equals(null), "equals(null) must explicitly return false");
+        boolean isGroupEqualsNull = group1.equals(null);
+        assertFalse(isGroupEqualsNull, "equals(null) must explicitly return false");
 
-        assertFalse(group1.equals(new Object()), "equals(differentClass) must explicitly return false");
+        boolean isGroupEqualsToObject = group1.equals(new Object());
+        assertFalse(isGroupEqualsToObject, "equals(differentClass) must explicitly return false");
     }
 
     @Test
@@ -138,14 +136,13 @@ class SiftPatternsTest {
         assertRegexMatches(regex, "Mr. John");
         assertRegexMatches(regex, "John");
         assertRegexDoesNotMatch(regex, "Mr.123");
+        assertRegexDoesNotMatch(regex, "Mr.1");
     }
 
     @Test
     @DisplayName("Anti-Pattern: Manual concatenation with null creates a silent logic bug")
     void manualConcatenation_withNull_createsSilentBug() {
-        String userInput = null;
-
-        String regex = literal("user_" + userInput).shake();
+        String regex = literal("user_" + null).shake();
 
         assertEquals("user_null", regex, "It should silently generate a search for 'user_null'");
     }
@@ -153,10 +150,8 @@ class SiftPatternsTest {
     @Test
     @DisplayName("Best Practice: Using the DSL protects against null logic bugs (Fail-Fast)")
     void usingDsl_withNull_failsFast() {
-        String userInput = null;
-
         assertThrows(NullPointerException.class, () ->
-                group(literal("user_"), literal(userInput))
+                group(literal("user_"), literal(null))
         );
     }
 

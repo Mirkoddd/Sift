@@ -85,7 +85,7 @@ final class Re2jCompiledPattern implements SiftCompiledPattern {
     public List<String> splitBy(CharSequence input) {
         if (input == null) return Collections.emptyList();
         // RE2J's split expects a String, not a CharSequence
-        return Arrays.asList(pattern.split(input.toString()));
+        return Arrays.asList(pattern.split(input.toString(), -1));
     }
 
     @Override
@@ -122,17 +122,12 @@ final class Re2jCompiledPattern implements SiftCompiledPattern {
         }
 
         Map<String, String> extractedGroups = new HashMap<>();
-        java.util.regex.Matcher nameExtractor = java.util.regex.Pattern.compile("\\(\\?<([a-zA-Z][a-zA-Z0-9]*)>").matcher(rawRegex);
+        Map<String, Integer> namedGroups = pattern.namedGroups();
 
-        while (nameExtractor.find()) {
-            String groupName = nameExtractor.group(1);
-            try {
-                String matchValue = matcher.group(groupName);
-                if (matchValue != null) {
-                    extractedGroups.put(groupName, matchValue);
-                }
-            } catch (IllegalArgumentException e) {
-                // Defensive catch: ignores malformed or uncaptured group names
+        for (String groupName : namedGroups.keySet()) {
+            String matchValue = matcher.group(groupName);
+            if (matchValue != null) {
+                extractedGroups.put(groupName, matchValue);
             }
         }
         return Collections.unmodifiableMap(extractedGroups);
@@ -143,22 +138,15 @@ final class Re2jCompiledPattern implements SiftCompiledPattern {
         if (input == null) return Collections.emptyList();
 
         Matcher matcher = pattern.matcher(input);
-        java.util.regex.Matcher nameExtractor = java.util.regex.Pattern.compile("\\(\\?<([a-zA-Z][a-zA-Z0-9]*)>").matcher(rawRegex);
-
-        List<String> groupNames = new ArrayList<>();
-        while (nameExtractor.find()) {
-            groupNames.add(nameExtractor.group(1));
-        }
-
+        Map<String, Integer> namedGroups = pattern.namedGroups();
         List<Map<String, String>> results = new ArrayList<>();
+
         while (matcher.find()) {
             Map<String, String> groups = new HashMap<>();
-            for (String name : groupNames) {
-                try {
-                    String value = matcher.group(name);
-                    if (value != null) groups.put(name, value);
-                } catch (IllegalArgumentException e) {
-                    // Defensive catch
+            for (String groupName : namedGroups.keySet()) {
+                String value = matcher.group(groupName);
+                if (value != null) {
+                    groups.put(groupName, value);
                 }
             }
             results.add(Collections.unmodifiableMap(groups));

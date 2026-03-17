@@ -32,23 +32,24 @@ class JdkEngineTest {
     @Test
     @DisplayName("All compiled pattern methods should gracefully handle null inputs directly at the engine level")
     void testNullInputsOnCompiledPattern() {
-        // We instantiate the compiled pattern directly from the engine, 
+        // We instantiate the compiled pattern directly from the engine,
         // bypassing the DSL interfaces to test the engine's internal null safety.
-        SiftCompiledPattern compiledPattern = JdkEngine.INSTANCE.compile("dummy-regex", Collections.emptySet());
+        try (SiftCompiledPattern compiledPattern = JdkEngine.INSTANCE.compile("dummy-regex", Collections.emptySet())) {
 
-        // Assert all methods handle null without throwing NullPointerException
-        assertFalse(compiledPattern.containsMatchIn(null), "containsMatchIn should return false for null");
-        assertFalse(compiledPattern.matchesEntire(null), "matchesEntire should return false for null");
-        assertEquals(Optional.empty(), compiledPattern.extractFirst(null), "extractFirst should return empty for null");
-        assertTrue(compiledPattern.extractAll(null).isEmpty(), "extractAll should return empty list for null");
+            // Assert all methods handle null without throwing NullPointerException
+            assertFalse(compiledPattern.containsMatchIn(null), "containsMatchIn should return false for null");
+            assertFalse(compiledPattern.matchesEntire(null), "matchesEntire should return false for null");
+            assertEquals(Optional.empty(), compiledPattern.extractFirst(null), "extractFirst should return empty for null");
+            assertTrue(compiledPattern.extractAll(null).isEmpty(), "extractAll should return empty list for null");
 
-        assertEquals("", compiledPattern.replaceFirst(null, "replacement"), "replaceFirst should return empty string");
-        assertEquals("", compiledPattern.replaceAll(null, "replacement"), "replaceAll should return empty string");
+            assertEquals("", compiledPattern.replaceFirst(null, "replacement"), "replaceFirst should return empty string");
+            assertEquals("", compiledPattern.replaceAll(null, "replacement"), "replaceAll should return empty string");
 
-        assertTrue(compiledPattern.extractGroups(null).isEmpty(), "extractGroups should return empty map for null");
-        assertTrue(compiledPattern.extractAllGroups(null).isEmpty(), "extractAllGroups should return empty list for null");
+            assertTrue(compiledPattern.extractGroups(null).isEmpty(), "extractGroups should return empty map for null");
+            assertTrue(compiledPattern.extractAllGroups(null).isEmpty(), "extractAllGroups should return empty list for null");
 
-        assertTrue(compiledPattern.splitBy(null).isEmpty(), "splitBy should return empty list for null");
-        assertEquals(0L, compiledPattern.streamMatches(null).count(), "streamMatches should return empty stream for null");
+            assertTrue(compiledPattern.splitBy(null).isEmpty(), "splitBy should return empty list for null");
+            assertEquals(0L, compiledPattern.streamMatches(null).count(), "streamMatches should return empty stream for null");
+        }
     }
 }

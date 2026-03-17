@@ -37,7 +37,7 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
     GraalVmCompiledPattern(String rawRegex) {
         this.rawRegex = rawRegex;
         this.threadLocalRegex = ThreadLocal.withInitial(() -> {
-            Context ctx = GraalVmEngine.THREAD_CONTEXT.get();
+            Context ctx = GraalVmEngine.getContext();
             Value compiler = ctx.eval(JS_LANGUAGE_ID, JS_COMPILER_SNIPPET);
             return compiler.execute(rawRegex);
         });
@@ -234,5 +234,10 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
         if (start == end) {
             jsRegex.putMember(MEMBER_LAST_INDEX, end + 1);
         }
+    }
+
+    @Override
+    public void close() {
+        threadLocalRegex.remove();
     }
 }

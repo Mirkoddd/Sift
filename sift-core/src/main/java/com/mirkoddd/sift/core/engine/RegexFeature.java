@@ -54,5 +54,11 @@ public enum RegexFeature {
      * This is highly specific to the JDK Matcher API and is strictly unsupported by
      * alternative engines like RE2J.
      */
-    PREVIOUS_MATCH_ANCHOR
+    PREVIOUS_MATCH_ANCHOR,
+
+    /**
+     * Represents a conditional statement, e.g., (?(condition)true-pattern|false-pattern).
+     * This feature requires backtracking.
+     */
+    CONDITIONAL
 }

@@ -22,10 +22,12 @@ import static com.mirkoddd.sift.core.SiftPatterns.literal;
 import static com.mirkoddd.sift.engine.re2j.Re2jDictionary.*;
 
 import com.mirkoddd.sift.core.NamedCapture;
+import com.mirkoddd.sift.core.engine.AbstractSiftEngine;
 import com.mirkoddd.sift.core.engine.RegexFeature;
 import com.mirkoddd.sift.core.engine.SiftCompiledPattern;
-import com.mirkoddd.sift.core.engine.SiftEngine;
 
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -36,7 +38,7 @@ import java.util.Set;
  *
  * @since 6.1.0
  */
-public final class Re2jEngine implements SiftEngine {
+public final class Re2jEngine extends AbstractSiftEngine {
 
     /**
      * Stateless singleton instance of the RE2J Engine.
@@ -53,45 +55,28 @@ public final class Re2jEngine implements SiftEngine {
             .followedBy(JDK_GROUP_SUFFIX)
             .sieve();
 
+    private static final Map<RegexFeature, String> UNSUPPORTED = new EnumMap<>(RegexFeature.class);
+    static {
+        UNSUPPORTED.put(RegexFeature.LOOKAHEAD, "RE2J Engine does not support Lookaround assertions.");
+        UNSUPPORTED.put(RegexFeature.LOOKBEHIND, "RE2J Engine does not support Lookaround assertions.");
+        UNSUPPORTED.put(RegexFeature.BACKREFERENCE, "RE2J Engine does not support Backreferences, as they break linear-time guarantees.");
+        UNSUPPORTED.put(RegexFeature.PREVIOUS_MATCH_ANCHOR, "RE2J Engine does not support the \\G anchor (Previous Match End).");
+        UNSUPPORTED.put(RegexFeature.ATOMIC_GROUP, "RE2J Engine does not support Atomic Groups (?>...). RE2J is natively immune to backtracking.");
+        UNSUPPORTED.put(RegexFeature.RECURSION, "RE2J Engine does not support recursive patterns.");
+        UNSUPPORTED.put(RegexFeature.CONDITIONAL, "RE2J Engine does not support Conditional assertions. They break linear-time guarantees.");
+    }
+
     private Re2jEngine() {
         // Prevent instantiation
     }
 
     @Override
-    public void checkSupport(Set<RegexFeature> features) {
-        if (features.contains(RegexFeature.LOOKAHEAD) || features.contains(RegexFeature.LOOKBEHIND)) {
-            throw new UnsupportedOperationException(
-                    "RE2J Engine does not support Lookaround assertions. " +
-                            "Please remove them or use the default JdkEngine."
-            );
-        }
-        if (features.contains(RegexFeature.BACKREFERENCE)) {
-            throw new UnsupportedOperationException(
-                    "RE2J Engine does not support Backreferences, as they break linear-time guarantees."
-            );
-        }
-        if (features.contains(RegexFeature.PREVIOUS_MATCH_ANCHOR)) {
-            throw new UnsupportedOperationException(
-                    "RE2J Engine does not support the \\G anchor (Previous Match End)."
-            );
-        }
-        if (features.contains(RegexFeature.ATOMIC_GROUP)) {
-            throw new UnsupportedOperationException(
-                    "RE2J Engine does not support Atomic Groups (?>...). " +
-                            "Note: RE2J is natively immune to catastrophic backtracking, so preventBacktracking() is unnecessary."
-            );
-        }
-        if (features.contains(RegexFeature.RECURSION)) {
-            throw new UnsupportedOperationException(
-                    "RE2J Engine does not support recursive patterns."
-            );
-        }
+    protected Map<RegexFeature, String> getUnsupportedFeatures() {
+        return UNSUPPORTED;
     }
 
     @Override
-    public SiftCompiledPattern compile(String rawRegex, Set<RegexFeature> usedFeatures) {
-        checkSupport(usedFeatures);
-
+    protected SiftCompiledPattern doCompile(String rawRegex, Set<RegexFeature> usedFeatures) {
         try {
             String re2jCompatibleRegex = rawRegex;
 

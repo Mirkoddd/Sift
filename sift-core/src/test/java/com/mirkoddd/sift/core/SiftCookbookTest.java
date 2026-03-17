@@ -279,17 +279,18 @@ class SiftCookbookTest {
 
         // 5. Using .sieve() to retrieve the fully compiled engine-agnostic pattern.
         // This automatically applies the SiftGlobalFlag under the hood.
-        SiftCompiledPattern compiledPattern = htmlTagPattern.sieve();
+        try (SiftCompiledPattern compiledPattern = htmlTagPattern.sieve()) {
 
-        // 6. Data extraction using Sift's null-safe extraction API (No more raw JDK Matchers!)
-        Map<String, String> extractedData = compiledPattern.extractGroups(input);
+            // 6. Data extraction using Sift's null-safe extraction API (No more raw JDK Matchers!)
+            Map<String, String> extractedData = compiledPattern.extractGroups(input);
 
-        assertFalse(extractedData.isEmpty(), "The pattern should find a match");
-        assertEquals("TITLE", extractedData.get("tag"), "Should extract the exact opening tag");
-        assertEquals("My Awesome Cookbook", extractedData.get("content"), "Should extract the inner payload");
+            assertFalse(extractedData.isEmpty(), "The pattern should find a match");
+            assertEquals("TITLE", extractedData.get("tag"), "Should extract the exact opening tag");
+            assertEquals("My Awesome Cookbook", extractedData.get("content"), "Should extract the inner payload");
 
-        // Proof that backreference works: a mismatched closing tag will fail
-        assertFalse(compiledPattern.containsMatchIn("<TITLE>My Awesome Cookbook</H1>"));
+            // Proof that backreference works: a mismatched closing tag will fail
+            assertFalse(compiledPattern.containsMatchIn("<TITLE>My Awesome Cookbook</H1>"));
+        }
     }
 
     @Test
