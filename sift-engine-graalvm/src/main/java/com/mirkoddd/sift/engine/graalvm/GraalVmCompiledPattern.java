@@ -23,6 +23,7 @@ import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,8 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
 
     @Override
     public boolean containsMatchIn(CharSequence input) {
+        if (input == null) return false;
+
         Value jsRegex = threadLocalRegex.get();
         jsRegex.putMember(MEMBER_LAST_INDEX, 0);
         return jsRegex.invokeMember(MEMBER_TEST, input.toString()).asBoolean();
@@ -57,6 +60,8 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
 
     @Override
     public boolean matchesEntire(CharSequence input) {
+        if (input == null) return false;
+
         String inputStr = input.toString();
         Value jsRegex = threadLocalRegex.get();
         jsRegex.putMember(MEMBER_LAST_INDEX, 0);
@@ -73,6 +78,8 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
 
     @Override
     public Optional<String> extractFirst(CharSequence input) {
+        if (input == null) return Optional.empty();
+
         String inputStr = input.toString();
         Value jsRegex = threadLocalRegex.get();
         jsRegex.putMember(MEMBER_LAST_INDEX, 0);
@@ -86,6 +93,8 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
 
     @Override
     public List<String> extractAll(CharSequence input) {
+        if (input == null) return Collections.emptyList();
+
         List<String> matches = new ArrayList<>();
         String inputStr = input.toString();
         Value jsRegex = threadLocalRegex.get();
@@ -103,6 +112,8 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
 
     @Override
     public String replaceFirst(CharSequence input, String replacement) {
+        if (input == null) return null;
+
         String inputStr = input.toString();
         Value jsRegex = threadLocalRegex.get();
         jsRegex.putMember(MEMBER_LAST_INDEX, 0);
@@ -121,6 +132,8 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
 
     @Override
     public String replaceAll(CharSequence input, String replacement) {
+        if (input == null) return null;
+
         String inputStr = input.toString();
         StringBuilder sb = new StringBuilder();
         Value jsRegex = threadLocalRegex.get();
@@ -148,6 +161,8 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
 
     @Override
     public Map<String, String> extractGroups(CharSequence input) {
+        if (input == null) return Collections.emptyMap();
+
         String inputStr = input.toString();
         Value jsRegex = threadLocalRegex.get();
         jsRegex.putMember(MEMBER_LAST_INDEX, 0);
@@ -157,6 +172,8 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
 
     @Override
     public List<Map<String, String>> extractAllGroups(CharSequence input) {
+        if (input == null) return Collections.emptyList();
+
         List<Map<String, String>> allGroups = new ArrayList<>();
         String inputStr = input.toString();
         Value jsRegex = threadLocalRegex.get();
@@ -174,6 +191,8 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
 
     @Override
     public List<String> splitBy(CharSequence input) {
+        if (input == null) return Collections.emptyList();
+
         List<String> chunks = new ArrayList<>();
         String inputStr = input.toString();
         Value jsRegex = threadLocalRegex.get();
@@ -199,6 +218,7 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
 
     @Override
     public Stream<String> streamMatches(CharSequence input) {
+        if (input == null) return Stream.empty();
         return extractAll(input).stream();
     }
 
@@ -236,6 +256,19 @@ final class GraalVmCompiledPattern implements SiftCompiledPattern {
         }
     }
 
+    /**
+     * Releases the JavaScript RegExp reference associated with this specific pattern
+     * from the underlying GraalVM Polyglot context.
+     * <p>
+     * <b>Important Resource Management Note:</b>
+     * Calling this method ONLY cleans up the resources strictly tied to this compiled pattern.
+     * It <b>DOES NOT</b> close the execution engine's thread context.
+     * <p>
+     * To fully prevent memory leaks in environments with long-lived thread pools,
+     * you must ensure that the engine scope itself is properly closed using a
+     * {@code try-with-resources} block around {@link GraalVmEngine#openThreadScope()},
+     * independently of closing this specific pattern.
+     */
     @Override
     public void close() {
         threadLocalRegex.remove();

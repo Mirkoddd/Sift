@@ -73,17 +73,23 @@ public final class GraalVmEngine extends AbstractSiftEngine {
      */
     static final ThreadLocal<Context> THREAD_CONTEXT = new ThreadLocal<>();
 
-    /**
-     * Internal test seam used to mock the context closure
-     * and achieve 100% branch coverage without relying on external mocking libraries.
-     */
-    static ContextCloser contextCloser = Context::close;
+    private final ContextCloser contextCloser;
 
     /**
      * Private constructor to prevent instantiation. Use {@link #INSTANCE}.
+     * Initializes the default production behavior for closing contexts.
      */
     private GraalVmEngine() {
-        // Prevent instantiation
+        this.contextCloser = Context::close;
+    }
+
+    /**
+     * Package-private constructor for testing purposes only.
+     * Allows injecting a custom ContextCloser to test branch coverage (e.g., exceptions during close)
+     * without polluting global state with mutable static fields.
+     */
+    GraalVmEngine(ContextCloser closer) {
+        this.contextCloser = closer;
     }
 
     /**

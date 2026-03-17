@@ -25,6 +25,7 @@ import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 import com.mirkoddd.sift.core.engine.SiftCompiledPattern;
 
+import org.graalvm.polyglot.Context;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -125,26 +126,21 @@ class GraalVmEngineTest {
     }
 
     @Test
-    @DisplayName("Coverage: force catch block in openThreadScope using internal seam")
-    void testOpenThreadScopeCatchWithSeam() {
-        GraalVmEngine.ContextCloser originalCloser = GraalVmEngine.contextCloser;
+    @DisplayName("Should silently ignore exceptions thrown while closing the context")
+    void testOpenThreadScopeIgnoresCloseExceptions() {
+        GraalVmEngine testEngine = new GraalVmEngine(ctx -> {
+            throw new IllegalStateException("Simulated closure failure");
+        });
 
-        try {
-            GraalVmEngine.contextCloser = ctx -> {
-                throw new RuntimeException("Simulated failure for coverage");
-            };
+        GraalVmEngine.THREAD_CONTEXT.set(Context.newBuilder(GraalVmDictionary.JS_LANGUAGE_ID).build());
 
-            try (SiftCompiledPattern p = oneOrMore().digits().sieveWith(engine)) {
-                p.matchesEntire("1");
+        assertDoesNotThrow(() -> {
+            try (AutoCloseable scope = testEngine.openThreadScope()) {
+                assertNotNull(scope);
             }
+        });
 
-            assertDoesNotThrow(() -> engine.openThreadScope().close());
-
-            assertNull(GraalVmEngine.THREAD_CONTEXT.get());
-
-        } finally {
-            GraalVmEngine.contextCloser = originalCloser;
-        }
+        assertNull(GraalVmEngine.THREAD_CONTEXT.get(), "ThreadLocal should be cleaned up even if close() throws");
     }
 
     @Test
@@ -622,5 +618,32 @@ class GraalVmEngineTest {
                 System.out.println("unreachable");
             }
         }, "Expected engine to reject inline/local flags like (?i)");
+    }
+
+    @Test
+    @DisplayName("Should gracefully handle null inputs across all extraction and matching methods")
+    void testNullGuards() {
+        try (SiftCompiledPattern pattern = oneOrMore().digits().sieveWith(engine)) {
+
+            // --- Matching ---
+            assertFalse(pattern.containsMatchIn(null), "containsMatchIn should return false for null");
+            assertFalse(pattern.matchesEntire(null), "matchesEntire should return false for null");
+
+            // --- Extraction ---
+            assertFalse(pattern.extractFirst(null).isPresent(), "extractFirst should be empty for null");
+            assertTrue(pattern.extractAll(null).isEmpty(), "extractAll should be empty for null");
+
+            // --- Replacement ---
+            assertNull(pattern.replaceFirst(null, "replacement"), "replaceFirst should return empty string for null");
+            assertNull(pattern.replaceAll(null, "replacement"), "replaceAll should return empty string for null");
+
+            // --- Groups ---
+            assertTrue(pattern.extractGroups(null).isEmpty(), "extractGroups should be empty for null");
+            assertTrue(pattern.extractAllGroups(null).isEmpty(), "extractAllGroups should be empty for null");
+
+            // --- Splitting & Streaming ---
+            assertTrue(pattern.splitBy(null).isEmpty(), "splitBy should be empty for null");
+            assertEquals(0, pattern.streamMatches(null).count(), "streamMatches should be empty for null");
+        }
     }
 }

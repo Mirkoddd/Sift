@@ -84,6 +84,11 @@ final class ConditionalAssembler implements ConditionalThen, ConditionalElse {
     }
 
     private SiftPattern<Fragment> assembleConditionalPattern(SiftPattern<Fragment> falseBranch) {
+
+        SiftPattern<?>[] childNodes = falseBranch != null
+                ? new SiftPattern<?>[]{trueCondition, thenPattern, falseCondition, falseBranch}
+                : new SiftPattern<?>[]{trueCondition, thenPattern, falseCondition};
+
         return SiftPatterns.memoize(
                 () -> {
                     StringBuilder sb = new StringBuilder();
@@ -103,7 +108,7 @@ final class ConditionalAssembler implements ConditionalThen, ConditionalElse {
                     return sb.toString();
                 },
                 RegexFeature.CONDITIONAL,
-                thenPattern
+                childNodes
         );
     }
 }
