@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.3.1](https://github.com/Mirkoddd/Sift/compare/sift-v6.3.0...sift-v6.3.1) (2026-03-17)
+
+
+### Bug Fixes
+
+* **core:** enforce feature propagation in AST container nodes ([4f6c83d](https://github.com/Mirkoddd/Sift/commit/4f6c83d99efbaf483e54d387f21bd196b22918c4))
+
 ## [6.3.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.2.0...sift-v6.3.0) (2026-03-17)
 
 
