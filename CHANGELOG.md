@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.3.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.2.0...sift-v6.3.0) (2026-03-17)
+
+
+### Features
+
+* **engine:** enforce Template Method, OCP, and resource safety ([f27553a](https://github.com/Mirkoddd/Sift/commit/f27553aec7fb17d6d15dd22f488b5d45dc26f3a8))
+
 ## [6.2.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.1.0...sift-v6.2.0) (2026-03-16)
 
 
