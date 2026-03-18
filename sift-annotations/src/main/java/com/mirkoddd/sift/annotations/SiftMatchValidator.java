@@ -26,6 +26,18 @@ import java.util.regex.Pattern;
  * <p>
  * For performance optimization, this validator compiles the regular expression into a
  * {@link java.util.regex.Pattern} only once during initialization, rather than on every validation call.
+ * <p>
+ * <b>Engine Note:</b> This validator always uses the standard JDK regex engine
+ * ({@code java.util.regex}), regardless of the engine configured elsewhere in the application.
+ * This is an architectural constraint of the Jakarta Validation lifecycle: the validator
+ * is instantiated by the validation container without any Sift execution context.
+ * <p>
+ * As a consequence, ReDoS protection provided by alternative engines (such as
+ * {@code Re2jEngine}) does <b>not</b> apply here. If you are validating untrusted
+ * input against a structurally complex pattern in a security-sensitive context,
+ * consider wrapping your pattern with {@link com.mirkoddd.sift.core.dsl.SiftPattern#preventBacktracking()}
+ * before exposing it via {@link SiftRegexProvider#getRegex()}.
+ *
  * @author Mirko Dimartino
  * @since 1.1.0
  */

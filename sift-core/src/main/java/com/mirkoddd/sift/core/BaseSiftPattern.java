@@ -84,7 +84,7 @@ abstract class BaseSiftPattern<Ctx extends SiftContext> implements SiftPattern<C
     @Override
     public Set<RegexFeature> getInternalUsedFeatures() {
         shake();
-        return buildFeatures();
+        return cachedFeatures;
     }
 
     /**

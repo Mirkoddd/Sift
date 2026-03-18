@@ -119,7 +119,7 @@ public final class JdkEngine extends AbstractSiftEngine {
          */
         @Override
         public String replaceFirst(CharSequence input, String replacement) {
-            if (input == null) return "";
+            if (input == null) return null;
             return pattern.matcher(input).replaceFirst(replacement);
         }
 
@@ -128,7 +128,7 @@ public final class JdkEngine extends AbstractSiftEngine {
          */
         @Override
         public String replaceAll(CharSequence input, String replacement) {
-            if (input == null) return "";
+            if (input == null) return null;
             return pattern.matcher(input).replaceAll(replacement);
         }
 

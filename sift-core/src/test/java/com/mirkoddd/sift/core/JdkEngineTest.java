@@ -42,8 +42,8 @@ class JdkEngineTest {
             assertEquals(Optional.empty(), compiledPattern.extractFirst(null), "extractFirst should return empty for null");
             assertTrue(compiledPattern.extractAll(null).isEmpty(), "extractAll should return empty list for null");
 
-            assertEquals("", compiledPattern.replaceFirst(null, "replacement"), "replaceFirst should return empty string");
-            assertEquals("", compiledPattern.replaceAll(null, "replacement"), "replaceAll should return empty string");
+            assertNull(compiledPattern.replaceFirst(null, "replacement"), "replaceFirst should return empty string");
+            assertNull(compiledPattern.replaceAll(null, "replacement"), "replaceAll should return empty string");
 
             assertTrue(compiledPattern.extractGroups(null).isEmpty(), "extractGroups should return empty map for null");
             assertTrue(compiledPattern.extractAllGroups(null).isEmpty(), "extractAllGroups should return empty list for null");
