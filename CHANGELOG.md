@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.3.2](https://github.com/Mirkoddd/Sift/compare/sift-v6.3.1...sift-v6.3.2) (2026-03-18)
+
+
+### Bug Fixes
+
+* align JdkEngine null handling and optimize AST feature caching ([de8be48](https://github.com/Mirkoddd/Sift/commit/de8be4866aab76204735bb7bca7d9ff7fff5c4c4))
+
 ## [6.3.1](https://github.com/Mirkoddd/Sift/compare/sift-v6.3.0...sift-v6.3.1) (2026-03-17)
 
 
