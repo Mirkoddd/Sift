@@ -29,6 +29,7 @@ import org.graalvm.polyglot.Context;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +40,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.mirkoddd.sift.core.Sift.fromAnywhere;
@@ -60,7 +62,7 @@ class GraalVmEngineTest {
     void testAutoCloseableScopeAndPattern() {
         assertDoesNotThrow(() -> {
             try (
-                    AutoCloseable scope = engine.openThreadScope();
+                    GraalVmEngine.EngineScope scope = engine.openThreadScope();
                     SiftCompiledPattern pattern = oneOrMore().digits().sieveWith(engine)
             ) {
                 assertNotNull(scope, "Thread scope should be successfully created");
@@ -71,17 +73,67 @@ class GraalVmEngineTest {
     }
 
     @Test
+    @DisplayName("Should safely execute an action within a managed scope using execute()")
+    void testExecuteMethod() {
+        // Happy path: context created, action executes, cleanup runs
+        Supplier<Boolean> booleanSupplier = () -> {
+            try (SiftCompiledPattern pattern = oneOrMore().digits().sieveWith(engine)) {
+                return pattern.matchesEntire("12345");
+            }
+        };
+
+        boolean result = engine.execute(booleanSupplier);
+        assertTrue(result);
+        assertNull(GraalVmEngine.THREAD_CONTEXT.get());
+
+        // Branch: execute() called but no context ever opened (ctx == null in finally)
+        boolean resultNoCtx = engine.execute(() -> true);
+        assertTrue(resultNoCtx);
+        assertNull(GraalVmEngine.THREAD_CONTEXT.get());
+
+        // Branch: RuntimeException propagated as-is
+        assertThrows(IllegalStateException.class, () ->
+                engine.execute(() -> { throw new IllegalStateException("runtime failure"); })
+        );
+        assertNull(GraalVmEngine.THREAD_CONTEXT.get());
+
+        // Branch: non-RuntimeException wrapped
+        RuntimeException wrapped = assertThrows(RuntimeException.class, () ->
+                engine.execute(() -> { sneakyThrow(new IOException("checked")); return null; })
+        );
+        assertInstanceOf(IOException.class, wrapped.getCause());
+        assertEquals("Failed to execute action within GraalVM scope", wrapped.getMessage());
+        assertNull(GraalVmEngine.THREAD_CONTEXT.get());
+
+        // Branch: contextCloser throws during cleanup
+        GraalVmEngine faultyEngine = new GraalVmEngine(ctx -> {
+            throw new IllegalStateException("close failure");
+        });
+        assertDoesNotThrow(() -> faultyEngine.execute(() -> {
+            try (SiftCompiledPattern p = oneOrMore().digits().sieveWith(faultyEngine)) {
+                return p.matchesEntire("1");
+            }
+        }));
+        assertNull(GraalVmEngine.THREAD_CONTEXT.get());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void sneakyThrow(Throwable t) throws T {
+        throw (T) t;
+    }
+
+    @Test
     @DisplayName("Coverage: test all branches of openThreadScope")
     void testOpenThreadScopeCoverage() {
         GraalVmEngine.THREAD_CONTEXT.remove();
         assertDoesNotThrow(() -> {
-            try (AutoCloseable scope = engine.openThreadScope()) {
+            try (GraalVmEngine.EngineScope scope = engine.openThreadScope()) {
                 assertNotNull(scope, "Thread scope should be successfully created");
             }
         });
 
         assertDoesNotThrow(() -> {
-            try (AutoCloseable scope = engine.openThreadScope()) {
+            try (GraalVmEngine.EngineScope scope = engine.openThreadScope()) {
                 assertNotNull(scope, "Thread scope should be successfully created");
                 try (SiftCompiledPattern p = oneOrMore().digits().sieveWith(engine)) {
                     p.matchesEntire("123");
@@ -94,7 +146,7 @@ class GraalVmEngineTest {
     @DisplayName("Coverage: test catch block in openThreadScope")
     void testOpenThreadScopeCatchBlock() {
         assertDoesNotThrow(() -> {
-            AutoCloseable scope = engine.openThreadScope();
+            GraalVmEngine.EngineScope scope = engine.openThreadScope();
 
             try (SiftCompiledPattern p = oneOrMore().digits().sieveWith(engine)) {
                 p.matchesEntire("1");
@@ -112,7 +164,7 @@ class GraalVmEngineTest {
     @Test
     @DisplayName("Coverage: force catch block in openThreadScope")
     void testOpenThreadScopeCatchCoverage() {
-        AutoCloseable scope = engine.openThreadScope();
+        GraalVmEngine.EngineScope scope = engine.openThreadScope();
 
         try (SiftCompiledPattern p = oneOrMore().digits().sieveWith(engine)) {
             p.matchesEntire("1");
@@ -135,7 +187,7 @@ class GraalVmEngineTest {
         GraalVmEngine.THREAD_CONTEXT.set(Context.newBuilder(GraalVmDictionary.JS_LANGUAGE_ID).build());
 
         assertDoesNotThrow(() -> {
-            try (AutoCloseable scope = testEngine.openThreadScope()) {
+            try (GraalVmEngine.EngineScope scope = testEngine.openThreadScope()) {
                 assertNotNull(scope);
             }
         });
@@ -250,7 +302,7 @@ class GraalVmEngineTest {
     @Test
     @DisplayName("Should handle optional groups via DSL")
     void testOptionalGroups() {
-        try (AutoCloseable scope = engine.openThreadScope()) {
+        try (GraalVmEngine.EngineScope scope = engine.openThreadScope()) {
             assertNotNull(scope, "Thread scope should be successfully created");
 
             NamedCapture metalGroup = capture("metal",
@@ -510,7 +562,7 @@ class GraalVmEngineTest {
                 .otherwiseUse(literal("banana"));
 
         try (
-                AutoCloseable scope = engine.openThreadScope();
+                GraalVmEngine.EngineScope scope = engine.openThreadScope();
                 SiftCompiledPattern pattern = conditionalRule.sieveWith(engine)
         ) {
             assertNotNull(scope, "Thread scope should be successfully created");

@@ -27,6 +27,8 @@ import org.graalvm.polyglot.Value;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 /**
  * GraalVM TRegex execution engine for Sift.
@@ -73,6 +75,8 @@ public final class GraalVmEngine extends AbstractSiftEngine {
      */
     static final ThreadLocal<Context> THREAD_CONTEXT = new ThreadLocal<>();
 
+    private static final Logger LOGGER = Logger.getLogger(GraalVmEngine.class.getName());
+
     private final ContextCloser contextCloser;
 
     /**
@@ -93,6 +97,57 @@ public final class GraalVmEngine extends AbstractSiftEngine {
     }
 
     /**
+     * Safely executes a block of code within a managed GraalVM thread scope.
+     * <p>
+     * This is the recommended API for evaluating patterns with this engine, as it
+     * automatically manages the thread-local {@link Context} lifecycle and prevents
+     * memory leaks in environments with long-lived thread pools.
+     * <p>
+     * If the action throws a {@link RuntimeException}, it is propagated as-is.
+     * Any exception thrown during scope cleanup is suppressed and does not mask the original.
+     * <p>
+     * Usage example:
+     * <pre>{@code
+     * boolean isValid = GraalVmEngine.INSTANCE.execute(() -> {
+     *     try (SiftCompiledPattern pattern = myRegex.sieveWith(GraalVmEngine.INSTANCE)) {
+     *         return pattern.matchesEntire(input);
+     *     }
+     * });
+     * }</pre>
+     *
+     * @param action The operation to perform within the managed scope.
+     * @param <T>    The return type of the operation.
+     * @return The result of the operation.
+     */
+    @SuppressWarnings("ConstantConditions")
+    public <T> T execute(Supplier<T> action) {
+        try {
+            return action.get();
+        } catch (Exception e) {
+            // JUSTIFICATION for @SuppressWarnings("ConstantConditions"):
+            // The Java compiler assumes Supplier.get() only throws RuntimeExceptions.
+            // However, cross-language interoperability or Java's "sneaky throws"
+            // can bypass compiler checks and throw checked exceptions at runtime.
+            // This explicit type check prevents a catastrophic ClassCastException.
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
+            throw new RuntimeException("Failed to execute action within GraalVM scope", e);
+        } finally {
+            openThreadScope().close();
+        }
+    }
+
+    /**
+     * Represents a managed execution scope for the GraalVM engine.
+     * Extends AutoCloseable but safely overrides close() to not throw checked exceptions.
+     */
+    public interface EngineScope extends AutoCloseable {
+        @Override
+        void close();
+    }
+
+    /**
      * Opens a new execution scope for the GraalVM engine on the current thread.
      * <p>
      * <b>Important Memory Leak Prevention:</b> When using this engine in environments
@@ -101,18 +156,21 @@ public final class GraalVmEngine extends AbstractSiftEngine {
      * block. This ensures that the thread-local Polyglot {@link Context} and its associated
      * native resources are safely destroyed at the end of the execution.
      * <p>
+     * For most use cases, prefer {@link #execute(java.util.function.Supplier)} which manages
+     * the scope automatically.
+     * <p>
      * Usage example:
      * <pre>{@code
-     * try (AutoCloseable scope = GraalVmEngine.INSTANCE.openThreadScope()) {
-     * SiftCompiledPattern pattern = myRegex.sieveWith(GraalVmEngine.INSTANCE);
-     * boolean isValid = pattern.matchesEntire(input);
-     * // ... your business logic ...
+     * try (GraalVmEngine.EngineScope scope = GraalVmEngine.INSTANCE.openThreadScope()) {
+     *     SiftCompiledPattern pattern = myRegex.sieveWith(GraalVmEngine.INSTANCE);
+     *     boolean isValid = pattern.matchesEntire(input);
+     *     // ... your business logic ...
      * } // The GraalVM context is safely closed and removed from the thread here
      * }</pre>
      *
-     * @return an {@link AutoCloseable} representing the current thread's GraalVM execution scope
+     * @return an {@link EngineScope} representing the current thread's GraalVM execution scope
      */
-    public AutoCloseable openThreadScope() {
+    public EngineScope openThreadScope() {
         return () -> {
             Context ctx = THREAD_CONTEXT.get();
             if (ctx != null) {
@@ -134,6 +192,14 @@ public final class GraalVmEngine extends AbstractSiftEngine {
 
     @Override
     protected SiftCompiledPattern doCompile(String rawRegex, Set<RegexFeature> usedFeatures) {
+        if (THREAD_CONTEXT.get() == null) {
+            LOGGER.warning(
+                    "GraalVmEngine: compiling without an explicit thread scope. " +
+                            "In thread-pool environments this may cause memory leaks. " +
+                            "Wrap your call in GraalVmEngine.INSTANCE.execute(...) or manually use openThreadScope()."
+            );
+        }
+
         try {
             // Validate the syntax immediately to fail fast
             Context ctx = getContext();
