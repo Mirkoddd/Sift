@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.4.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.3.2...sift-v6.4.0) (2026-03-18)
+
+
+### Features
+
+* **graalvm:** introduce safe execute API and EngineScope interface ([31c5360](https://github.com/Mirkoddd/Sift/commit/31c5360faf086893980a1b8b2cf3d1dcc7671f4b))
+
 ## [6.3.2](https://github.com/Mirkoddd/Sift/compare/sift-v6.3.1...sift-v6.3.2) (2026-03-18)
 
 
