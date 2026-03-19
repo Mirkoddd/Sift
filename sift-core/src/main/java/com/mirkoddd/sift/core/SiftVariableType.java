@@ -37,12 +37,12 @@ import com.mirkoddd.sift.core.dsl.VariableConnector;
 class SiftVariableType<Ctx extends SiftContext> extends BaseType<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> {
 
     /**
-     * Instantiates the variable-type step with the current state of the pattern assembler.
+     * Instantiates the variable-type step, linking it to the AST chain.
      *
-     * @param assembler The internal state machine builder.
+     * @param parentNode The preceding node in the DSL chain.
      */
-    SiftVariableType(PatternAssembler assembler) {
-        super(assembler);
+    SiftVariableType(BaseSiftPattern<?> parentNode) {
+        super(parentNode);
     }
 
     /**
@@ -51,8 +51,8 @@ class SiftVariableType<Ctx extends SiftContext> extends BaseType<Ctx, VariableCo
      * Returns a specialized connector that exposes variable-length modifiers.
      */
     @Override
-    protected VariableConnector<Ctx> getNormalConnector(PatternAssembler nextAssembler) {
-        return new SiftVariableConnector<>(nextAssembler);
+    protected VariableConnector<Ctx> getNormalConnector(BaseSiftPattern<?> nextNode) {
+        return new SiftVariableConnector<>(nextNode);
     }
 
     /**
@@ -61,7 +61,7 @@ class SiftVariableType<Ctx extends SiftContext> extends BaseType<Ctx, VariableCo
      * Returns a specialized character class connector that retains variable-length modifiers.
      */
     @Override
-    protected VariableCharacterConnector<Ctx> getCharacterClassConnector(PatternAssembler nextAssembler) {
-        return new SiftVariableConnector<>(nextAssembler);
+    protected VariableCharacterConnector<Ctx> getCharacterClassConnector(BaseSiftPattern<?> nextNode) {
+        return new SiftVariableConnector<>(nextNode);
     }
 }

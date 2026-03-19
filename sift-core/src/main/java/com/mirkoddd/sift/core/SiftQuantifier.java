@@ -16,6 +16,7 @@
 package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.*;
+import com.mirkoddd.sift.core.engine.RegexFeature;
 
 import java.util.Objects;
 
@@ -35,57 +36,57 @@ import java.util.Objects;
  */
 class SiftQuantifier<Ctx extends SiftContext> implements Quantifier<Ctx> {
 
-    protected final PatternAssembler assembler;
+    // In the lazy AST, we hold a reference to the previous node, not a builder.
+    protected final BaseSiftPattern<?> parentNode;
 
     /**
-     * Instantiates the quantifier step with the current state of the pattern assembler.
+     * Instantiates the quantifier step, linking it to the AST chain.
      *
-     * @param assembler The internal state machine builder.
+     * @param parentNode The preceding node in the DSL chain.
      */
-    SiftQuantifier(PatternAssembler assembler) {
-        this.assembler = assembler;
+    SiftQuantifier(BaseSiftPattern<?> parentNode) {
+        this.parentNode = parentNode;
+    }
+
+    /**
+     * Helper to create the intermediate node that records the quantifier action.
+     */
+    private BaseSiftPattern<?> createQuantifierNode(String quantifierString) {
+        return new SiftConnector<>(parentNode, visitor -> visitor.visitQuantifier(quantifierString));
     }
 
     /** {@inheritDoc} */
     @Override
     public Type<Ctx, Connector<Ctx>, CharacterConnector<Ctx>> exactly(int n) {
         if (n <= 0) throw new IllegalArgumentException("Quantity must be strictly positive: " + n);
-        PatternAssembler next = assembler.copy();
-        next.setQuantifier((n == 1) ? RegexSyntax.EMPTY : RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.QUANTIFIER_CLOSE);
-        return new SiftFixedType<>(next);
+        String quantifier = (n == 1) ? RegexSyntax.EMPTY : RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.QUANTIFIER_CLOSE;
+        return new SiftFixedType<>(createQuantifierNode(quantifier));
     }
 
     /** {@inheritDoc} */
     @Override
     public Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> atLeast(int n) {
         if (n < 0) throw new IllegalArgumentException("Quantity cannot be negative: " + n);
-        PatternAssembler next = assembler.copy();
-        next.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.COMMA + RegexSyntax.QUANTIFIER_CLOSE);
-        return new SiftVariableType<>(next);
+        String quantifier = RegexSyntax.QUANTIFIER_OPEN + n + RegexSyntax.COMMA + RegexSyntax.QUANTIFIER_CLOSE;
+        return new SiftVariableType<>(createQuantifierNode(quantifier));
     }
 
     /** {@inheritDoc} */
     @Override
     public Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> oneOrMore() {
-        PatternAssembler next = assembler.copy();
-        next.setQuantifier(RegexSyntax.ONE_OR_MORE);
-        return new SiftVariableType<>(next);
+        return new SiftVariableType<>(createQuantifierNode(RegexSyntax.ONE_OR_MORE));
     }
 
     /** {@inheritDoc} */
     @Override
     public Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> zeroOrMore() {
-        PatternAssembler next = assembler.copy();
-        next.setQuantifier(RegexSyntax.ZERO_OR_MORE);
-        return new SiftVariableType<>(next);
+        return new SiftVariableType<>(createQuantifierNode(RegexSyntax.ZERO_OR_MORE));
     }
 
     /** {@inheritDoc} */
     @Override
     public Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> optional() {
-        PatternAssembler next = assembler.copy();
-        next.setQuantifier(RegexSyntax.OPTIONAL);
-        return new SiftVariableType<>(next);
+        return new SiftVariableType<>(createQuantifierNode(RegexSyntax.OPTIONAL));
     }
 
     /** {@inheritDoc} */
@@ -93,9 +94,8 @@ class SiftQuantifier<Ctx extends SiftContext> implements Quantifier<Ctx> {
     public Type<Ctx, VariableConnector<Ctx>, VariableCharacterConnector<Ctx>> atMost(int max) {
         if (max == 0) throw new IllegalArgumentException("atMost(0) is invalid as it always matches an empty string.");
         if (max < 0) throw new IllegalArgumentException("Max quantity cannot be negative: " + max);
-        PatternAssembler next = assembler.copy();
-        next.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + "0" + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE);
-        return new SiftVariableType<>(next);
+        String quantifier = RegexSyntax.QUANTIFIER_OPEN + "0" + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE;
+        return new SiftVariableType<>(createQuantifierNode(quantifier));
     }
 
     /** {@inheritDoc} */
@@ -105,36 +105,32 @@ class SiftQuantifier<Ctx extends SiftContext> implements Quantifier<Ctx> {
         if (min < 0) throw new IllegalArgumentException("Min quantity cannot be negative: " + min);
         if (max <= 0) throw new IllegalArgumentException("Max quantity must be strictly positive: " + max);
         if (min > max) throw new IllegalArgumentException("Min cannot be greater than max");
-        PatternAssembler next = assembler.copy();
-        next.setQuantifier(RegexSyntax.QUANTIFIER_OPEN + min + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE);
-        return new SiftVariableType<>(next);
+        String quantifier = RegexSyntax.QUANTIFIER_OPEN + min + RegexSyntax.COMMA + max + RegexSyntax.QUANTIFIER_CLOSE;
+        return new SiftVariableType<>(createQuantifierNode(quantifier));
     }
 
     /** {@inheritDoc} */
     @Override
     public Connector<Ctx> followedByAssertion(SiftPattern<Assertion> assertion) {
         Objects.requireNonNull(assertion, "Assertion cannot be null");
-        PatternAssembler next = assembler.copy();
-        next.addPattern(assertion);
-        return new SiftConnector<>(next);
+        return new SiftConnector<>(parentNode, visitor -> {
+            visitor.visitFeature(RegexFeature.LOOKAHEAD);
+            visitor.visitPattern(assertion);
+        });
     }
 
     /** {@inheritDoc} */
     @Override
     public Connector<Ctx> namedCapture(NamedCapture group) {
         Objects.requireNonNull(group, "NamedCapture cannot be null.");
-        PatternAssembler next = assembler.copy();
-        next.addNamedCapture(group);
-        return new SiftConnector<>(next);
+        return new SiftConnector<>(parentNode, visitor -> visitor.visitNamedCapture(group.getName(), group.getPattern()));
     }
 
     /** {@inheritDoc} */
     @Override
     public Connector<Ctx> backreference(NamedCapture group) {
         Objects.requireNonNull(group, "Backreference group cannot be null.");
-        PatternAssembler next = assembler.copy();
-        next.addBackreference(group);
-        return new SiftConnector<>(next);
+        return new SiftConnector<>(parentNode, visitor -> visitor.visitBackreference(group));
     }
 
     // --- Implicit Quantity Fallbacks (Defaults to exactly 1) ---
@@ -154,17 +150,8 @@ class SiftQuantifier<Ctx extends SiftContext> implements Quantifier<Ctx> {
     @Override public CharacterConnector<Ctx> nonLettersUnicode() { return exactly(1).nonLettersUnicode(); }
     @Override public CharacterConnector<Ctx> upperCaseLettersUnicode() { return exactly(1).upperCaseLettersUnicode(); }
     @Override public CharacterConnector<Ctx> lowerCaseLettersUnicode() { return exactly(1).lowerCaseLettersUnicode(); }
-
-    @Override
-    public CharacterConnector<Ctx> caselessLettersUnicode() {
-        return exactly(1).caselessLettersUnicode();
-    }
-
-    @Override
-    public CharacterConnector<Ctx> symbolsUnicode() {
-        return exactly(1).symbolsUnicode();
-    }
-
+    @Override public CharacterConnector<Ctx> caselessLettersUnicode() { return exactly(1).caselessLettersUnicode(); }
+    @Override public CharacterConnector<Ctx> symbolsUnicode() { return exactly(1).symbolsUnicode(); }
     @Override public CharacterConnector<Ctx> alphanumeric() { return exactly(1).alphanumeric(); }
     @Override public CharacterConnector<Ctx> nonAlphanumeric() { return exactly(1).nonAlphanumeric(); }
     @Override public CharacterConnector<Ctx> alphanumericUnicode() { return exactly(1).alphanumericUnicode(); }
@@ -175,71 +162,18 @@ class SiftQuantifier<Ctx extends SiftContext> implements Quantifier<Ctx> {
     @Override public CharacterConnector<Ctx> nonWordCharactersUnicode() { return exactly(1).nonWordCharactersUnicode(); }
     @Override public CharacterConnector<Ctx> whitespace() { return exactly(1).whitespace(); }
     @Override public CharacterConnector<Ctx> nonWhitespace() { return exactly(1).nonWhitespace(); }
-
-    @Override
-    public CharacterConnector<Ctx> whitespaceHorizontal() {
-        return exactly(1).whitespaceHorizontal();
-    }
-
-    @Override
-    public CharacterConnector<Ctx> whitespaceVertical() {
-        return exactly(1).whitespaceVertical();
-    }
-
+    @Override public CharacterConnector<Ctx> whitespaceHorizontal() { return exactly(1).whitespaceHorizontal(); }
+    @Override public CharacterConnector<Ctx> whitespaceVertical() { return exactly(1).whitespaceVertical(); }
     @Override public CharacterConnector<Ctx> whitespaceUnicode() { return exactly(1).whitespaceUnicode(); }
     @Override public CharacterConnector<Ctx> nonWhitespaceUnicode() { return exactly(1).nonWhitespaceUnicode(); }
     @Override public CharacterConnector<Ctx> range(char start, char end) { return exactly(1).range(start, end); }
-
-    /** {@inheritDoc} */
-    @Override
-    public Connector<Ctx> newline() {
-        return exactly(1).newline();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public Connector<Ctx> carriageReturn() {
-        return exactly(1).carriageReturn();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public Connector<Ctx> tab() {
-        return exactly(1).tab();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CharacterConnector<Ctx> hexDigits() {
-        return exactly(1).hexDigits();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CharacterConnector<Ctx> punctuation() {
-        return exactly(1).punctuation();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CharacterConnector<Ctx> punctuationUnicode() {
-        return exactly(1).punctuationUnicode();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CharacterConnector<Ctx> blank() {
-        return exactly(1).blank();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CharacterConnector<Ctx> blankUnicode() {
-        return exactly(1).blankUnicode();
-    }
-
-    @Override
-    public Connector<Ctx> linebreakUnicode() {
-        return exactly(1).linebreakUnicode();
-    }
+    @Override public Connector<Ctx> newline() { return exactly(1).newline(); }
+    @Override public Connector<Ctx> carriageReturn() { return exactly(1).carriageReturn(); }
+    @Override public Connector<Ctx> tab() { return exactly(1).tab(); }
+    @Override public CharacterConnector<Ctx> hexDigits() { return exactly(1).hexDigits(); }
+    @Override public CharacterConnector<Ctx> punctuation() { return exactly(1).punctuation(); }
+    @Override public CharacterConnector<Ctx> punctuationUnicode() { return exactly(1).punctuationUnicode(); }
+    @Override public CharacterConnector<Ctx> blank() { return exactly(1).blank(); }
+    @Override public CharacterConnector<Ctx> blankUnicode() { return exactly(1).blankUnicode(); }
+    @Override public Connector<Ctx> linebreakUnicode() { return exactly(1).linebreakUnicode(); }
 }

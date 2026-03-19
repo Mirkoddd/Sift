@@ -37,23 +37,23 @@ import com.mirkoddd.sift.core.dsl.SiftContext;
 class SiftFixedType<Ctx extends SiftContext> extends BaseType<Ctx, Connector<Ctx>, CharacterConnector<Ctx>> {
 
     /**
-     * Instantiates the fixed-type step with the current state of the pattern assembler.
+     * Instantiates the fixed-type step, linking it to the AST chain.
      *
-     * @param assembler The internal state machine builder.
+     * @param parentNode The preceding node in the DSL chain.
      */
-    SiftFixedType(PatternAssembler assembler) {
-        super(assembler);
+    SiftFixedType(BaseSiftPattern<?> parentNode) {
+        super(parentNode);
     }
 
     /** {@inheritDoc} */
     @Override
-    protected Connector<Ctx> getNormalConnector(PatternAssembler nextAssembler) {
-        return new SiftConnector<>(nextAssembler);
+    protected Connector<Ctx> getNormalConnector(BaseSiftPattern<?> nextNode) {
+        return new SiftConnector<>(nextNode, null);
     }
 
     /** {@inheritDoc} */
     @Override
-    protected CharacterConnector<Ctx> getCharacterClassConnector(PatternAssembler nextAssembler) {
-        return new SiftConnector<>(nextAssembler);
+    protected CharacterConnector<Ctx> getCharacterClassConnector(BaseSiftPattern<?> nextNode) {
+        return new SiftConnector<>(nextNode, null);
     }
 }

@@ -27,9 +27,9 @@ import java.util.Objects;
  * Sift enforces a state machine flow (Start -> Quantifier -> Type -> Connector) to prevent
  * syntax errors at compile-time.
  * <p>
- * <b>Thread Safety &amp; Immutability:</b>
+ * <b>Thread Safety &amp; Immutability (Lazy AST):</b>
  * Sift nodes are <b>100% immutable and thread-safe</b>.
- * Every step in the fluent chain returns a new independent instance.
+ * Every step in the fluent chain returns a new independent, lightweight AST node pointing to its parent.
  * You can safely assign intermediate steps to variables, reuse them to branch off
  * into different regex patterns without poisoning the state, and share them safely
  * across multiple threads (e.g., in Spring Boot controllers or Kotlin Coroutines).
@@ -73,9 +73,8 @@ public final class Sift {
      * @return The initial quantifier step to start the definition.
      */
     public static Quantifier<Root> fromStart() {
-        PatternAssembler assembler = new PatternAssembler();
-        assembler.addAnchor(RegexSyntax.START_OF_LINE);
-        return new SiftQuantifier<>(assembler);
+        SiftConnector<Root> rootNode = new SiftConnector<>(null, visitor -> visitor.visitAnchor(RegexSyntax.START_OF_LINE));
+        return new SiftQuantifier<>(rootNode);
     }
 
     /**
@@ -85,8 +84,8 @@ public final class Sift {
      * @return The initial quantifier step to start the definition.
      */
     public static Quantifier<Fragment> fromAnywhere() {
-        PatternAssembler assembler = new PatternAssembler();
-        return new SiftQuantifier<>(assembler);
+        SiftConnector<Fragment> rootNode = new SiftConnector<>(null, null);
+        return new SiftQuantifier<>(rootNode);
     }
 
     /**
@@ -96,9 +95,7 @@ public final class Sift {
      * @return The standard connector step, bypassing the initial quantifier.
      */
     public static Connector<Fragment> fromWordBoundary() {
-        PatternAssembler assembler = new PatternAssembler();
-        assembler.addWordBoundary();
-        return new SiftConnector<>(assembler);
+        return new SiftConnector<>(null, PatternVisitor::visitWordBoundary);
     }
 
     /**
@@ -111,10 +108,11 @@ public final class Sift {
      * @return The initial quantifier step to start the definition.
      */
     public static Quantifier<Root> fromPreviousMatchEnd() {
-        PatternAssembler assembler = new PatternAssembler();
-        assembler.registerFeature(RegexFeature.PREVIOUS_MATCH_ANCHOR);
-        assembler.addAnchor(RegexSyntax.PREVIOUS_MATCH_END);
-        return new SiftQuantifier<>(assembler);
+        SiftConnector<Root> rootNode = new SiftConnector<>(null, visitor -> {
+            visitor.visitFeature(RegexFeature.PREVIOUS_MATCH_ANCHOR);
+            visitor.visitAnchor(RegexSyntax.PREVIOUS_MATCH_END);
+        });
+        return new SiftQuantifier<>(rootNode);
     }
 
     /**
@@ -190,15 +188,26 @@ public final class Sift {
             this.flags = flags;
         }
 
+        private SiftConnector<Root> createFlaggedRoot() {
+            return new SiftConnector<>(null, visitor -> {
+                visitor.visitFeature(RegexFeature.INLINE_FLAGS);
+                StringBuilder flagStr = new StringBuilder(RegexSyntax.INLINE_FLAG_OPEN);
+                for (SiftGlobalFlag flag : flags) {
+                    flagStr.append(flag.getSymbol());
+                }
+                flagStr.append(RegexSyntax.GROUP_CLOSE);
+                visitor.visitAnchor(flagStr.toString()); // Applying flags as an anchor equivalent for simplicity
+            });
+        }
+
         /**
          * Starts building a flagged Regex anchored at the beginning of the string using {@code ^}.
          *
          * @return The initial quantifier step.
          */
         public Quantifier<Root> fromStart() {
-            PatternAssembler assembler = new PatternAssembler(flags);
-            assembler.addAnchor(RegexSyntax.START_OF_LINE);
-            return new SiftQuantifier<>(assembler);
+            SiftConnector<Root> rootNode = new SiftConnector<>(createFlaggedRoot(), visitor -> visitor.visitAnchor(RegexSyntax.START_OF_LINE));
+            return new SiftQuantifier<>(rootNode);
         }
 
         /**
@@ -207,8 +216,7 @@ public final class Sift {
          * @return The initial quantifier step.
          */
         public Quantifier<Root> fromAnywhere() {
-            PatternAssembler assembler = new PatternAssembler(flags);
-            return new SiftQuantifier<>(assembler);
+            return new SiftQuantifier<>(createFlaggedRoot());
         }
 
         /**
@@ -217,9 +225,7 @@ public final class Sift {
          * @return The standard connector step.
          */
         public Connector<Root> fromWordBoundary() {
-            PatternAssembler assembler = new PatternAssembler(flags);
-            assembler.addWordBoundary();
-            return new SiftConnector<>(assembler);
+            return new SiftConnector<>(createFlaggedRoot(), PatternVisitor::visitWordBoundary);
         }
 
         /**
@@ -228,10 +234,11 @@ public final class Sift {
          * @return The initial quantifier step.
          */
         public Quantifier<Root> fromPreviousMatchEnd() {
-            PatternAssembler assembler = new PatternAssembler(flags);
-            assembler.registerFeature(RegexFeature.PREVIOUS_MATCH_ANCHOR);
-            assembler.addAnchor(RegexSyntax.PREVIOUS_MATCH_END);
-            return new SiftQuantifier<>(assembler);
+            SiftConnector<Root> rootNode = new SiftConnector<>(createFlaggedRoot(), visitor -> {
+                visitor.visitFeature(RegexFeature.PREVIOUS_MATCH_ANCHOR);
+                visitor.visitAnchor(RegexSyntax.PREVIOUS_MATCH_END);
+            });
+            return new SiftQuantifier<>(rootNode);
         }
 
         /**

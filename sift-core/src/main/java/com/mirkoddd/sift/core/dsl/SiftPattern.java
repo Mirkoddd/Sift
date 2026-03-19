@@ -89,6 +89,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      * @param input The character sequence to search within.
      * @return {@code true} if any part of the input matches this pattern.
      */
+    @SuppressWarnings("resource") // Intentional: sieve() uses JdkEngine where close() is a no-op. Omitted try-with-resources to prevent coverage bloat from unreachable bytecode.
     default boolean containsMatchIn(CharSequence input) {
         if (input == null) return false;
         return sieve().containsMatchIn(input);
@@ -108,6 +109,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      * @param input The character sequence to validate.
      * @return {@code true} if the entire sequence matches this pattern.
      */
+    @SuppressWarnings("resource") // Intentional: sieve() uses JdkEngine where close() is a no-op. Omitted try-with-resources to prevent coverage bloat from unreachable bytecode.
     default boolean matchesEntire(CharSequence input) {
         if (input == null) return false;
         return sieve().matchesEntire(input);
@@ -119,6 +121,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      * @param input The character sequence to search within.
      * @return An {@link Optional} containing the matched string, or empty if not found.
      */
+    @SuppressWarnings("resource") // Intentional: sieve() uses JdkEngine where close() is a no-op. Omitted try-with-resources to prevent coverage bloat from unreachable bytecode.
     default Optional<String> extractFirst(CharSequence input) {
         if (input == null) return Optional.empty();
         return sieve().extractFirst(input);
@@ -130,6 +133,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      * @param input The character sequence to search within.
      * @return An unmodifiable list of all matched strings. Returns an empty list if none are found.
      */
+    @SuppressWarnings("resource") // Intentional: sieve() uses JdkEngine where close() is a no-op. Omitted try-with-resources to prevent coverage bloat from unreachable bytecode.
     default List<String> extractAll(CharSequence input) {
         if (input == null) return Collections.emptyList();
         return sieve().extractAll(input);
@@ -149,6 +153,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      * @param replacement The replacement string.
      * @return The resulting string with the first matching replacement applied, or {@code null} if the input was null.
      */
+    @SuppressWarnings("resource") // Intentional: sieve() uses JdkEngine where close() is a no-op. Omitted try-with-resources to prevent coverage bloat from unreachable bytecode.
     default String replaceFirst(CharSequence input, String replacement) {
         if (input == null) return null;
         return sieve().replaceFirst(input, replacement);
@@ -168,6 +173,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      * @param replacement The replacement string.
      * @return The resulting string with replacements applied, or {@code null} if the input was null.
      */
+    @SuppressWarnings("resource") // Intentional: sieve() uses JdkEngine where close() is a no-op. Omitted try-with-resources to prevent coverage bloat from unreachable bytecode.
     default String replaceAll(CharSequence input, String replacement) {
         if (input == null) return null;
         return sieve().replaceAll(input, replacement);
@@ -183,6 +189,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      * @param input The character sequence to search within.
      * @return An unmodifiable map containing the group names as keys and their matched substrings as values.
      */
+    @SuppressWarnings("resource") // Intentional: sieve() uses JdkEngine where close() is a no-op. Omitted try-with-resources to prevent coverage bloat from unreachable bytecode.
     default Map<String, String> extractGroups(CharSequence input) {
         if (input == null) return Collections.emptyMap();
         return sieve().extractGroups(input);
@@ -199,6 +206,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      * and contains the group names as keys and their matched substrings as values.
      * Returns an empty list if no matches are found.
      */
+    @SuppressWarnings("resource") // Intentional: sieve() uses JdkEngine where close() is a no-op. Omitted try-with-resources to prevent coverage bloat from unreachable bytecode.
     default List<Map<String, String>> extractAllGroups(CharSequence input) {
         if (input == null) return Collections.emptyList();
         return sieve().extractAllGroups(input);
@@ -210,6 +218,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      * @param input The character sequence to be split.
      * @return A list of strings computed by splitting the input around matches.
      */
+    @SuppressWarnings("resource") // Intentional: sieve() uses JdkEngine where close() is a no-op. Omitted try-with-resources to prevent coverage bloat from unreachable bytecode.
     default List<String> splitBy(CharSequence input) {
         if (input == null) return Collections.emptyList();
         return sieve().splitBy(input);
@@ -226,6 +235,7 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
      * @param input The character sequence to search within.
      * @return A sequential {@link Stream} of matched substrings.
      */
+    @SuppressWarnings("resource") // Intentional: sieve() uses JdkEngine where close() is a no-op. Omitted try-with-resources to prevent coverage bloat from unreachable bytecode.
     default Stream<String> streamMatches(CharSequence input) {
         if (input == null) return Stream.empty();
         return sieve().streamMatches(input);

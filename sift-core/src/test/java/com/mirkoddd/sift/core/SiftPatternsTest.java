@@ -34,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.mirkoddd.sift.core.dsl.Assertion;
 import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.Root;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
@@ -219,23 +220,20 @@ class SiftPatternsTest {
     @Test
     @DisplayName("BaseSiftPattern execution methods should correctly delegate to the default engine")
     void testDefaultSieveImplementation() {
-        BaseSiftPattern<Fragment> fakePattern = new BaseSiftPattern<Fragment>() {
-            @Override
-            protected String buildRegex() {
-                return "[a-z]+";
-            }
-        };
+        // We use a real AST node created by the factory instead of a fake anonymous class
+        SiftPattern<Fragment> pattern = SiftPatterns.anyOf(literal("abc"), literal("def"));
 
-        SiftCompiledPattern compiled = fakePattern.sieve();
+        SiftCompiledPattern compiled = pattern.sieve();
 
         assertNotNull(compiled, "sieve() should return a valid SiftCompiledPattern");
-        assertEquals("[a-z]+", compiled.getRawRegex(), "The compiled pattern should match the shake() output");
+        assertEquals("(?:abc|def)", compiled.getRawRegex(), "The compiled pattern should match the AST evaluation");
 
-        assertTrue(fakePattern.matchesEntire("abc"), "matchesEntire() should correctly match valid strings");
-        assertTrue(fakePattern.containsMatchIn("123abc456"), "containsMatchIn() should correctly find valid substrings");
-        assertFalse(fakePattern.matchesEntire("123"), "matchesEntire() should correctly reject invalid strings");
+        assertTrue(pattern.matchesEntire("abc"), "matchesEntire() should correctly match valid strings");
+        assertTrue(pattern.containsMatchIn("123abc456"), "containsMatchIn() should correctly find valid substrings");
+        assertFalse(pattern.matchesEntire("123"), "matchesEntire() should correctly reject invalid strings");
 
-        assertEquals(InternalToken.INSTANCE, fakePattern.___internal_lock___(),
+        // Use a cast to check the internal lock since it's package-private
+        assertEquals(InternalToken.INSTANCE, (pattern).___internal_lock___(),
                 "Internal lock must return the Singleton Enum instance");
     }
 
@@ -314,5 +312,25 @@ class SiftPatternsTest {
                 "Should return false when the sequence is broken");
         assertFalse(partialPattern.containsMatchIn(null),
                 "Should gracefully return false when the input is null, avoiding NullPointerException");
+    }
+
+    @Test
+    @DisplayName("AST Structural nodes should safely delegate quantification to the parent node")
+    void structuralNodesQuantifierCoverage() {
+        // 1. anyOf
+        SiftPattern<Fragment> anyOfNode = SiftPatterns.anyOf(literal("A"), literal("B"));
+        assertEquals("^(?:(?:A|B))++", Sift.fromStart().oneOrMore().of(anyOfNode).withoutBacktracking().shake());
+
+        // 2. captureGroup
+        SiftPattern<Fragment> captureNode = SiftPatterns.capture(literal("A"));
+        assertEquals("^(?:(A))++", Sift.fromStart().oneOrMore().of(captureNode).withoutBacktracking().shake());
+
+        // 3. nonCapturingGroup
+        SiftPattern<Fragment> nonCapNode = SiftPatterns.group(literal("A"), literal("B"));
+        assertEquals("^(?:(?:AB))++", Sift.fromStart().oneOrMore().of(nonCapNode).withoutBacktracking().shake());
+
+        // 4. lookaround (Positive Lookahead)
+        SiftPattern<Assertion> lookaroundNode = SiftPatterns.positiveLookahead(literal("A"));
+        assertEquals("^(?=A)", Sift.fromStart().followedByAssertion(lookaroundNode).shake());
     }
 }

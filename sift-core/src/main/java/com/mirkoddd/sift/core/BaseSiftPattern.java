@@ -28,83 +28,110 @@ import java.util.Set;
 /**
  * Internal foundation for all Sift patterns.
  * <p>
- * This class centralizes the <b>Double-Checked Locking</b> logic for thread-safe caching
- * of the generated regex string and its associated structural features.
+ * This class serves as the abstract base for all nodes in the Sift Abstract Syntax Tree (AST).
+ * It represents an immutable node linked to its parent, establishing a lazy evaluation chain.
  * <p>
- * By completely decoupling the string generation from the runtime execution engine,
- * this core class implements the Dependency Inversion Principle, allowing Sift
- * to act as a framework-agnostic regex builder.
+ * It also centralizes the <b>Double-Checked Locking</b> logic for thread-safe caching
+ * of the generated regex string and its associated structural features, ensuring that
+ * tree traversal and compilation happen at most once per pattern instance.
  *
  * @param <Ctx> The specific context type for state machine validation.
  */
-abstract class BaseSiftPattern<Ctx extends SiftContext> implements SiftPattern<Ctx>, PatternMetadata {
+abstract class BaseSiftPattern<Ctx extends SiftContext> implements SiftPattern<Ctx>, RegexNode, PatternMetadata {
+
+    // The core of the Lazy AST: an immutable pointer to the previous step in the DSL.
+    private final BaseSiftPattern<?> parentNode;
 
     private volatile String cachedRegex = null;
     private volatile Set<RegexFeature> cachedFeatures = null;
+    private volatile Set<String> cachedRegisteredGroups = null;
+    private volatile Set<String> cachedRequiredBackreferences = null;
+
+    /**
+     * Creates a new node in the AST, linking it to its parent.
+     *
+     * @param parentNode The preceding node in the DSL chain, or null if this is the root node.
+     */
+    protected BaseSiftPattern(BaseSiftPattern<?> parentNode) {
+        this.parentNode = parentNode;
+    }
 
     @Override
     public final Object ___internal_lock___() {
         return InternalToken.INSTANCE;
     }
 
-    @Override
-    public final String shake() {
+    /**
+     * Traverses the AST recursively from the root down to this leaf node,
+     * allowing the visitor to process instructions in the correct structural order.
+     *
+     * @param visitor The visitor traversing the tree (e.g., PatternAssembler).
+     */
+    protected final void traverse(PatternVisitor visitor) {
+        if (parentNode != null) {
+            parentNode.traverse(visitor);
+        }
+        this.accept(visitor);
+    }
+
+    private void evaluateAst() {
         if (cachedRegex == null) {
             synchronized (this) {
                 if (cachedRegex == null) {
-                    String computedRegex = buildRegex();
-                    this.cachedFeatures = Collections.unmodifiableSet(buildFeatures());
-                    this.cachedRegex = computedRegex;
+                    PatternAssembler compiler = new PatternAssembler();
+                    this.traverse(compiler);
+
+                    this.cachedRegex = compiler.build();
+                    this.cachedFeatures = compiler.getUsedFeatures();
+                    this.cachedRegisteredGroups = compiler.getRegisteredGroups();
+                    this.cachedRequiredBackreferences = compiler.getRequiredBackreferences();
                 }
             }
         }
+    }
+
+    @Override
+    public final String shake() {
+        evaluateAst();
+
+        for (String req : cachedRequiredBackreferences) {
+            if (!cachedRegisteredGroups.contains(req)) {
+                throw new IllegalStateException("The group '" + req +
+                        "' must be captured with .namedCapture() before it can be referenced.");
+            }
+        }
+
+        return cachedRegex;
+    }
+
+    @Override
+    public final String getInternalRawRegex() {
+        evaluateAst();
         return cachedRegex;
     }
 
     @Override
     public final SiftCompiledPattern sieveWith(SiftEngine engine) {
         shake();
-        return engine.compile(cachedRegex, getInternalUsedFeatures());
+        return engine.compile(cachedRegex, cachedFeatures);
     }
 
     @Override
-    public Set<String> getInternalRegisteredGroups() {
-        // Default implementation: empty.
-        // Overridden by complex builders (like SiftConnector) that manage state.
-        return Collections.emptySet();
+    public final Set<String> getInternalRegisteredGroups() {
+        evaluateAst();
+        return cachedRegisteredGroups;
     }
 
     @Override
-    public Set<String> getInternalRequiredBackreferences() {
-        // Default implementation: empty.
-        // Overridden by complex builders.
-        return Collections.emptySet();
+    public final Set<String> getInternalRequiredBackreferences() {
+        evaluateAst();
+        return cachedRequiredBackreferences;
     }
 
     @Override
-    public Set<RegexFeature> getInternalUsedFeatures() {
-        shake();
+    public final Set<RegexFeature> getInternalUsedFeatures() {
+        evaluateAst();
         return cachedFeatures;
-    }
-
-    /**
-     * Implemented by subclasses to define the specific regex string generation logic.
-     *
-     * @return The raw regular expression string.
-     */
-    protected abstract String buildRegex();
-
-    /**
-     * Implemented by subclasses to report advanced features (e.g., lookarounds, backreferences)
-     * used during the pattern assembly.
-     * <p>
-     * The default implementation returns an empty set. Complex pattern builders should
-     * override this method to accurately reflect their structural requirements.
-     *
-     * @return A set of features used by this specific pattern.
-     */
-    protected Set<RegexFeature> buildFeatures() {
-        return Collections.emptySet();
     }
 
     @Override

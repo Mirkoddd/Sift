@@ -19,41 +19,48 @@ import com.mirkoddd.sift.core.dsl.*;
 import com.mirkoddd.sift.core.engine.RegexFeature;
 
 import java.util.Objects;
-import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * Node responsible for connecting steps and terminating the DSL chain.
  * <p>
- * <b>Architectural Note (Interface Segregation & Memory Optimization):</b><br>
- * This single package-private class implements multiple state interfaces (e.g., {@link Connector}
- * and {@link CharacterConnector}). While these represent logically distinct states in the DSL,
- * they are unified into a single concrete implementation to prevent "class explosion" and reduce
- * memory footprint (especially useful for Android environments).
- * <p>
- * Strict type-safety is guaranteed at compile-time because this class is not public.
- * External consumers interact exclusively with the narrowly-scoped public interfaces returned by the engine.
+ * <b>Architectural Note (Immutable AST & Zero Overhead):</b><br>
+ * This class represents a single node in the lazy abstract syntax tree. It holds no
+ * string building state. When a DSL method is invoked, it simply creates a new, lightweight
+ * node linked to itself, recording the semantic operation to perform.
+ * This guarantees absolute thread-safety and near-zero memory allocation overhead.
  *
  * @param <Ctx> The structural context (Fragment or Root) preserving the integrity of the chain.
  */
-class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implements Connector<Ctx>, CharacterConnector<Ctx>, PatternMetadata {
+class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implements Connector<Ctx>, CharacterConnector<Ctx> {
 
-    protected final PatternAssembler assembler;
+    // The semantic operation this specific node represents
+    private final Consumer<PatternVisitor> operation;
 
     /**
-     * Instantiates the connector with the current state of the pattern assembler.
+     * Instantiates a new node in the DSL chain.
      *
-     * @param assembler The internal state machine builder containing the accumulated pattern.
+     * @param parentNode The preceding node. Can be null if this is the root.
+     * @param operation  The specific instruction to apply to the visitor when traversing this node.
      */
-    SiftConnector(PatternAssembler assembler) {
-        this.assembler = assembler;
+    SiftConnector(BaseSiftPattern<?> parentNode, Consumer<PatternVisitor> operation) {
+        super(parentNode);
+        this.operation = operation;
+    }
+
+    @Override
+    public void accept(PatternVisitor visitor) {
+        if (operation != null) {
+            operation.accept(visitor);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     public Quantifier<Ctx> then() {
-        PatternAssembler next = assembler.copy();
-        next.flush();
-        return new SiftQuantifier<>(next);
+        // Quantifier creation might need adjustment depending on how SiftQuantifier is structured.
+        // Assuming SiftQuantifier also extends BaseSiftPattern and takes a parent.
+        return new SiftQuantifier<>(this);
     }
 
     /** {@inheritDoc} */
@@ -73,11 +80,10 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
     @Override
     public Connector<Ctx> followedByAssertion(SiftPattern<Assertion> assertion) {
         Objects.requireNonNull(assertion, "Assertion cannot be null");
-
-        PatternAssembler next = assembler.copy();
-        next.registerFeature(RegexFeature.LOOKAHEAD);
-        next.addPattern(assertion);
-        return new SiftConnector<>(next);
+        return new SiftConnector<>(this, visitor -> {
+            visitor.visitFeature(RegexFeature.LOOKAHEAD);
+            visitor.visitPattern(assertion);
+        });
     }
 
     /** {@inheritDoc} */
@@ -90,7 +96,6 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
     @Override
     public Connector<Ctx> followedBy(Iterable<? extends SiftPattern<Fragment>> patterns) {
         Objects.requireNonNull(patterns, "Patterns iterable cannot be null");
-
         Connector<Ctx> current = this;
         for (SiftPattern<Fragment> p : patterns) {
             Objects.requireNonNull(p, "SiftPattern in iterable cannot be null");
@@ -103,85 +108,47 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
     @Override
     public Connector<Ctx> precededBy(SiftPattern<Fragment> p1) {
         Objects.requireNonNull(p1, "Pattern cannot be null");
-
-        PatternAssembler next = assembler.copy();
-        next.prependPattern(p1);
-        return new SiftConnector<>(next);
+        return new SiftConnector<>(this, visitor -> visitor.visitPrependPattern(p1));
     }
 
     /** {@inheritDoc} */
     @Override
     public Connector<Ctx> precededByAssertion(SiftPattern<Assertion> assertion) {
         Objects.requireNonNull(assertion, "Assertion cannot be null");
-
-        PatternAssembler next = assembler.copy();
-        next.registerFeature(RegexFeature.LOOKBEHIND);
-        next.prependPattern(assertion);
-        return new SiftConnector<>(next);
+        return new SiftConnector<>(this, visitor -> {
+            visitor.visitFeature(RegexFeature.LOOKBEHIND);
+            visitor.visitPrependPattern(assertion);
+        });
     }
 
     /** {@inheritDoc} */
     @Override
     public CharacterConnector<Ctx> including(char extra, char... additionalExtras) {
-        PatternAssembler next = assembler.copy();
-        next.addClassInclusion(extra, additionalExtras);
-        return new SiftConnector<>(next);
+        return new SiftConnector<>(this, visitor -> visitor.visitClassInclusion(extra, additionalExtras));
     }
 
     /** {@inheritDoc} */
     @Override
     public CharacterConnector<Ctx> excluding(char excluded, char... additionalExcluded) {
-        PatternAssembler next = assembler.copy();
-        next.addClassExclusion(excluded, additionalExcluded);
-        return new SiftConnector<>(next);
+        return new SiftConnector<>(this, visitor -> visitor.visitClassExclusion(excluded, additionalExcluded));
     }
 
     /** {@inheritDoc} */
     @Override
     public CharacterConnector<Ctx> intersecting(CharacterSubset subset) {
         Objects.requireNonNull(subset, "CharacterSubset cannot be null");
-
-        PatternAssembler next = assembler.copy();
-        next.addClassIntersection(subset.getPattern());
-        return new SiftConnector<>(next);
+        return new SiftConnector<>(this, visitor -> visitor.visitClassIntersection(subset.getPattern()));
     }
 
     /** {@inheritDoc} */
     @Override
     public Connector<Ctx> wordBoundary() {
-        PatternAssembler next = assembler.copy();
-        next.addWordBoundary();
-        return new SiftConnector<>(next);
+        return new SiftConnector<>(this, PatternVisitor::visitWordBoundary);
     }
 
     /** {@inheritDoc} */
     @Override
     public SiftPattern<Root> andNothingElse() {
-        PatternAssembler next = assembler.copy();
-        next.addAnchor(RegexSyntax.END_OF_LINE);
-        return new SiftConnector<>(next);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    protected String buildRegex() {
-        PatternAssembler temp = assembler.copy();
-        temp.validateFinalAssembly();
-        return temp.build();
-    }
-
-    @Override
-    public Set<String> getInternalRegisteredGroups() {
-        return assembler.getRegisteredGroups();
-    }
-
-    @Override
-    public Set<String> getInternalRequiredBackreferences() {
-        return assembler.getRequiredBackreferences();
-    }
-
-    @Override
-    public Set<RegexFeature> getInternalUsedFeatures() {
-        return assembler.getUsedFeatures();
+        return new SiftConnector<>(this, visitor -> visitor.visitAnchor(RegexSyntax.END_OF_LINE));
     }
 }

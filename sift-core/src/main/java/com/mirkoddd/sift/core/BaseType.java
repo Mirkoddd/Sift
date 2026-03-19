@@ -23,16 +23,16 @@ import com.mirkoddd.sift.core.dsl.SiftPattern;
 import com.mirkoddd.sift.core.dsl.Type;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * Base template class for evaluating type definitions in the Sift DSL.
  * <p>
  * This abstract class implements the <b>Template Method pattern</b> to centralize the
- * interaction with the regex engine. In the immutable architecture of Sift,
- * this class acts as a secure bridge: every time a type is selected, it forces
- * the {@link PatternAssembler} to clone its state before applying the new mutation.
- * This ensures absolute Thread-Safety and prevents state poisoning when
- * reusing intermediate builder variables.
+ * interaction with the regex engine. In the immutable AST architecture of Sift,
+ * this class acts as a secure factory: every time a type is selected, it creates
+ * a new immutable AST node describing the operation, guaranteeing thread-safety
+ * and zero overhead.
  *
  * @param <Ctx> The Context (Fragment or Root) enforcing Type-Driven Design.
  * @param <T>   The specific {@link Connector} returned for standard type definitions.
@@ -40,361 +40,291 @@ import java.util.Objects;
  */
 abstract class BaseType<Ctx extends SiftContext, T extends Connector<Ctx>, C extends CharacterConnector<Ctx>> implements Type<Ctx, T, C> {
 
-    protected final PatternAssembler assembler;
+    // The preceding node in the DSL chain.
+    protected final BaseSiftPattern<?> parentNode;
 
     /**
-     * Instantiates the base step with the current state of the pattern assembler.
+     * Instantiates the base type step, linking it to the AST chain.
      *
-     * @param assembler The current internal state machine builder.
+     * @param parentNode The preceding node in the DSL chain.
      */
-    protected BaseType(PatternAssembler assembler) {
-        this.assembler = assembler;
+    protected BaseType(BaseSiftPattern<?> parentNode) {
+        this.parentNode = parentNode;
+    }
+
+    /**
+     * Helper to create the intermediate node representing the specific type instruction.
+     */
+    private BaseSiftPattern<?> createTypeNode(Consumer<PatternVisitor> operation) {
+        return new SiftConnector<>(parentNode, operation);
     }
 
     /**
      * Factory method delegated to subclasses to instantiate the correct concrete step
      * for standard, non-character-class types.
      *
-     * @param nextAssembler The newly cloned and mutated assembler state.
+     * @param nextNode The newly created AST node representing this type.
      * @return The specific connector step defined by the subclass (Fixed or Variable).
      */
-    protected abstract T getNormalConnector(PatternAssembler nextAssembler);
+    protected abstract T getNormalConnector(BaseSiftPattern<?> nextNode);
 
     /**
      * Factory method delegated to subclasses to instantiate the correct concrete step
      * for character classes (enabling modifiers like {@code including()}).
      *
-     * @param nextAssembler The newly cloned and mutated assembler state.
+     * @param nextNode The newly created AST node representing this character class.
      * @return The specific character class connector step defined by the subclass.
      */
-    protected abstract C getCharacterClassConnector(PatternAssembler nextAssembler);
+    protected abstract C getCharacterClassConnector(BaseSiftPattern<?> nextNode);
 
     /** {@inheritDoc} */
     @Override
     public T anyCharacter() {
-        PatternAssembler next = assembler.copy();
-        next.addAnyChar();
-        return getNormalConnector(next);
+        return getNormalConnector(createTypeNode(PatternVisitor::visitAnyChar));
     }
 
     /** {@inheritDoc} */
     @Override
     public T character(char literal) {
-        PatternAssembler next = assembler.copy();
-        next.addCharacter(literal);
-        return getNormalConnector(next);
+        return getNormalConnector(createTypeNode(visitor -> visitor.visitCharacter(literal)));
     }
 
     /** {@inheritDoc} */
     @Override
     public T of(SiftPattern<Fragment> pattern) {
         Objects.requireNonNull(pattern, "SiftPattern cannot be null");
-        PatternAssembler next = assembler.copy();
-        next.addPattern(pattern);
-        return getNormalConnector(next);
+        return getNormalConnector(createTypeNode(visitor -> visitor.visitPattern(pattern)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C digits() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.RANGE_DIGITS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.RANGE_DIGITS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C nonDigits() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.NON_DIGITS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.NON_DIGITS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C digitsUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.UNICODE_DIGITS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.UNICODE_DIGITS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C nonDigitsUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.NON_UNICODE_DIGITS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.NON_UNICODE_DIGITS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C letters() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.RANGE_LETTERS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.RANGE_LETTERS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C nonLetters() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.NON_LETTERS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.NON_LETTERS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C upperCaseLetters() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.RANGE_LETTERS_UPPERCASE_ONLY);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.RANGE_LETTERS_UPPERCASE_ONLY)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C lowerCaseLetters() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.RANGE_LETTERS_LOWERCASE_ONLY);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.RANGE_LETTERS_LOWERCASE_ONLY)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C lettersUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.UNICODE_LETTERS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.UNICODE_LETTERS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C nonLettersUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.NON_UNICODE_LETTERS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.NON_UNICODE_LETTERS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C upperCaseLettersUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.UNICODE_LETTERS_UPPERCASE_ONLY);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.UNICODE_LETTERS_UPPERCASE_ONLY)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C lowerCaseLettersUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.UNICODE_LETTERS_LOWERCASE_ONLY);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.UNICODE_LETTERS_LOWERCASE_ONLY)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C caselessLettersUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.UNICODE_LETTERS_CASELESS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.UNICODE_LETTERS_CASELESS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C symbolsUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.UNICODE_SYMBOLS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.UNICODE_SYMBOLS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C alphanumeric() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.RANGE_ALPHANUMERIC);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.RANGE_ALPHANUMERIC)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C nonAlphanumeric() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.NON_ALPHANUMERIC);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.NON_ALPHANUMERIC)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C alphanumericUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.UNICODE_ALPHANUMERIC);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.UNICODE_ALPHANUMERIC)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C nonAlphanumericUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.NON_UNICODE_ALPHANUMERIC);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.NON_UNICODE_ALPHANUMERIC)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C wordCharacters() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.WORD_CHARACTERS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.WORD_CHARACTERS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C nonWordCharacters() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.NON_WORD_CHARACTERS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.NON_WORD_CHARACTERS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C wordCharactersUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.UNICODE_WORD_CHARACTERS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.UNICODE_WORD_CHARACTERS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C nonWordCharactersUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.NON_UNICODE_WORD_CHARACTERS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.NON_UNICODE_WORD_CHARACTERS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C whitespace() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.WHITESPACE);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.WHITESPACE)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C nonWhitespace() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.NON_WHITESPACE);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.NON_WHITESPACE)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C whitespaceUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.UNICODE_WHITESPACE);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.UNICODE_WHITESPACE)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C nonWhitespaceUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.NON_UNICODE_WHITESPACE);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.NON_UNICODE_WHITESPACE)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C whitespaceHorizontal() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.HORIZONTAL_WHITESPACE);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.HORIZONTAL_WHITESPACE)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C whitespaceVertical() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.VERTICAL_WHITESPACE);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.VERTICAL_WHITESPACE)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C range(char start, char end) {
-        PatternAssembler next = assembler.copy();
-        next.addCustomRange(start, end);
-        return getCharacterClassConnector(next);
+        if (start > end) {
+            throw new IllegalArgumentException("Invalid range: start character '" + start +
+                    "' must be less than or equal to end character '" + end + "'.");
+        }
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitCustomRange(start, end)));
     }
 
     /** {@inheritDoc} */
     @Override
     public T newline() {
-        PatternAssembler next = assembler.copy();
-        next.addCharacter('\n');
-        return getNormalConnector(next);
+        return getNormalConnector(createTypeNode(visitor -> visitor.visitCharacter('\n')));
     }
 
     /** {@inheritDoc} */
     @Override
     public T linebreakUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addLinebreak();
-        return getNormalConnector(next);
+        return getNormalConnector(createTypeNode(PatternVisitor::visitLinebreak));
     }
 
     /** {@inheritDoc} */
     @Override
     public T carriageReturn() {
-        PatternAssembler next = assembler.copy();
-        next.addCharacter('\r');
-        return getNormalConnector(next);
+        return getNormalConnector(createTypeNode(visitor -> visitor.visitCharacter('\r')));
     }
 
     /** {@inheritDoc} */
     @Override
     public T tab() {
-        PatternAssembler next = assembler.copy();
-        next.addCharacter('\t');
-        return getNormalConnector(next);
+        return getNormalConnector(createTypeNode(visitor -> visitor.visitCharacter('\t')));
     }
 
     /** {@inheritDoc} */
     @Override
     public C hexDigits() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.RANGE_HEX_DIGITS);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.RANGE_HEX_DIGITS)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C punctuation() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.PUNCTUATION);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.PUNCTUATION)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C punctuationUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.UNICODE_PUNCTUATION);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.UNICODE_PUNCTUATION)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C blank() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.BLANK);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.BLANK)));
     }
 
     /** {@inheritDoc} */
     @Override
     public C blankUnicode() {
-        PatternAssembler next = assembler.copy();
-        next.addClassRange(RegexSyntax.UNICODE_BLANK);
-        return getCharacterClassConnector(next);
+        return getCharacterClassConnector(createTypeNode(visitor -> visitor.visitClassRange(RegexSyntax.UNICODE_BLANK)));
     }
 }

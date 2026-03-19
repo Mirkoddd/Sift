@@ -421,12 +421,8 @@ class SiftTest {
         @Test
         @DisplayName("Engine compilation should perform fail-fast validation when a malformed pattern is compiled")
         void testEngineFailFastValidation() {
-            BaseSiftPattern<Fragment> malformedPattern = new BaseSiftPattern<Fragment>() {
-                @Override
-                protected String buildRegex() {
-                    return "(?unclosedGroup";
-                }
-            };
+            // Simulate a malformed pattern by injecting raw invalid syntax directly into the AST
+            SiftPattern<Fragment> malformedPattern = new SiftConnector<>(null, visitor -> visitor.visitAnchor("(?unclosedGroup"));
 
             IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
                         try (SiftCompiledPattern ignore = Sift.fromStart().of(malformedPattern).sieve()) {
@@ -822,29 +818,29 @@ class SiftTest {
         @DisplayName("asFewAsPossible() exhaustive branch coverage for internal state protections")
         void testLazyModifierEdgeCasesAndProtections() {
             PatternAssembler assembler = new PatternAssembler();
-            assembler.addClassRange("0-9");
-            assembler.setQuantifier("?");
-            assembler.applyLazyModifier();
+            assembler.visitQuantifier("?");
+            assembler.visitClassRange("0-9");
+            assembler.visitLazyModifier();
             assertEquals("[0-9]??", assembler.build());
 
             PatternAssembler assembler2 = new PatternAssembler();
-            assembler2.addClassRange("0-9");
-            assembler2.setQuantifier("+");
-            assembler2.applyLazyModifier();
-            assembler2.applyLazyModifier();
+            assembler2.visitQuantifier("+");
+            assembler2.visitClassRange("0-9");
+            assembler2.visitLazyModifier();
+            assembler2.visitLazyModifier();
             assertEquals("[0-9]+?", assembler2.build());
 
             PatternAssembler assembler3 = new PatternAssembler();
-            assembler3.addClassRange("0-9");
-            assembler3.setQuantifier("");
-            assembler3.applyLazyModifier();
+            assembler3.visitQuantifier("");
+            assembler3.visitClassRange("0-9");
+            assembler3.visitLazyModifier();
             assertEquals("[0-9]", assembler3.build());
 
             PatternAssembler assembler4 = new PatternAssembler();
-            assembler4.setQuantifier("+");
-            assembler4.addAnyChar();
-            assembler4.applyLazyModifier();
-            assembler4.applyLazyModifier();
+            assembler4.visitQuantifier("+");
+            assembler4.visitAnyChar();
+            assembler4.visitLazyModifier();
+            assembler4.visitLazyModifier();
             assertEquals(".+?", assembler4.build());
         }
 
@@ -852,29 +848,29 @@ class SiftTest {
         @DisplayName("withoutBacktracking() exhaustive branch coverage for internal state protections")
         void testPossessiveModifierEdgeCasesAndProtections() {
             PatternAssembler assembler1 = new PatternAssembler();
-            assembler1.addClassRange("0-9");
-            assembler1.setQuantifier("+");
-            assembler1.applyPossessiveModifier();
+            assembler1.visitQuantifier("+");
+            assembler1.visitClassRange("0-9");
+            assembler1.visitPossessiveModifier();
             assertEquals("[0-9]++", assembler1.build());
 
             PatternAssembler assembler2 = new PatternAssembler();
-            assembler2.addClassRange("0-9");
-            assembler2.setQuantifier("+");
-            assembler2.applyPossessiveModifier();
-            assembler2.applyPossessiveModifier();
+            assembler2.visitQuantifier("+");
+            assembler2.visitClassRange("0-9");
+            assembler2.visitPossessiveModifier();
+            assembler2.visitPossessiveModifier();
             assertEquals("[0-9]++", assembler2.build());
 
             PatternAssembler assembler3 = new PatternAssembler();
-            assembler3.addClassRange("0-9");
-            assembler3.setQuantifier("");
-            assembler3.applyPossessiveModifier();
+            assembler3.visitQuantifier("");
+            assembler3.visitClassRange("0-9");
+            assembler3.visitPossessiveModifier();
             assertEquals("[0-9]", assembler3.build());
 
             PatternAssembler assembler4 = new PatternAssembler();
-            assembler4.setQuantifier("*");
-            assembler4.addAnyChar();
-            assembler4.applyPossessiveModifier();
-            assembler4.applyPossessiveModifier();
+            assembler4.visitQuantifier("*");
+            assembler4.visitAnyChar();
+            assembler4.visitPossessiveModifier();
+            assembler4.visitPossessiveModifier();
             assertEquals(".*+", assembler4.build());
         }
 
@@ -1254,6 +1250,26 @@ class SiftTest {
             assertRegexDoesNotMatch(regexSugar, "ERROR: Out of memory");
             assertRegexDoesNotMatch(regexSugar, "ERROR");
         }
+
+        @Test
+        @DisplayName("visitConditional should correctly handle non-empty quantifiers via .of()")
+        void conditionalQuantifierCoverage() {
+            SiftPattern<Fragment> conditionalBlock = SiftPatterns.ifFollowedBy(literal("A"))
+                    .thenUse(literal("B"))
+                    .otherwiseNothing();
+
+            String unquantified = Sift.fromStart()
+                    .of(conditionalBlock)
+                    .shake();
+
+            assertEquals("^(?:(?=A)B|(?!A))", unquantified);
+
+            String quantified = Sift.fromStart()
+                    .oneOrMore().of(conditionalBlock).withoutBacktracking()
+                    .shake();
+
+            assertEquals("^(?:(?:(?=A)B|(?!A)))++", quantified);
+        }
     }
 
     @Test
@@ -1396,7 +1412,7 @@ class SiftTest {
         void shouldCoverFalseBranchInAddAnchor() {
             PatternAssembler assembler = new PatternAssembler();
 
-            assembler.addAnchor("\\b");
+            assembler.visitAnchor("\\b");
 
             assertFalse(assembler.isContainsAbsoluteAnchor());
         }
@@ -1435,6 +1451,23 @@ class SiftTest {
 
             assertRegexDoesNotMatch(regex, "aSIFT");  // 'a' is Latin, not Greek (Intersection fails)
             assertRegexDoesNotMatch(regex, "αSIFTX"); // Too long, andNothingElse() blocks it
+        }
+
+        @Test
+        @DisplayName("visitLocalFlags should safely delegate quantification to the parent node")
+        void localFlagsQuantifierCoverage() {
+            SiftPattern<Fragment> flaggedBlock = SiftPatterns.withFlags(literal("A"), SiftGlobalFlag.CASE_INSENSITIVE);
+
+            // Branch 1: Unquantified
+            String unquantified = Sift.fromStart().of(flaggedBlock).shake();
+            assertEquals("^(?i:A)", unquantified);
+
+            // Branch 2: Quantified + Possessive
+            String quantified = Sift.fromStart()
+                    .oneOrMore().of(flaggedBlock).withoutBacktracking()
+                    .shake();
+
+            assertEquals("^(?:(?i:A))++", quantified);
         }
 
         @Test

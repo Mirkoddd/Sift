@@ -37,12 +37,17 @@ import com.mirkoddd.sift.core.dsl.VariableConnector;
 class SiftVariableConnector<Ctx extends SiftContext> extends SiftConnector<Ctx> implements VariableConnector<Ctx>, VariableCharacterConnector<Ctx> {
 
     /**
-     * Instantiates the variable-length connector with the current state of the pattern assembler.
+     * Instantiates the variable-length connector, linking it to the AST chain.
      *
-     * @param assembler The internal state machine builder.
+     * @param parentNode The preceding node in the DSL chain.
      */
-    SiftVariableConnector(PatternAssembler assembler) {
-        super(assembler);
+    SiftVariableConnector(BaseSiftPattern<?> parentNode) {
+        super(parentNode, null); // Pass null for operation, as the modifier methods will create child nodes
+    }
+
+    // Constructor used internally by modifier methods to append themselves to the chain
+    private SiftVariableConnector(BaseSiftPattern<?> parentNode, java.util.function.Consumer<PatternVisitor> operation) {
+        super(parentNode, operation);
     }
 
     /**
@@ -55,9 +60,7 @@ class SiftVariableConnector<Ctx extends SiftContext> extends SiftConnector<Ctx> 
      */
     @Override
     public VariableCharacterConnector<Ctx> including(char extra, char... additionalExtras) {
-        PatternAssembler next = assembler.copy();
-        next.addClassInclusion(extra, additionalExtras);
-        return new SiftVariableConnector<>(next);
+        return new SiftVariableConnector<>(this, visitor -> visitor.visitClassInclusion(extra, additionalExtras));
     }
 
     /**
@@ -67,24 +70,18 @@ class SiftVariableConnector<Ctx extends SiftContext> extends SiftConnector<Ctx> 
      */
     @Override
     public VariableCharacterConnector<Ctx> excluding(char excluded, char... additionalExcluded) {
-        PatternAssembler next = assembler.copy();
-        next.addClassExclusion(excluded, additionalExcluded);
-        return new SiftVariableConnector<>(next);
+        return new SiftVariableConnector<>(this, visitor -> visitor.visitClassExclusion(excluded, additionalExcluded));
     }
 
     /** {@inheritDoc} */
     @Override
     public VariableConnector<Ctx> withoutBacktracking() {
-        PatternAssembler next = assembler.copy();
-        next.applyPossessiveModifier();
-        return new SiftVariableConnector<>(next);
+        return new SiftVariableConnector<>(this, PatternVisitor::visitPossessiveModifier);
     }
 
     /** {@inheritDoc} */
     @Override
     public VariableConnector<Ctx> asFewAsPossible() {
-        PatternAssembler next = assembler.copy();
-        next.applyLazyModifier();
-        return new SiftVariableConnector<>(next);
+        return new SiftVariableConnector<>(this, PatternVisitor::visitLazyModifier);
     }
 }

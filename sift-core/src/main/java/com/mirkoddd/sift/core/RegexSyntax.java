@@ -38,6 +38,7 @@ final class RegexSyntax {
     static final String LAZY_MODIFIER = "?";
     static final String QUANTIFIER_OPEN = "{";
     static final String QUANTIFIER_CLOSE = "}";
+    public static final String ATOMIC_GROUP_OPEN = "(?>";
     static final String NON_CAPTURING_GROUP_OPEN = "(?:";
     static final String GROUP_OPEN = "(";
     static final String GROUP_CLOSE = ")";

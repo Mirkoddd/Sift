@@ -1,10 +1,13 @@
 package com.mirkoddd.sift.core;
 
 import static com.mirkoddd.sift.core.Sift.exactly;
+import static com.mirkoddd.sift.core.SiftPatterns.literal;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.mirkoddd.sift.core.dsl.Assertion;
 import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 import com.mirkoddd.sift.core.engine.RegexFeature;
@@ -19,7 +22,7 @@ public class FeatureLoggingAndPropagationTest {
     @Test
     @DisplayName("Should correctly track NAMED_CAPTURE, BACKREFERENCE and ATOMIC_GROUP")
     void testCoreFeaturesPropagation() {
-        NamedCapture group = SiftPatterns.capture("id", SiftPatterns.literal("val"));
+        NamedCapture group = SiftPatterns.capture("id", literal("val"));
 
         SiftPattern<Fragment> basePattern = Sift.fromAnywhere()
                 .namedCapture(group)
@@ -39,9 +42,9 @@ public class FeatureLoggingAndPropagationTest {
     @DisplayName("Should correctly track LOOKAHEAD and LOOKBEHIND")
     void testLookaroundFeaturesPropagation() {
         SiftPattern<Fragment> lookaroundPattern = Sift.fromAnywhere()
-                .of(SiftPatterns.literal("target"))
-                .mustBeFollowedBy(SiftPatterns.literal("suffix"))
-                .mustBePrecededBy(SiftPatterns.literal("prefix"));
+                .of(literal("target"))
+                .mustBeFollowedBy(literal("suffix"))
+                .mustBePrecededBy(literal("prefix"));
 
         Set<RegexFeature> features = ((PatternMetadata) lookaroundPattern).getInternalUsedFeatures();
 
@@ -55,7 +58,7 @@ public class FeatureLoggingAndPropagationTest {
     void testRecursionFeaturePropagation() {
         SiftPattern<Fragment> nestingPattern = SiftPatterns.nesting(3)
                 .using(Delimiter.PARENTHESES)
-                .containing(SiftPatterns.literal("inner"));
+                .containing(literal("inner"));
 
         Set<RegexFeature> features = ((PatternMetadata) nestingPattern).getInternalUsedFeatures();
 
@@ -84,11 +87,11 @@ public class FeatureLoggingAndPropagationTest {
         // This aggregates: LOOKBEHIND, NAMED_CAPTURE, RECURSION, ATOMIC_GROUP, BACKREFERENCE, LOOKAHEAD
         SiftPattern<Fragment> ultimatePattern = Sift.fromAnywhere()
                 .namedCapture(bossGroup)                               // 1. NAMED_CAPTURE
-                .mustBePrecededBy(SiftPatterns.literal("start-")) // 2. LOOKBEHIND
+                .mustBePrecededBy(literal("start-")) // 2. LOOKBEHIND
                 .then().of(recursiveBlock)                             // 3. RECURSION
                 .then().of(atomicPart)                                 // 4. ATOMIC_GROUP
                 .then().backreference(bossGroup)                       // 5. BACKREFERENCE
-                .mustBeFollowedBy(SiftPatterns.literal("-end"));  // 6. LOOKAHEAD
+                .mustBeFollowedBy(literal("-end"));  // 6. LOOKAHEAD
 
         // 5. Extraction and Validation
         Set<RegexFeature> features = ((PatternMetadata) ultimatePattern).getInternalUsedFeatures();
@@ -105,37 +108,41 @@ public class FeatureLoggingAndPropagationTest {
     }
 
     @Test
-    @DisplayName("MemoizedPattern should satisfy 100% branch coverage including feature-only edge cases")
-    void testMemoizedPatternFullCoverage() {
-        // Case 1: inner == null && features.isEmpty() -> TRUE && TRUE (Hit)
-        SiftPattern<Fragment> literal = SiftPatterns.literal("abc");
-        assertTrue(((PatternMetadata) literal).getInternalUsedFeatures().isEmpty());
+    @DisplayName("AST nodes should correctly propagate features and handle alien patterns safely")
+    void testAstNodeFeaturePropagation() {
+        // Case 1: Simple node without features
+        SiftPattern<Fragment> literal = literal("abc");
+        assertTrue(((PatternMetadata) literal).getInternalUsedFeatures().isEmpty(),
+                "Literal should not introduce any advanced features");
 
-        // Case 2: inner == null && features.isEmpty() -> TRUE && FALSE (Hit)
-        // We force a MemoizedPattern with a feature but NO inner pattern.
-        // This targets the specific branch you mentioned.
-        SiftPattern<Fragment> featureOnly = SiftPatterns.memoize(
-                () -> "some-regex",
-                RegexFeature.ATOMIC_GROUP,
-                null
-        );
-        Set<RegexFeature> features = ((PatternMetadata) featureOnly).getInternalUsedFeatures();
-        assertEquals(1, features.size());
-        assertTrue(features.contains(RegexFeature.ATOMIC_GROUP));
+        // Case 2: Node that inherently adds a feature
+        SiftPattern<Assertion> lookahead = SiftPatterns.positiveLookahead(literal);
+        Set<RegexFeature> features = ((PatternMetadata) lookahead).getInternalUsedFeatures();
+        assertEquals(1, features.size(), "Lookahead should introduce exactly 1 feature");
+        assertTrue(features.contains(RegexFeature.LOOKAHEAD));
 
-        // Case 3: inner instanceof PatternMetadata -> FALSE (Hit)
-        // Testing with an "alien" pattern that doesn't implement PatternMetadata
+        // Case 3: Alien pattern integration (Branch coverage for 'instanceof PatternMetadata == false')
+        // We simulate a third-party class that implements SiftPattern but NOT PatternMetadata
         SiftPattern<Fragment> alien = new SiftPattern<Fragment>() {
             @Override public String shake() { return "alien"; }
             @Override public com.mirkoddd.sift.core.engine.SiftCompiledPattern sieveWith(com.mirkoddd.sift.core.engine.SiftEngine e) { return null; }
+            @Override public com.mirkoddd.sift.core.engine.SiftCompiledPattern sieve() { return null; }
+            @Override public boolean matchesEntire(CharSequence i) { return false; }
+            @Override public boolean containsMatchIn(CharSequence i) { return false; }
             @Override public SiftPattern<Fragment> preventBacktracking() { return this; }
             @Override public Object ___internal_lock___() { return this; }
         };
 
-        SiftPattern<Fragment> wrapper = SiftPatterns.memoize(() -> "wrap", RegexFeature.LOOKAHEAD, alien);
-        Set<RegexFeature> wrapperFeatures = ((PatternMetadata) wrapper).getInternalUsedFeatures();
-        assertEquals(1, wrapperFeatures.size());
-        assertTrue(wrapperFeatures.contains(RegexFeature.LOOKAHEAD));
+        // Wrap the alien pattern in a group.
+        // The AST Compiler (PatternAssembler) will try to extract features/groups from it.
+        SiftPattern<Fragment> wrapper = SiftPatterns.group(literal("test"), alien);
+
+        // This triggers shake() -> traverse() -> PatternAssembler visiting the alien pattern.
+        // The fallback logic for alien patterns (returning empty sets) should prevent any ClassCastException.
+        assertDoesNotThrow(() -> {
+            String regex = wrapper.shake();
+            assertEquals("(?:testalien)", regex);
+        }, "The AST Compiler must not crash when traversing an alien pattern");
     }
 
     @Test
@@ -153,7 +160,7 @@ public class FeatureLoggingAndPropagationTest {
 
         // Test 2: Local inline flags via SiftPatterns.withFlags
         SiftPattern<Fragment> localPattern = Sift.fromAnywhere()
-                .of(SiftPatterns.withFlags(SiftPatterns.literal("test"), SiftGlobalFlag.DOTALL));
+                .of(SiftPatterns.withFlags(literal("test"), SiftGlobalFlag.DOTALL));
 
         Set<RegexFeature> localFeatures = ((PatternMetadata) localPattern).getInternalUsedFeatures();
         assertNotNull(localFeatures);

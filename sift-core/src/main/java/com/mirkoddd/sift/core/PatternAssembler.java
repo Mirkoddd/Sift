@@ -22,22 +22,21 @@ import com.mirkoddd.sift.core.engine.RegexFeature;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
  * Internal Buffer and String manipulator for Regex generation.
  * Handles the low-level string concatenation, character escaping, class flushing,
  * and tracking of advanced regex features for cross-engine compatibility.
+ * <p>
+ * This class now implements {@link PatternVisitor} to act as the regex compiler
+ * traversing the Lazy AST.
  */
-class PatternAssembler {
+class PatternAssembler implements PatternVisitor {
 
     private enum QuantifierModifier {
-        /** No modifier applied. The quantifier behaves greedily (default). */
-        NONE,
-        /** Possessive modifier ({@code ++}, {@code *+}, {@code ?+}, {@code {n,m}+}). Disables backtracking. */
-        POSSESSIVE,
-        /** Lazy modifier ({@code +?}, {@code *?}, {@code ??}, {@code {n,m}?}). Matches as few characters as possible. */
-        LAZY
+        NONE, POSSESSIVE, LAZY
     }
 
     private final StringBuilder mainPattern = new StringBuilder();
@@ -52,15 +51,6 @@ class PatternAssembler {
     private final EnumSet<RegexFeature> usedFeatures = EnumSet.noneOf(RegexFeature.class);
 
     PatternAssembler() {
-    }
-
-    PatternAssembler(SiftGlobalFlag... flags) {
-        mainPattern.append(RegexSyntax.INLINE_FLAG_OPEN);
-        for (SiftGlobalFlag flag : flags) {
-            mainPattern.append(flag.getSymbol());
-        }
-        mainPattern.append(RegexSyntax.GROUP_CLOSE);
-        registerFeature(RegexFeature.INLINE_FLAGS);
     }
 
     Set<String> getRegisteredGroups() {
@@ -79,37 +69,42 @@ class PatternAssembler {
         return Collections.unmodifiableSet(usedFeatures);
     }
 
-    void registerFeature(RegexFeature feature) {
+    @Override
+    public void visitFeature(RegexFeature feature) {
         this.usedFeatures.add(feature);
     }
 
-    void setQuantifier(String quantifier) {
+    @Override
+    public void visitQuantifier(String quantifier) {
+        flush();
         this.currentQuantifier = quantifier;
     }
 
-    void addAnchor(String anchor) {
+    @Override
+    public void visitAnchor(String anchor) {
         flush();
-
         if (RegexSyntax.START_OF_LINE.equals(anchor) || RegexSyntax.END_OF_LINE.equals(anchor)){
             containsAbsoluteAnchor = true;
         }
-
         mainPattern.append(anchor);
     }
 
-    void addClassRange(String range) {
+    @Override
+    public void visitClassRange(String range) {
         isBuildingClass = true;
         pendingClass.append(range);
     }
 
-    void addClassInclusion(char c, char... additionalExtras) {
+    @Override
+    public void visitClassInclusion(char c, char... additionalExtras) {
         RegexEscaper.escapeInsideBrackets(c, pendingClass);
         for (char extra : additionalExtras) {
             RegexEscaper.escapeInsideBrackets(extra, pendingClass);
         }
     }
 
-    void addClassExclusion(char excluded, char... additionalExcluded) {
+    @Override
+    public void visitClassExclusion(char excluded, char... additionalExcluded) {
         pendingClass.append(RegexSyntax.CLASS_INTERSECTION_NEGATION);
         RegexEscaper.escapeInsideBrackets(excluded, pendingClass);
         for (char c : additionalExcluded) {
@@ -118,67 +113,52 @@ class PatternAssembler {
         pendingClass.append(RegexSyntax.CLASS_CLOSE);
     }
 
-    void addCustomRange(char start, char end) {
-        if (start > end) {
-            throw new IllegalArgumentException("Invalid range: start character '" + start +
-                    "' must be less than or equal to end character '" + end + "'.");
-        }
+    @Override
+    public void visitCustomRange(char start, char end) {
         isBuildingClass = true;
         RegexEscaper.escapeInsideBrackets(start, pendingClass);
         pendingClass.append('-');
         RegexEscaper.escapeInsideBrackets(end, pendingClass);
     }
 
-    void addNamedCapture(NamedCapture group) {
-        boolean isAdded = registeredGroups.add(group.getName());
-        if (!isAdded) {
-            throw new IllegalStateException("A capturing group with the name '" + group.getName() +
-                    "' has already been defined. Each group name must be unique.");
-        }
-
-        extractAndCheckGroupsAndRequirements(group.getPattern(), group.getName());
-
-        registerFeature(RegexFeature.NAMED_CAPTURE);
-
-        mainPattern.append(RegexSyntax.NAMED_GROUP_OPEN)
-                .append(group.getName())
-                .append(RegexSyntax.NAMED_GROUP_NAME_CLOSE)
-                .append(group.getPattern().shake())
-                .append(RegexSyntax.GROUP_CLOSE);
-    }
-
-    void addBackreference(NamedCapture group) {
+    @Override
+    public void visitBackreference(NamedCapture group) {
+        flush();
         requiredBackreferences.add(group.getName());
-
-        registerFeature(RegexFeature.BACKREFERENCE);
+        visitFeature(RegexFeature.BACKREFERENCE);
 
         mainPattern.append(RegexSyntax.NAMED_BACKREFERENCE_OPEN)
                 .append(group.getName())
-                .append(RegexSyntax.NAMED_BACKREFERENCE_CLOSE);
+                .append(RegexSyntax.NAMED_BACKREFERENCE_CLOSE)
+                .append(currentQuantifier);
     }
 
-    void addAnyChar() {
+    @Override
+    public void visitAnyChar() {
         flush();
         mainPattern.append(RegexSyntax.ANY_CHAR).append(currentQuantifier);
         canModifyMain = !currentQuantifier.isEmpty();
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
-    void addLinebreak() {
+    @Override
+    public void visitLinebreak() {
         flush();
         mainPattern.append(RegexSyntax.LINEBREAK).append(currentQuantifier);
         canModifyMain = !currentQuantifier.isEmpty();
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
-    void addClassIntersection(String intersectionClass) {
+    @Override
+    public void visitClassIntersection(String intersectionClass) {
         isBuildingClass = true;
         pendingClass.append(RegexSyntax.CLASS_INTERSECTION);
         pendingClass.append(intersectionClass);
         pendingClass.append(RegexSyntax.CLASS_CLOSE);
     }
 
-    void addCharacter(char literal) {
+    @Override
+    public void visitCharacter(char literal) {
         flush();
         StringBuilder esc = new StringBuilder();
         RegexEscaper.escapeString(String.valueOf(literal), esc);
@@ -187,11 +167,12 @@ class PatternAssembler {
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
-    void addPattern(SiftPattern<? extends Composable> pattern) {
+    @Override
+    public void visitPattern(SiftPattern<? extends Composable> pattern) {
         flush();
         extractAndCheckGroupsAndRequirements(pattern, null);
 
-        String rawSubPattern = extractRawString(pattern);
+        String rawSubPattern = extractRawRegex(pattern);
 
         if (!currentQuantifier.isEmpty()) {
             mainPattern.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN)
@@ -206,63 +187,24 @@ class PatternAssembler {
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
-    void prependPattern(SiftPattern<? extends Composable> pattern) {
+    @Override
+    public void visitPrependPattern(SiftPattern<? extends Composable> pattern) {
         flush();
         extractAndCheckGroupsAndRequirements(pattern, null);
 
-        String rawSubPattern = extractRawString(pattern);
-
+        String rawSubPattern = extractRawRegex(pattern);
         mainPattern.insert(0, rawSubPattern);
     }
 
-    private void extractAndCheckGroupsAndRequirements(SiftPattern<?> pattern, String wrapperGroupName) {
-        Set<String> incomingGroups = getIncomingGroups(pattern);
-        for (String incomingGroup : incomingGroups) {
-            if (!registeredGroups.add(incomingGroup)) {
-                if (wrapperGroupName != null) {
-                    throw new IllegalStateException("Collision detected: The pattern inside capturing group '" +
-                            wrapperGroupName + "' contains a nested group named '" + incomingGroup +
-                            "' which has already been defined in the current builder.");
-                } else {
-                    throw new IllegalStateException("Collision detected: The sub-pattern contains a capturing group named '" +
-                            incomingGroup + "' which has already been defined in the current pattern.");
-                }
-            }
-        }
-
-        requiredBackreferences.addAll(getIncomingBackreferences(pattern));
-
-        usedFeatures.addAll(getIncomingFeatures(pattern));
-    }
-
-    private static Set<String> getIncomingGroups(SiftPattern<?> pattern) {
-        if (pattern instanceof PatternMetadata) {
-            return ((PatternMetadata) pattern).getInternalRegisteredGroups();
-        }
-        return Collections.emptySet();
-    }
-
-    private static Set<String> getIncomingBackreferences(SiftPattern<?> pattern) {
-        if (pattern instanceof PatternMetadata) {
-            return ((PatternMetadata) pattern).getInternalRequiredBackreferences();
-        }
-        return Collections.emptySet();
-    }
-
-    private static Set<RegexFeature> getIncomingFeatures(SiftPattern<?> pattern) {
-        if (pattern instanceof PatternMetadata) {
-            return ((PatternMetadata) pattern).getInternalUsedFeatures();
-        }
-        return Collections.emptySet();
-    }
-
-    void addWordBoundary() {
+    @Override
+    public void visitWordBoundary() {
         flush();
         mainPattern.append(RegexSyntax.WORD_BOUNDARY);
         currentQuantifier = RegexSyntax.EMPTY;
     }
 
-    void applyPossessiveModifier() {
+    @Override
+    public void visitPossessiveModifier() {
         if (isBuildingClass) {
             if (!currentQuantifier.isEmpty()) {
                 quantifierModifier = QuantifierModifier.POSSESSIVE;
@@ -273,7 +215,8 @@ class PatternAssembler {
         }
     }
 
-    void applyLazyModifier() {
+    @Override
+    public void visitLazyModifier() {
         if (isBuildingClass) {
             if (!currentQuantifier.isEmpty()) {
                 quantifierModifier = QuantifierModifier.LAZY;
@@ -282,6 +225,143 @@ class PatternAssembler {
             mainPattern.append(RegexSyntax.LAZY_MODIFIER);
             canModifyMain = false;
         }
+    }
+
+    @Override
+    public void visitAtomicGroup(SiftPattern<?> pattern) {
+        flush();
+        extractAndCheckGroupsAndRequirements(pattern, null);
+        visitFeature(RegexFeature.ATOMIC_GROUP);
+
+        String rawSubPattern = extractRawRegex(pattern);
+
+        mainPattern.append(RegexSyntax.ATOMIC_GROUP_OPEN)
+                .append(rawSubPattern)
+                .append(RegexSyntax.GROUP_CLOSE);
+
+        canModifyMain = false;
+    }
+
+    @Override
+    public void visitAnyOf(List<? extends SiftPattern<?>> options) {
+        flush();
+        mainPattern.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN);
+        for (int i = 0; i < options.size(); i++) {
+            SiftPattern<?> option = options.get(i);
+            extractAndCheckGroupsAndRequirements(option, null);
+            mainPattern.append(extractRawRegex(option));
+            if (i < options.size() - 1) {
+                mainPattern.append(RegexSyntax.OR);
+            }
+        }
+        mainPattern.append(RegexSyntax.GROUP_CLOSE);
+        canModifyMain = false;
+    }
+
+    @Override
+    public void visitCaptureGroup(SiftPattern<?> pattern) {
+        flush();
+        extractAndCheckGroupsAndRequirements(pattern, null);
+        mainPattern.append(RegexSyntax.GROUP_OPEN)
+                .append(extractRawRegex(pattern))
+                .append(RegexSyntax.GROUP_CLOSE);
+        canModifyMain = false;
+    }
+
+    @Override
+    public void visitNonCapturingGroup(List<? extends SiftPattern<?>> patterns) {
+        flush();
+        mainPattern.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN);
+        for (SiftPattern<?> p : patterns) {
+            extractAndCheckGroupsAndRequirements(p, null);
+            mainPattern.append(extractRawRegex(p));
+        }
+        mainPattern.append(RegexSyntax.GROUP_CLOSE);
+        canModifyMain = false;
+    }
+
+    @Override
+    public void visitLookaround(SiftPattern<?> pattern, boolean positive, boolean lookahead) {
+        flush();
+        extractAndCheckGroupsAndRequirements(pattern, null);
+
+        RegexFeature feature = lookahead ? RegexFeature.LOOKAHEAD : RegexFeature.LOOKBEHIND;
+        visitFeature(feature);
+
+        String openSyntax;
+        if (lookahead) {
+            openSyntax = positive ? RegexSyntax.POSITIVE_LOOKAHEAD_OPEN : RegexSyntax.NEGATIVE_LOOKAHEAD_OPEN;
+        } else {
+            openSyntax = positive ? RegexSyntax.POSITIVE_LOOKBEHIND_OPEN : RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN;
+        }
+
+        mainPattern.append(openSyntax)
+                .append(extractRawRegex(pattern))
+                .append(RegexSyntax.GROUP_CLOSE);
+
+        canModifyMain = false;
+    }
+
+    @Override
+    public void visitNamedCapture(String name, SiftPattern<?> pattern) {
+        flush();
+        boolean isAdded = registeredGroups.add(name);
+        if (!isAdded) {
+            throw new IllegalStateException("A capturing group with the name '" + name +
+                    "' has already been defined. Each group name must be unique.");
+        }
+        extractAndCheckGroupsAndRequirements(pattern, name);
+        visitFeature(RegexFeature.NAMED_CAPTURE);
+
+        mainPattern.append(RegexSyntax.NAMED_GROUP_OPEN)
+                .append(name)
+                .append(RegexSyntax.NAMED_GROUP_NAME_CLOSE)
+                .append(extractRawRegex(pattern))
+                .append(RegexSyntax.GROUP_CLOSE);
+
+        canModifyMain = false;
+    }
+
+    @Override
+    public void visitLocalFlags(SiftPattern<?> pattern, SiftGlobalFlag... flags) {
+        flush();
+        extractAndCheckGroupsAndRequirements(pattern, null);
+        visitFeature(RegexFeature.INLINE_FLAGS);
+
+        mainPattern.append(RegexSyntax.INLINE_FLAG_OPEN);
+        for (SiftGlobalFlag flag : flags) {
+            mainPattern.append(flag.getSymbol());
+        }
+        mainPattern.append(RegexSyntax.INLINE_FLAG_SEPARATOR)
+                .append(extractRawRegex(pattern))
+                .append(RegexSyntax.GROUP_CLOSE);
+
+        canModifyMain = false;
+    }
+
+    @Override
+    public void visitConditional(SiftPattern<?> trueCond, SiftPattern<?> thenPat, SiftPattern<?> falseCond, SiftPattern<?> falsePat) {
+        flush();
+        extractAndCheckGroupsAndRequirements(trueCond, null);
+        extractAndCheckGroupsAndRequirements(thenPat, null);
+        extractAndCheckGroupsAndRequirements(falseCond, null);
+        if (falsePat != null) {
+            extractAndCheckGroupsAndRequirements(falsePat, null);
+        }
+        visitFeature(RegexFeature.CONDITIONAL);
+
+        mainPattern.append(RegexSyntax.NON_CAPTURING_GROUP_OPEN)
+                .append(extractRawRegex(trueCond))
+                .append(extractRawRegex(thenPat))
+                .append(RegexSyntax.OR)
+                .append(extractRawRegex(falseCond));
+
+        if (falsePat != null) {
+            mainPattern.append(extractRawRegex(falsePat));
+        }
+
+        mainPattern.append(RegexSyntax.GROUP_CLOSE);
+        canModifyMain = false;
     }
 
     void flush() {
@@ -314,33 +394,49 @@ class PatternAssembler {
         return mainPattern.toString();
     }
 
-    void validateFinalAssembly() {
-        for (String req : requiredBackreferences) {
-            if (!registeredGroups.contains(req)) {
-                throw new IllegalStateException("The group '" + req +
-                        "' must be captured with .namedCapture() before it can be referenced.");
+    private void extractAndCheckGroupsAndRequirements(SiftPattern<?> pattern, String wrapperGroupName) {
+        Set<String> incomingGroups = getIncomingGroups(pattern);
+        for (String incomingGroup : incomingGroups) {
+            if (!registeredGroups.add(incomingGroup)) {
+                if (wrapperGroupName != null) {
+                    throw new IllegalStateException("Collision detected: The pattern inside capturing group '" +
+                            wrapperGroupName + "' contains a nested group named '" + incomingGroup +
+                            "' which has already been defined in the current builder.");
+                } else {
+                    throw new IllegalStateException("Collision detected: The sub-pattern contains a capturing group named '" +
+                            incomingGroup + "' which has already been defined in the current pattern.");
+                }
             }
         }
+
+        requiredBackreferences.addAll(getIncomingBackreferences(pattern));
+        usedFeatures.addAll(getIncomingFeatures(pattern));
     }
 
-    PatternAssembler copy() {
-        PatternAssembler clone = new PatternAssembler();
-        clone.mainPattern.append(this.mainPattern);
-        clone.pendingClass.append(this.pendingClass);
-        clone.currentQuantifier = this.currentQuantifier;
-        clone.isBuildingClass = this.isBuildingClass;
-        clone.quantifierModifier = this.quantifierModifier;
-        clone.canModifyMain = this.canModifyMain;
-        clone.registeredGroups.addAll(this.registeredGroups);
-        clone.requiredBackreferences.addAll(this.requiredBackreferences);
-        clone.containsAbsoluteAnchor = this.containsAbsoluteAnchor;
-        clone.usedFeatures.addAll(this.usedFeatures);
-        return clone;
+    private static Set<String> getIncomingGroups(SiftPattern<?> pattern) {
+        if (pattern instanceof PatternMetadata) {
+            return ((PatternMetadata) pattern).getInternalRegisteredGroups();
+        }
+        return Collections.emptySet();
     }
 
-    private static String extractRawString(SiftPattern<?> pattern) {
-        if (pattern instanceof SiftConnector) {
-            return ((SiftConnector<?>) pattern).assembler.copy().build();
+    private static Set<String> getIncomingBackreferences(SiftPattern<?> pattern) {
+        if (pattern instanceof PatternMetadata) {
+            return ((PatternMetadata) pattern).getInternalRequiredBackreferences();
+        }
+        return Collections.emptySet();
+    }
+
+    private static Set<RegexFeature> getIncomingFeatures(SiftPattern<?> pattern) {
+        if (pattern instanceof PatternMetadata) {
+            return ((PatternMetadata) pattern).getInternalUsedFeatures();
+        }
+        return Collections.emptySet();
+    }
+
+    private String extractRawRegex(SiftPattern<?> pattern) {
+        if (pattern instanceof PatternMetadata) {
+            return ((PatternMetadata) pattern).getInternalRawRegex();
         }
         return pattern.shake();
     }
