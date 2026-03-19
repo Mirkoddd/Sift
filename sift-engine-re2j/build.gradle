@@ -32,7 +32,7 @@ dependencies {
 
     implementation 'com.google.re2j:re2j:1.7'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.3'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
