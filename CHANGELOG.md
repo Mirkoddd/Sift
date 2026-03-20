@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.5.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.4.0...sift-v6.5.0) (2026-03-20)
+
+
+### Features
+
+* **core:** introduce SiftExplainer for human-readable regex translation ([51cf602](https://github.com/Mirkoddd/Sift/commit/51cf6023d5512dec9d1914c844c861e7c025ec05))
+
 ## [6.4.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.3.2...sift-v6.4.0) (2026-03-18)
 
 
