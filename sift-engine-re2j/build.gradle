@@ -30,7 +30,7 @@ tasks.withType(JavaCompile).configureEach {
 dependencies {
     api project(':sift-core')
 
-    implementation 'com.google.re2j:re2j:1.7'
+    implementation 'com.google.re2j:re2j:1.8'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.3'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
