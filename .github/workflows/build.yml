@@ -44,8 +44,7 @@ jobs:
         with:
           name: sbom-reports
           path: |
-            sift-core/build/reports/bom.*
-            sift-annotations/build/reports/bom.*
+            */build/reports/cyclonedx-direct/bom.*
 
       - name: Generate Jacoco Badge
         if: ${{ matrix.java == '17' }}

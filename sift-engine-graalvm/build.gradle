@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'signing'
-    id 'org.cyclonedx.bom' version '2.2.0'
+    id 'org.cyclonedx.bom' version '3.2.2'
 }
 
 java {
@@ -13,14 +13,13 @@ java {
     withSourcesJar()
 }
 
-cyclonedxBom {
+cyclonedxDirectBom {
     includeConfigs = ["runtimeClasspath"]
     projectType = "library"
-    outputFormat = "all"
 }
 
 tasks.named('build') {
-    dependsOn('cyclonedxBom')
+    dependsOn('cyclonedxDirectBom')
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -67,16 +66,15 @@ publishing {
             artifactId = 'sift-engine-graalvm'
             from components.java
 
-            artifact(layout.buildDirectory.file("reports/bom.xml")) {
+            artifact(layout.buildDirectory.file("reports/cyclonedx-direct/bom.xml")) {
                 classifier = 'bom'
                 extension = 'xml'
-                builtBy cyclonedxBom
+                builtBy cyclonedxDirectBom
             }
-
-            artifact(layout.buildDirectory.file("reports/bom.json")) {
+            artifact(layout.buildDirectory.file("reports/cyclonedx-direct/bom.json")) {
                 classifier = 'bom'
                 extension = 'json'
-                builtBy cyclonedxBom
+                builtBy cyclonedxDirectBom
             }
 
             pom {
