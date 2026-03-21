@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.6.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.5.0...sift-v6.6.0) (2026-03-21)
+
+
+### Features
+
+* **core:** add fluent explain API ([4bf49ce](https://github.com/Mirkoddd/Sift/commit/4bf49cebf46d9275d1034a37d8c6d7ae5ab14bf5))
+
 ## [6.5.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.4.0...sift-v6.5.0) (2026-03-20)
 
 
