@@ -16,8 +16,6 @@
 package com.mirkoddd.sift.core;
 
 import com.mirkoddd.sift.core.dsl.Composable;
-import com.mirkoddd.sift.core.dsl.Connector;
-import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 import com.mirkoddd.sift.core.engine.SiftCompiledPattern;
 import com.mirkoddd.sift.core.engine.SiftEngine;
@@ -27,12 +25,9 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.Set;
 
-import static com.mirkoddd.sift.core.Sift.exactly;
-import static com.mirkoddd.sift.core.Sift.fromWordBoundary;
-import static com.mirkoddd.sift.core.Sift.oneOrMore;
-import static com.mirkoddd.sift.core.Sift.optional;
-import static com.mirkoddd.sift.core.SiftPatterns.anyOf;
 import static com.mirkoddd.sift.core.SiftPatterns.literal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -127,7 +122,7 @@ class SiftExplainerTest {
 
         IllegalStateException exception = assertThrows(
                 IllegalStateException.class,
-                () -> SiftExplainer.explainInternal(dummyPattern, Locale.ENGLISH, "un_bundle_che_non_esiste_123")
+                () -> SiftExplainer.explainInternal(dummyPattern, Locale.ENGLISH, "not_existing_bundle")
         );
 
         assertTrue(
@@ -151,5 +146,27 @@ class SiftExplainerTest {
 
 
         assertNotEquals(english, italian);
+        assertEquals(testPattern.explain(), english);
+        assertEquals(testPattern.explain(null), english);
+        assertEquals(testPattern.explain(Locale.ITALIAN), italian);
+    }
+
+    @Test
+    void verifyBundleKeysAlignment() {
+        ResourceBundle english = ResourceBundle.getBundle("sift_messages", Locale.ENGLISH);
+        ResourceBundle italian = ResourceBundle.getBundle("sift_messages", Locale.ITALIAN);
+
+        Set<String> englishKeys = english.keySet();
+        Set<String> italianKeys = italian.keySet();
+
+        for (String key : englishKeys) {
+            assertTrue(italianKeys.contains(key),
+                    "Missing translation in Italian bundle for key: " + key);
+        }
+
+        for (String key : italianKeys) {
+            assertTrue(englishKeys.contains(key),
+                    "Orphaned key in Italian bundle not present in English: " + key);
+        }
     }
 }

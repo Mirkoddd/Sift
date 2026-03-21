@@ -21,7 +21,6 @@ import com.mirkoddd.sift.core.engine.RegexFeature;
 import com.mirkoddd.sift.core.engine.SiftCompiledPattern;
 import com.mirkoddd.sift.core.engine.SiftEngine;
 
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 

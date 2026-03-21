@@ -15,12 +15,14 @@
  */
 package com.mirkoddd.sift.core.dsl;
 
+import com.mirkoddd.sift.core.SiftExplainer;
 import com.mirkoddd.sift.core.engine.JdkEngine;
 import com.mirkoddd.sift.core.engine.SiftCompiledPattern;
 import com.mirkoddd.sift.core.engine.SiftEngine;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -239,5 +241,32 @@ public interface SiftPattern<Ctx extends SiftContext> extends SiftInternalSealer
     default Stream<String> streamMatches(CharSequence input) {
         if (input == null) return Stream.empty();
         return sieve().streamMatches(input);
+    }
+
+    /**
+     * Provides a human-readable ASCII tree explanation of the pattern structure in English.
+     * <p>
+     * This is a convenience method that delegates to {@link com.mirkoddd.sift.core.SiftExplainer}.
+     * It is useful for debugging and logging the logic of the composed regex.
+     * </p>
+     *
+     * @return a formatted string representing the pattern hierarchy.
+     */
+    default String explain() {
+        return SiftExplainer.explain(this);
+    }
+
+    /**
+     * Provides a localized human-readable ASCII tree explanation of the pattern structure.
+     * <p>
+     * If the translation bundle for the requested {@code locale} is missing or incomplete,
+     * the explainer will automatically fall back to the default English translation.
+     * </p>
+     *
+     * @param locale the target locale for the explanation. If null, it defaults to English.
+     * @return a localized string explaining the pattern, or the English fallback if the locale is unsupported.
+     */
+    default String explain(Locale locale) {
+        return SiftExplainer.explain(this, locale);
     }
 }
