@@ -23,3 +23,6 @@ local.properties
 /captures
 .externalNativeBuild
 .cxx
+
+# Jqwik
+.jqwik-database

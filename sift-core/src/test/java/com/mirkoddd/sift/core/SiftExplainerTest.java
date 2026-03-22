@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -152,21 +154,39 @@ class SiftExplainerTest {
     }
 
     @Test
+    void testSpanishTranslation() {
+        SiftPattern<?> pattern = SiftCatalog.ipv4();
+        String explanation = SiftExplainer.explain(pattern, new Locale("es"));
+
+        assertTrue(explanation.contains("Coincide con"));
+        assertTrue(explanation.contains("dígito"));
+    }
+
+    @Test
     void verifyBundleKeysAlignment() {
         ResourceBundle english = ResourceBundle.getBundle("sift_messages", Locale.ENGLISH);
-        ResourceBundle italian = ResourceBundle.getBundle("sift_messages", Locale.ITALIAN);
-
         Set<String> englishKeys = english.keySet();
-        Set<String> italianKeys = italian.keySet();
 
-        for (String key : englishKeys) {
-            assertTrue(italianKeys.contains(key),
-                    "Missing translation in Italian bundle for key: " + key);
-        }
+        List<String> languages = Arrays.asList("it", "es");
 
-        for (String key : italianKeys) {
-            assertTrue(englishKeys.contains(key),
-                    "Orphaned key in Italian bundle not present in English: " + key);
+        for (String lang : languages) {
+            Locale locale = Locale.forLanguageTag(lang);
+            ResourceBundle targetBundle = ResourceBundle.getBundle("sift_messages", locale);
+
+            assertEquals(lang, targetBundle.getLocale().getLanguage(),
+                    "Resource bundle for " + lang + " was not found or fell back incorrectly");
+
+            Set<String> targetKeys = targetBundle.keySet();
+
+            for (String key : englishKeys) {
+                assertTrue(targetKeys.contains(key),
+                        "Missing key [" + key + "] in language: " + locale.getDisplayLanguage());
+            }
+
+            for (String key : targetKeys) {
+                assertTrue(englishKeys.contains(key),
+                        "Orphaned key [" + key + "] in language: " + locale.getDisplayLanguage());
+            }
         }
     }
 }

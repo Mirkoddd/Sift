@@ -15,6 +15,9 @@
  */
 package com.mirkoddd.sift.core;
 
+import static com.mirkoddd.sift.core.Sift.exactly;
+import static com.mirkoddd.sift.core.SiftPatterns.anyOf;
+
 import com.mirkoddd.sift.core.dsl.Fragment;
 import com.mirkoddd.sift.core.dsl.SiftPattern;
 
@@ -66,7 +69,7 @@ public final class SiftCatalog {
      */
     public static SiftPattern<Fragment> ipv4() {
         // Octet logic: 25[0-5] OR 2[0-4][0-9] OR [01]?[0-9][0-9]?
-        SiftPattern<Fragment> octet = SiftPatterns.anyOf(
+        SiftPattern<Fragment> octet = anyOf(
                 // 250-255
                 Sift.fromAnywhere().character('2').followedBy('5').then().exactly(1).range('0', '5'),
                 // 200-249
@@ -109,7 +112,7 @@ public final class SiftCatalog {
                 .of(hexPair)
                 .then().exactly(5).of(hyphenGroup);
 
-        return SiftPatterns.anyOf(colonSeparated, hyphenSeparated)
+        return anyOf(colonSeparated, hyphenSeparated)
                 .preventBacktracking();
     }
 
@@ -156,7 +159,7 @@ public final class SiftCatalog {
      * @return A SiftPattern representing a Web URL.
      */
     public static SiftPattern<Fragment> webUrl() {
-        SiftPattern<Fragment> protocol = SiftPatterns.anyOf(
+        SiftPattern<Fragment> protocol = anyOf(
                 SiftPatterns.literal("http://"),
                 SiftPatterns.literal("https://")
         );
@@ -193,12 +196,12 @@ public final class SiftCatalog {
     public static SiftPattern<Fragment> isoDate() {
         SiftPattern<Fragment> year = Sift.fromAnywhere().exactly(4).digits();
 
-        SiftPattern<Fragment> month = SiftPatterns.anyOf(
+        SiftPattern<Fragment> month = anyOf(
                 Sift.fromAnywhere().character('0').then().exactly(1).range('1', '9'),
                 Sift.fromAnywhere().character('1').then().exactly(1).range('0', '2')
         );
 
-        SiftPattern<Fragment> day = SiftPatterns.anyOf(
+        SiftPattern<Fragment> day = anyOf(
                 Sift.fromAnywhere().character('0').then().exactly(1).range('1', '9'),
                 Sift.fromAnywhere().range('1', '2').then().exactly(1).digits(),
                 Sift.fromAnywhere().character('3').then().exactly(1).range('0', '1')
@@ -210,6 +213,159 @@ public final class SiftCatalog {
                 .then().exactly(1).of(month)
                 .followedBy('-')
                 .then().exactly(1).of(day)
+                .preventBacktracking();
+    }
+
+    /**
+     * Matches a structural International Bank Account Number (IBAN).
+     * <p>
+     * <b>Important:</b> This pattern performs <i>syntactic</i> validation of the IBAN format.
+     * It ensures the string matches the international standard shape:
+     * <ul>
+     * <li>2 letters for the Country Code</li>
+     * <li>2 digits for the Check Digits</li>
+     * <li>Between 11 and 30 alphanumeric characters for the Basic Bank Account Number (BBAN)</li>
+     * </ul>
+     * <p>
+     * It does <b>not</b> perform <i>semantic</i> validation, such as:
+     * <ul>
+     * <li>Verifying if the Country Code is a valid ISO 3166-1 alpha-2 code</li>
+     * <li>Calculating the MOD-97 check digits to verify the IBAN's integrity</li>
+     * <li>Enforcing country-specific BBAN lengths (e.g., exactly 27 for Italy, 22 for Germany)</li>
+     * </ul>
+     * For financial-grade validation, the matched string should be processed by a dedicated
+     * IBAN validation library.
+     *
+     * @return A SiftPattern representing the structural format of an IBAN.
+     */
+    public static SiftPattern<Fragment> iban() {
+        return Sift.fromAnywhere()
+                .exactly(2).letters()                   // Country Code
+                .then().exactly(2).digits()             // Check Digits
+                .then().between(11, 30).alphanumeric()  // Basic Bank Account Number
+                .preventBacktracking();
+    }
+
+    /**
+     * Matches a structural JSON Web Token (JWT).
+     * <p>
+     * Verifies the three-part structure (header.payload.signature) where each part
+     * is a valid Base64Url encoded string.
+     * <p>
+     * <b>Note:</b> Each segment uses the Base64URL alphabet ({@code [a-zA-Z0-9\-_]}),
+     * which differs from standard Base64 ({@code +} and {@code /} are replaced by
+     * {@code -} and {@code _}) and does not use padding ({@code =}).
+     *
+     * @return A SiftPattern representing a JWT structure.
+     */
+    public static SiftPattern<Fragment> jwt() {
+        SiftPattern<Fragment> b64UrlPart = Sift.fromAnywhere()
+                .oneOrMore().alphanumeric().including('-', '_');
+
+        return Sift.fromAnywhere()
+                .of(b64UrlPart)                         // Header
+                .followedBy('.')
+                .then().exactly(1).of(b64UrlPart)       // Payload
+                .followedBy('.')
+                .then().exactly(1).of(b64UrlPart)       // Signature
+                .preventBacktracking();
+    }
+
+    /**
+     * Matches major Credit Card formats (Visa, Mastercard, American Express).
+     * <p>
+     * <b>Important:</b> Validates structural length and common BIN prefixes only.
+     * It does <b>not</b> perform Luhn algorithm checksum validation.
+     * <ul>
+     * <li><b>Visa:</b> Starts with 4, length 16.</li>
+     * <li><b>Mastercard:</b> Starts with 51-55 (legacy) or 2x (modern 2221-2720 range).
+     *     The modern range uses a structural approximation ({@code 2[2-6]XXXXXXXXXXXXXX})
+     *     that may accept a small number of prefixes outside the strict 2221-2720 boundaries
+     *     (e.g., 2200-2220 and 2721-2699). For strict BIN validation, use a dedicated
+     *     payment library.</li>
+     * <li><b>American Express:</b> Starts with 34 or 37, length 15.</li>
+     * </ul>
+     *
+     * @return A SiftPattern representing common credit card formats.
+     */
+    public static SiftPattern<Fragment> creditCard() {
+        SiftPattern<Fragment> visa = Sift.fromAnywhere()
+                .character('4')
+                .then().exactly(15).digits();
+
+        SiftPattern<Fragment> amex = Sift.fromAnywhere()
+                .of(anyOf(SiftPatterns.literal("34"), SiftPatterns.literal("37")))
+                .then().exactly(13).digits();
+
+        SiftPattern<Fragment> mastercard = anyOf(
+                // Legacy 51-55
+                Sift.fromAnywhere().character('5').then().range('1', '5').then().exactly(14).digits(),
+                // Modern 2221-2720 (structural approximation: 2[2-6]XXXXXXXXXXXXXX)
+                Sift.fromAnywhere().character('2').then().range('2', '6').then().exactly(14).digits()
+        );
+
+        return anyOf(visa, amex, mastercard)
+                .preventBacktracking();
+    }
+
+    /**
+     * Matches a standard Base64 encoded string (RFC 4648).
+     * <p>
+     * Validates that the string uses the standard Base64 alphabet
+     * ({@code A-Z}, {@code a-z}, {@code 0-9}, {@code +}, {@code /}).
+     * The total length must be a multiple of 4. Padding ({@code =} or {@code ==})
+     * is required only when the encoded data does not align to a 3-byte boundary
+     * (i.e., when the number of Base64 characters before padding is not a multiple of 4).
+     * <p>
+     * <b>Note:</b> This pattern matches <b>standard Base64</b>, not Base64URL.
+     * Base64URL replaces {@code +} with {@code -} and {@code /} with {@code _},
+     * and does not use padding. For Base64URL validation (e.g., individual JWT segments),
+     * use {@link #base64Url()} instead.
+     *
+     * @return A SiftPattern representing a standard Base64 encoded string.
+     */
+    public static SiftPattern<Fragment> base64() {
+        SiftPattern<Fragment> b64Chars = Sift.fromAnywhere()
+                .alphanumeric().including('+', '/');
+
+        SiftPattern<Fragment> fullGroup = SiftPatterns.group(exactly(4).of(b64Chars));
+
+        SiftPattern<Fragment> singlePad = Sift.fromAnywhere()
+                .exactly(3).of(b64Chars)
+                .followedBy(SiftPatterns.literal("="));
+
+        SiftPattern<Fragment> doublePad = Sift.fromAnywhere()
+                .exactly(2).of(b64Chars)
+                .followedBy(SiftPatterns.literal("=="));
+
+        // Case 1: zero or more full groups + mandatory partial group with padding
+        SiftPattern<Fragment> withPadding = Sift.fromAnywhere()
+                .zeroOrMore().of(fullGroup)
+                .then().exactly(1).of(anyOf(singlePad, doublePad));
+
+        // Case 2: one or more full groups, no padding
+        SiftPattern<Fragment> noPadding = Sift.fromAnywhere()
+                .oneOrMore().of(fullGroup);
+
+        return anyOf(withPadding, noPadding)
+                .preventBacktracking();
+    }
+
+    /**
+     * Matches a Base64URL encoded string (RFC 4648 §5).
+     * <p>
+     * Base64URL is a URL-safe variant of Base64 that replaces {@code +} with {@code -}
+     * and {@code /} with {@code _}, and omits padding ({@code =}).
+     * It is used in contexts where standard Base64 characters would require percent-encoding,
+     * such as JWT segments, OAuth tokens, and URL-safe identifiers.
+     * <p>
+     * <b>Note:</b> For standard Base64 with padding, use {@link #base64()} instead.
+     *
+     * @return A SiftPattern representing a Base64URL encoded string.
+     */
+    public static SiftPattern<Fragment> base64Url() {
+        return Sift.fromAnywhere()
+                .oneOrMore().alphanumeric().including('-', '_')
                 .preventBacktracking();
     }
 }
