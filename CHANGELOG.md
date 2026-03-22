@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.7.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.6.0...sift-v6.7.0) (2026-03-22)
+
+
+### Features
+
+* **core:** expand SiftCatalog and implement robust property-based testing ([2f5c289](https://github.com/Mirkoddd/Sift/commit/2f5c289e975b41eb43b0ae238a024695190d2f3b))
+
 ## [6.6.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.5.0...sift-v6.6.0) (2026-03-21)
 
 
