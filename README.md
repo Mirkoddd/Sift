@@ -78,27 +78,27 @@ implementation 'com.mirkoddd:sift-engine-graalvm:<latest>'
     <version>latest</version>
 </dependency>
 
-<!-- Optional: Jakarta Validation / Hibernate Validator integration -->
+    <!-- Optional: Jakarta Validation / Hibernate Validator integration -->
 <dependency>
-    <groupId>com.mirkoddd</groupId>
-    <artifactId>sift-annotations</artifactId>
-    <version>latest</version>
+<groupId>com.mirkoddd</groupId>
+<artifactId>sift-annotations</artifactId>
+<version>latest</version>
 </dependency>
 
 
-<!-- Optional: Engine GraalVM -->
+    <!-- Optional: Engine GraalVM -->
 <dependency>
-    <groupId>com.mirkoddd</groupId>
-    <artifactId>sift-engine-graalvm</artifactId>
-    <version>latest</version>
+<groupId>com.mirkoddd</groupId>
+<artifactId>sift-engine-graalvm</artifactId>
+<version>latest</version>
 </dependency>
 
 
-<!-- Optional: Engine RE2J -->
+    <!-- Optional: Engine RE2J -->
 <dependency>
-    <groupId>com.mirkoddd</groupId>
-    <artifactId>sift-engine-re2j</artifactId>
-    <version>latest</version>
+<groupId>com.mirkoddd</groupId>
+<artifactId>sift-engine-re2j</artifactId>
+<version>latest</version>
 </dependency>
 ```
 
@@ -147,11 +147,11 @@ SiftPattern<Fragment> dateBlock = year.followedBy(dash, month, dash, day);
 
 // Embed inside a larger pattern
 String logRegex = Sift.fromStart()
-    .of(dateBlock)
-    .followedBy(' ')
-    .then().oneOrMore().anyCharacter()
-    .andNothingElse()
-    .shake();
+        .of(dateBlock)
+        .followedBy(' ')
+        .then().oneOrMore().anyCharacter()
+        .andNothingElse()
+        .shake();
 
 // Result: ^[0-9]{4}-[0-9]{2}-[0-9]{2} .+$
 ```
@@ -171,12 +171,12 @@ NamedCapture monthGroup = SiftPatterns.capture("month", Sift.exactly(2).digits()
 NamedCapture dayGroup   = SiftPatterns.capture("day",   Sift.exactly(2).digits());
 
 SiftPattern<?> datePattern = Sift.fromStart()
-    .namedCapture(yearGroup)
-    .followedBy('-')
-    .then().namedCapture(monthGroup)
-    .followedBy('-')
-    .then().namedCapture(dayGroup)
-    .andNothingElse();
+        .namedCapture(yearGroup)
+        .followedBy('-')
+        .then().namedCapture(monthGroup)
+        .followedBy('-')
+        .then().namedCapture(dayGroup)
+        .andNothingElse();
 
 // Extract structured data directly — no Matcher boilerplate
 Map<String, String> fields = datePattern.extractGroups("2026-03-13");
@@ -184,16 +184,16 @@ Map<String, String> fields = datePattern.extractGroups("2026-03-13");
 
 // Extract all matches from a larger text
 List<String> prices = Sift.fromAnywhere()
-    .oneOrMore().digits()
-    .sieve()
-    .extractAll("Order: 3 items at 25 and 40 euros");
+        .oneOrMore().digits()
+        .sieve()
+        .extractAll("Order: 3 items at 25 and 40 euros");
 // → ["3", "25", "40"]
 
 // Stream results lazily for large inputs
 Sift.fromAnywhere().oneOrMore().lettersUnicode()
     .streamMatches(largeText)
     .filter(word -> word.length() > 5)
-    .forEach(System.out::println);
+        .forEach(System.out::println);
 ```
 
 **Full extraction API:**
@@ -223,22 +223,22 @@ public class PromoCodeRule implements SiftRegexProvider {
     @Override
     public String getRegex() {
         return Sift.fromStart()
-            .atLeast(4).letters()
-            .then()
-            .exactly(3).digits()
-            .andNothingElse()
-            .shake();
+                .atLeast(4).letters()
+                .then()
+                .exactly(3).digits()
+                .andNothingElse()
+                .shake();
     }
 }
 
 // 2. Apply it declaratively — pattern is compiled once at bootstrap
 public record ApplyPromoRequest(
-    @SiftMatch(
-        value   = PromoCodeRule.class,
-        flags   = { SiftMatchFlag.CASE_INSENSITIVE },
-        message = "Invalid promo code format"
-    )
-    String promoCode
+        @SiftMatch(
+                value   = PromoCodeRule.class,
+                flags   = { SiftMatchFlag.CASE_INSENSITIVE },
+                message = "Invalid promo code format"
+        )
+        String promoCode
 ) {}
 ```
 
@@ -255,8 +255,8 @@ Sift.fromAnywhere()
 
 // Atomic group — locks a sub-pattern once matched
 SiftPattern<Fragment> safe = Sift.fromAnywhere()
-    .oneOrMore().digits()
-    .preventBacktracking(); // wraps in (?>...)
+        .oneOrMore().digits()
+        .preventBacktracking(); // wraps in (?>...)
 
 // Lazy quantifier — matches as few characters as possible
 Sift.fromAnywhere()
@@ -288,8 +288,8 @@ feature — for example, RE2J does not support lookarounds or backreferences —
 
 Available engine modules:
 - `sift-core` — includes `JdkEngine` (default, zero dependencies)
-- `sift-engine-re2j` — RE2J backend *(coming soon)*
-- `sift-engine-graalvm` — GraalVM Regex backend *(coming soon)*
+- `sift-engine-re2j` — RE2J backend, guarantees linear-time O(n) matching, immune to ReDoS
+- `sift-engine-graalvm` — GraalVM TRegex backend, AOT-ready for native images
 
 ---
 
@@ -339,7 +339,8 @@ String regex = Sift.fromStart()
         .shake();
 ```
 
-Available patterns: `uuid()`, `ipv4()`, `macAddress()`, `email()`, `webUrl()`, `isoDate()`.
+Available patterns: `uuid()`, `ipv4()`, `macAddress()`, `email()`, `webUrl()`, `isoDate()`,
+`iban()`, `jwt()`, `creditCard()`, `base64()`, `base64Url()`.
 
 ---
 
@@ -385,6 +386,37 @@ The state machine enforces the correct declaration order at compile time: `ifXxx
 
 ---
 
+### 10. Pattern Explanation
+
+Sift can translate any pattern into a human-readable ASCII tree — useful for debugging,
+documentation, and onboarding. The explainer supports multiple languages via i18n.
+```java
+SiftPattern pattern = Sift.fromStart()
+        .oneOrMore().digits()
+        .andNothingElse();
+
+// English (default)
+System.out.println(pattern.explain());
+
+// Italian
+System.out.println(pattern.explain(Locale.ITALIAN));
+
+// Spanish
+System.out.println(pattern.explain(new Locale("es")));
+```
+
+Output (English):
+```
+┌─ Starts at the beginning of the line
+├─ a digit one or more times
+└─ Ends at the end of the line
+```
+
+`explain()` is available directly on every `SiftPattern` and delegates to `SiftExplainer`,
+which can also be called standalone for more control over the locale resolution.
+
+---
+
 ## Why Sift?
 
 | | Raw Java Regex | Sift |
@@ -397,6 +429,7 @@ The state machine enforces the correct declaration order at compile time: `ifXxx
 | Jakarta Validation | Manual `@Pattern` duplication | `@SiftMatch` + `SiftRegexProvider` |
 | Regex engine | JDK only | Pluggable (JDK, RE2J, GraalVM, etc...) |
 | Dependencies | — | Zero (sift-core) |
+| Human-readable explanation | Not possible | `pattern.explain()` with i18n support |
 
 ---
 
