@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.7.1](https://github.com/Mirkoddd/Sift/compare/sift-v6.7.0...sift-v6.7.1) (2026-03-23)
+
+
+### Bug Fixes
+
+* **core:** enforce safe and semantically accurate equals and hashCode ([8ff80f4](https://github.com/Mirkoddd/Sift/commit/8ff80f4c4c4c722db1645ba76ec8bff1cd74b5fc))
+
 ## [6.7.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.6.0...sift-v6.7.0) (2026-03-22)
 
 
