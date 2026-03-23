@@ -34,6 +34,7 @@ import static com.mirkoddd.sift.core.SiftGlobalFlag.CASE_INSENSITIVE;
 import static com.mirkoddd.sift.core.SiftPatterns.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.mirkoddd.sift.core.dsl.Assertion;
 import com.mirkoddd.sift.core.dsl.CharacterConnector;
 import com.mirkoddd.sift.core.dsl.Connector;
 import com.mirkoddd.sift.core.dsl.Fragment;
@@ -410,6 +411,65 @@ class SiftTest {
         }
 
         @Test
+        @DisplayName("equals() should return false when one pattern has an unresolved backreference")
+        void testEqualsWithInvalidPattern() {
+            NamedCapture group = SiftPatterns.capture("x", Sift.fromAnywhere().digits());
+
+            // Pattern with unresolved backreference — shake() will throw
+            SiftPattern<?> invalid = Sift.fromAnywhere()
+                    .backreference(group); // namedCapture never called
+
+            SiftPattern<?> valid = Sift.fromAnywhere().digits();
+
+            // Must not throw — must return false defensively
+            assertFalse(invalid.equals(valid));
+            assertFalse(valid.equals(invalid));
+        }
+
+        @Test
+        @DisplayName("hashCode() should not throw when pattern has an unresolved backreference")
+        void testHashCodeWithInvalidPattern() {
+            NamedCapture group = SiftPatterns.capture("x", Sift.fromAnywhere().digits());
+            SiftPattern<?> invalid = Sift.fromAnywhere().backreference(group);
+
+            // Must not throw
+            assertDoesNotThrow(invalid::hashCode);
+        }
+
+        @Test
+        @DisplayName("toString() should return a readable error string instead of throwing for invalid patterns")
+        void testToStringWithInvalidPattern() {
+            NamedCapture group = SiftPatterns.capture("x", Sift.fromAnywhere().digits());
+            SiftPattern<?> invalid = Sift.fromAnywhere().backreference(group);
+
+            String result = invalid.toString();
+            assertTrue(result.startsWith("[Invalid SiftPattern:"),
+                    "Expected error prefix but got: " + result);
+            assertTrue(result.contains("x"), "Error message should reference the unresolved group name");
+        }
+
+        @Test
+        @DisplayName("equals() should differentiate patterns with same regex but different feature sets")
+        void testEqualsWithSameRegexDifferentFeatures() {
+            // Both compile to (?=\d+) conceptually, but one tracks LOOKAHEAD, one doesn't
+            SiftPattern<Assertion> withLookahead = SiftPatterns.positiveLookahead(
+                    Sift.fromAnywhere().oneOrMore().digits()
+            );
+
+            // A raw pattern injected with the same regex string but no feature tracking
+            SiftPattern<Fragment> rawSameRegex = new BaseSiftPattern<Fragment>(null) {
+                @Override
+                public void accept(PatternVisitor visitor) {
+                    visitor.visitAnchor("(?=[0-9]+)");
+                }
+            };
+
+            // Same regex string, different features — should NOT be equal
+            assertEquals(withLookahead.shake(), rawSameRegex.shake()); // confirm same string
+            assertNotEquals(withLookahead, rawSameRegex);
+        }
+
+        @Test
         @DisplayName("toString() should return the generated pattern string")
         void testPatternToString() {
             SiftPattern<Root> pattern = Sift.fromStart().exactly(3).digits();
@@ -473,6 +533,25 @@ class SiftTest {
             // We verify that the assembly succeeds and returns the expected raw string,
             // proving that the Collections.emptySet() fallback branches work flawlessly.
             assertEquals("^alien-regex$", regex);
+        }
+
+        @Test
+        @DisplayName("equals() should return true for two patterns with same regex when one lacks PatternMetadata")
+        @SuppressWarnings("EqualsWithItself")
+        void testEqualsWithNonMetadataPattern() {
+            SiftPattern<Fragment> normalPattern = Sift.fromAnywhere().oneOrMore().digits();
+
+            // An alien pattern implementing only the public SiftPattern interface,
+            // with no PatternMetadata — hits the final `return true` branch in equals()
+            SiftPattern<Fragment> alienPattern = new SiftPattern<Fragment>() {
+                @Override public Object ___internal_lock___() { return InternalToken.INSTANCE; }
+                @Override public String shake() { return normalPattern.shake(); }
+                @Override public SiftCompiledPattern sieveWith(SiftEngine engine) { return null; }
+                @Override public SiftPattern<Fragment> preventBacktracking() { return this; }
+            };
+
+            // Same regex, no PatternMetadata on alien → hits return true
+            assertTrue(normalPattern.equals(alienPattern));
         }
     }
 

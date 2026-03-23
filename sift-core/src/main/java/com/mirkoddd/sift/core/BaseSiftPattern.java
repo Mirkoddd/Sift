@@ -89,6 +89,13 @@ abstract class BaseSiftPattern<Ctx extends SiftContext> implements SiftPattern<C
         }
     }
 
+    /**
+     * Evaluates the AST and returns the raw regular expression string.
+     *
+     * @return The raw regex string.
+     * @throws IllegalStateException if the pattern is structurally invalid
+     * (e.g., contains an unresolved backreference).
+     */
     @Override
     public final String shake() {
         evaluateAst();
@@ -140,18 +147,44 @@ abstract class BaseSiftPattern<Ctx extends SiftContext> implements SiftPattern<C
 
     @Override
     public final String toString() {
-        return shake();
+        try {
+            return shake();
+        } catch (IllegalStateException e) {
+            return "[Invalid SiftPattern: " + e.getMessage() + "]";
+        }
     }
 
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof SiftPattern)) return false;
-        return Objects.equals(this.shake(), ((SiftPattern<?>) o).shake());
+
+        try {
+            String thisRegex = this.shake();
+            String otherRegex = ((SiftPattern<?>) o).shake();
+
+            if (!Objects.equals(thisRegex, otherRegex)) return false;
+
+            // Feature set must also match for true semantic equivalence
+            if (o instanceof PatternMetadata) {
+                return Objects.equals(
+                        this.getInternalUsedFeatures(),
+                        ((PatternMetadata) o).getInternalUsedFeatures()
+                );
+            }
+
+            return true;
+        } catch (IllegalStateException e) {
+            return false;
+        }
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(shake());
+        try {
+            return Objects.hash(shake(), getInternalUsedFeatures());
+        } catch (IllegalStateException e) {
+            return System.identityHashCode(this);
+        }
     }
 }
