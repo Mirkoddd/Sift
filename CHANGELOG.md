@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.8.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.7.1...sift-v6.8.0) (2026-03-26)
+
+
+### Features
+
+* **security:** implement absolute anchors to prevent CRLF injection ([bc179df](https://github.com/Mirkoddd/Sift/commit/bc179dfb08a7cc2f934f12fac87994277d40c6de))
+
 ## [6.7.1](https://github.com/Mirkoddd/Sift/compare/sift-v6.7.0...sift-v6.7.1) (2026-03-23)
 
 
