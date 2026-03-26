@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.8.1](https://github.com/Mirkoddd/Sift/compare/sift-v6.8.0...sift-v6.8.1) (2026-03-26)
+
+
+### Bug Fixes
+
+* **re2j:** fail fast on unsupported \Z anchor (endBeforeOptionalNewline) ([cfc41ba](https://github.com/Mirkoddd/Sift/commit/cfc41baf9adc0d359976e2328c40ed655c027065))
+
 ## [6.8.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.7.1...sift-v6.8.0) (2026-03-26)
 
 

@@ -1,6 +1,6 @@
 allprojects {
     group = 'com.mirkoddd'
-    version = '6.8.0' // x-release-please-version
+    version = '6.8.1' // x-release-please-version
 
     repositories {
         mavenCentral()
