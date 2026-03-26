@@ -60,5 +60,12 @@ public enum RegexFeature {
      * Represents a conditional statement, e.g., (?(condition)true-pattern|false-pattern).
      * This feature requires backtracking.
      */
-    CONDITIONAL
-}
+    CONDITIONAL,
+
+    /**
+     * Represents the \Z anchor (End before optional newline).
+     * While natively supported by the standard JDK engine and GraalVM, this specific
+     * anchor is explicitly unsupported by engines like RE2/RE2J, which strictly require
+     * the absolute end anchor (\z) for end-of-string validation.
+     */
+    END_BEFORE_NEWLINE_ANCHOR}

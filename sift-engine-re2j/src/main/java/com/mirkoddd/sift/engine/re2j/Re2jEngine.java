@@ -64,6 +64,7 @@ public final class Re2jEngine extends AbstractSiftEngine {
         UNSUPPORTED.put(RegexFeature.ATOMIC_GROUP, "RE2J Engine does not support Atomic Groups (?>...). RE2J is natively immune to backtracking.");
         UNSUPPORTED.put(RegexFeature.RECURSION, "RE2J Engine does not support recursive patterns.");
         UNSUPPORTED.put(RegexFeature.CONDITIONAL, "RE2J Engine does not support Conditional assertions. They break linear-time guarantees.");
+        UNSUPPORTED.put(RegexFeature.END_BEFORE_NEWLINE_ANCHOR, "RE2J Engine does not support the \\Z anchor (End before optional newline). Use absoluteEnd() (\\z) for strict end-of-string validation instead.");
     }
 
     private Re2jEngine() {

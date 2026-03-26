@@ -161,6 +161,9 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
     /** {@inheritDoc} */
     @Override
     public SiftPattern<Root> endBeforeOptionalNewline() {
-        return new SiftConnector<>(this, visitor -> visitor.visitAnchor(RegexSyntax.END_OF_STRING_BEFORE_NEWLINE));
+        return new SiftConnector<>(this, visitor -> {
+            visitor.visitFeature(RegexFeature.END_BEFORE_NEWLINE_ANCHOR);
+            visitor.visitAnchor(RegexSyntax.END_OF_STRING_BEFORE_NEWLINE);
+        });
     }
 }
