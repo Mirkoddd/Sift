@@ -27,7 +27,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 dependencies {
-    testImplementation 'net.jqwik:jqwik:1.9.1'
+    testImplementation 'net.jqwik:jqwik:1.9.3'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.3'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
