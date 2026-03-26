@@ -69,17 +69,28 @@ class ExplainerVisitorTest {
         visitor.visitAnchor(RegexSyntax.START_OF_LINE);
         visitor.visitAnchor(RegexSyntax.END_OF_LINE);
         visitor.visitAnchor(RegexSyntax.PREVIOUS_MATCH_END);
+
+        visitor.visitAnchor(RegexSyntax.START_OF_STRING_ABSOLUTE);
+        visitor.visitAnchor(RegexSyntax.END_OF_STRING_ABSOLUTE);
+        visitor.visitAnchor(RegexSyntax.END_OF_STRING_BEFORE_NEWLINE);
+
         visitor.visitAnchor("(?!)");
         visitor.visitAnchor("(?im)");
         visitor.visitAnchor("\\<\\/");
 
         String[] lines = visitor.getExplanation().split("\n");
+
         assertEquals("┌─ Starts at the beginning of the line", lines[0]);
         assertEquals("├─ Ends at the end of the line", lines[1]);
         assertEquals("├─ Starts at the end of the previous match", lines[2]);
-        assertEquals("├─ Matches the following pattern:", lines[3]);
-        assertEquals("├─ Applies inline global flags: Case Insensitive, Multiline", lines[4]);
-        assertEquals("└─ Matches the literal character '</'", lines[5]);
+
+        assertEquals("├─ Starts at the absolute beginning of the string", lines[3]);
+        assertEquals("├─ Ends at the absolute end of the string", lines[4]);
+        assertEquals("├─ Ends at the end of the string, or before a final newline", lines[5]);
+
+        assertEquals("├─ Matches the following pattern:", lines[6]);
+        assertEquals("├─ Applies inline global flags: Case Insensitive, Multiline", lines[7]);
+        assertEquals("└─ Matches the literal character '</'", lines[8]);
     }
 
     @Test

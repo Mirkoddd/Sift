@@ -15,6 +15,7 @@
  */
 package com.mirkoddd.sift.core.dsl;
 
+import com.mirkoddd.sift.core.SiftGlobalFlag;
 import com.mirkoddd.sift.core.SiftPatterns;
 
 /**
@@ -189,4 +190,29 @@ public interface Connector<Ctx extends SiftContext> extends SiftPattern<Ctx> {
      * @return A sealed, anchored Root pattern ready for compilation.
      */
     SiftPattern<Root> andNothingElse();
+
+    /**
+     * Finalizes the regex chain by appending {@code \z} — the absolute end of the string.
+     * <p>
+     * Unlike {@link #andNothingElse()} which appends {@code $}, this anchor is never
+     * affected by the {@link SiftGlobalFlag#MULTILINE} flag and never matches before
+     * a trailing newline. Use this when you need strict end-of-string semantics
+     * regardless of flags or input content.
+     *
+     * @return A sealed, anchored Root pattern ready for compilation.
+     */
+    SiftPattern<Root> absoluteEnd();
+
+    /**
+     * Finalizes the regex chain by appending {@code \Z} — end of string, or just
+     * before a trailing newline.
+     * <p>
+     * Matches at the very end of the string, or at the position immediately before
+     * a final line terminator. Unlike {@link #andNothingElse()} ({@code $}), it is
+     * not affected by {@link SiftGlobalFlag#MULTILINE} and will not match at internal
+     * line breaks.
+     *
+     * @return A sealed, anchored Root pattern ready for compilation.
+     */
+    SiftPattern<Root> endBeforeOptionalNewline();
 }

@@ -78,6 +78,22 @@ public final class Sift {
     }
 
     /**
+     * Starts building a Regex strictly anchored at the absolute beginning of the string using {@code \A}.
+     * <p>
+     * Unlike {@link #fromStart()} which uses {@code ^}, this anchor is strictly bound
+     * to the very first character of the input and is never affected by the
+     * {@link SiftGlobalFlag#MULTILINE} flag.
+     * <p>
+     * Returns a <b>Root</b> context, meaning it cannot be embedded inside other patterns.
+     *
+     * @return The initial quantifier step to start the definition.
+     */
+    public static Quantifier<Root> fromAbsoluteStart() {
+        SiftConnector<Root> rootNode = new SiftConnector<>(null, visitor -> visitor.visitAnchor(RegexSyntax.START_OF_STRING_ABSOLUTE));
+        return new SiftQuantifier<>(rootNode);
+    }
+
+    /**
      * Starts building a Regex that can match anywhere within a text.
      * Returns a <b>Fragment</b> context, making it safe to embed into other patterns.
      *
@@ -207,6 +223,20 @@ public final class Sift {
          */
         public Quantifier<Root> fromStart() {
             SiftConnector<Root> rootNode = new SiftConnector<>(createFlaggedRoot(), visitor -> visitor.visitAnchor(RegexSyntax.START_OF_LINE));
+            return new SiftQuantifier<>(rootNode);
+        }
+
+        /**
+         * Starts building a flagged Regex strictly anchored at the absolute beginning of the string using {@code \A}.
+         * <p>
+         * Unlike {@link #fromStart()} which uses {@code ^}, this anchor is strictly bound
+         * to the very first character of the input and is never affected by the
+         * {@link SiftGlobalFlag#MULTILINE} flag.
+         *
+         * @return The initial quantifier step.
+         */
+        public Quantifier<Root> fromAbsoluteStart() {
+            SiftConnector<Root> rootNode = new SiftConnector<>(createFlaggedRoot(), visitor -> visitor.visitAnchor(RegexSyntax.START_OF_STRING_ABSOLUTE));
             return new SiftQuantifier<>(rootNode);
         }
 

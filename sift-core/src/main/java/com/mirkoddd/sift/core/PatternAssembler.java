@@ -83,7 +83,10 @@ class PatternAssembler implements PatternVisitor {
     @Override
     public void visitAnchor(String anchor) {
         flush();
-        if (RegexSyntax.START_OF_LINE.equals(anchor) || RegexSyntax.END_OF_LINE.equals(anchor)){
+        if (RegexSyntax.START_OF_LINE.equals(anchor)
+                || RegexSyntax.END_OF_LINE.equals(anchor)
+                || RegexSyntax.END_OF_STRING_ABSOLUTE.equals(anchor)
+                || RegexSyntax.END_OF_STRING_BEFORE_NEWLINE.equals(anchor)) {
             containsAbsoluteAnchor = true;
         }
         mainPattern.append(anchor);

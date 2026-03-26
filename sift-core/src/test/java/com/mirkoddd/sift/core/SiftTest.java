@@ -754,6 +754,61 @@ class SiftTest {
             assertRegexDoesNotMatch(regex, "catalog");
             assertRegexDoesNotMatch(regex, "scatter");
         }
+
+        @Test
+        @DisplayName("fromAbsoluteStart() should generate \\A anchor and ignore MULTILINE flag")
+        void testAbsoluteStart() {
+            String regex = Sift.fromAbsoluteStart().oneOrMore().digits().shake();
+            assertEquals("\\A[0-9]+", regex);
+
+            Pattern p = Pattern.compile(regex, Pattern.MULTILINE);
+
+            assertTrue(p.matcher("123\nabc").find(), "Should match at the absolute start");
+
+            assertFalse(p.matcher("abc\n123").find(), "\\A must not match after internal newlines even with MULTILINE flag");
+        }
+
+        @Test
+        @DisplayName("absoluteEnd() should generate \\z anchor and ignore MULTILINE flag")
+        void testAbsoluteEnd() {
+            String regex = Sift.fromAnywhere().oneOrMore().digits().absoluteEnd().shake();
+            assertTrue(regex.endsWith("\\z"));
+
+            Pattern p = Pattern.compile(regex, Pattern.MULTILINE);
+
+            // Matches "123" at the end
+            assertTrue(p.matcher("abc\n123").find());
+
+            assertFalse(p.matcher("123\nabc").find(), "\\z must not match before internal newlines even with MULTILINE flag");
+
+            assertFalse(p.matcher("123\n").matches(), "\\z must not match before a trailing newline");
+        }
+
+        @Test
+        @DisplayName("endBeforeOptionalNewline() should generate \\Z anchor")
+        void testEndBeforeOptionalNewline() {
+            String regex = Sift.fromStart().oneOrMore().digits().endBeforeOptionalNewline().shake();
+            assertTrue(regex.endsWith("\\Z"));
+
+            // \Z matches at end of string or before a final \n
+            assertTrue(Pattern.compile(regex).matcher("123").find());
+            assertTrue(Pattern.compile(regex).matcher("123\n").find(), "\\Z should tolerate exactly one trailing newline");
+
+            assertFalse(Pattern.compile(regex).matcher("123\nabc").find());
+            assertFalse(Pattern.compile(regex).matcher("123abc").find());
+        }
+
+        @Test
+        @DisplayName("Should apply flags when starting from absolute start (\\A)")
+        void flagsFromAbsoluteStart() {
+            String regex = filteringWith(CASE_INSENSITIVE)
+                    .fromAbsoluteStart()
+                    .oneOrMore().letters()
+                    .shake();
+
+            assertEquals("(?i)\\A[a-zA-Z]+", regex);
+            assertTrue(Pattern.compile(regex).matcher("aBc").find());
+        }
     }
 
     @Nested
@@ -1665,5 +1720,32 @@ class SiftTest {
 
             assertFalse(matcher.find(), "The matcher should fail at the comma due to the \\G anchor");
         }
+    }
+
+    @Test
+    @DisplayName("absoluteEnd() should generate \\z anchor")
+    void testAbsoluteEnd() {
+        String regex = Sift.fromStart().oneOrMore().digits().absoluteEnd().shake();
+        assertTrue(regex.endsWith("\\z"));
+
+        // Matches "123" but not "123\n"
+        assertFalse(Pattern.compile(regex).matcher("123\n").matches());
+        assertTrue(Pattern.compile(regex).matcher("123").matches());
+    }
+
+    @Test
+    @DisplayName("endBeforeOptionalNewline() should generate \\Z anchor")
+    void testEndBeforeOptionalNewline() {
+        String regex = Sift.fromStart().oneOrMore().digits().endBeforeOptionalNewline().shake();
+        assertTrue(regex.endsWith("\\Z"));
+
+        // \Z matches at end of string or before a final \n
+        // Use find() to test the anchor behavior correctly
+        assertTrue(Pattern.compile(regex).matcher("123").find());
+        assertTrue(Pattern.compile(regex).matcher("123\n").find());
+        // But not when there's content after the newline
+        assertFalse(Pattern.compile(regex).matcher("123\nabc").find());
+        // And not when digits are followed immediately by non-newline content
+        assertFalse(Pattern.compile(regex).matcher("123abc").find());
     }
 }

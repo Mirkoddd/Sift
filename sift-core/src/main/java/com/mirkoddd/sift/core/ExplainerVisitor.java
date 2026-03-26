@@ -29,7 +29,10 @@ class ExplainerVisitor implements PatternVisitor {
     private static final class Msg {
         static final String ANY_CHAR = "explain.anyChar";
         static final String ANCHOR_START = "explain.anchor.start";
+        static final String ANCHOR_START_ABSOLUTE = "explain.anchor.startAbsolute";
         static final String ANCHOR_END = "explain.anchor.end";
+        static final String ANCHOR_END_ABSOLUTE = "explain.anchor.endAbsolute";
+        static final String ANCHOR_END_BEFORE_NEWLINE = "explain.anchor.endBeforeNewline";
         static final String ANCHOR_PREV = "explain.anchor.previous";
         static final String PATTERN = "explain.pattern";
         static final String GLOBAL_FLAGS = "explain.globalFlags";
@@ -101,8 +104,14 @@ class ExplainerVisitor implements PatternVisitor {
     public void visitAnchor(String anchor) {
         if (RegexSyntax.START_OF_LINE.equals(anchor)) {
             addNode(Msg.ANCHOR_START);
+        } else if (RegexSyntax.START_OF_STRING_ABSOLUTE.equals(anchor)) {
+            addNode(Msg.ANCHOR_START_ABSOLUTE);
         } else if (RegexSyntax.END_OF_LINE.equals(anchor)) {
             addNode(Msg.ANCHOR_END);
+        } else if (RegexSyntax.END_OF_STRING_ABSOLUTE.equals(anchor)) {
+            addNode(Msg.ANCHOR_END_ABSOLUTE);
+        } else if (RegexSyntax.END_OF_STRING_BEFORE_NEWLINE.equals(anchor)) {
+            addNode(Msg.ANCHOR_END_BEFORE_NEWLINE);
         } else if (RECURSIVE_FALLBACK.equals(anchor)) {
             addNode(Msg.PATTERN);
         } else if (anchor.startsWith("(?") && anchor.endsWith(")") && !anchor.contains(":")) {

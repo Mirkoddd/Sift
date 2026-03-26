@@ -29,7 +29,10 @@ final class RegexSyntax {
     static final String ANY_CHAR = ".";
     static final String COMMA = ",";
     static final String START_OF_LINE = "^";
+    static final String START_OF_STRING_ABSOLUTE = "\\A";
     static final String END_OF_LINE = "$";
+    static final String END_OF_STRING_ABSOLUTE = "\\z";
+    static final String END_OF_STRING_BEFORE_NEWLINE = "\\Z";
     static final String WORD_BOUNDARY = "\\b";
     static final String ZERO_OR_MORE = "*";
     static final String ONE_OR_MORE = "+";
