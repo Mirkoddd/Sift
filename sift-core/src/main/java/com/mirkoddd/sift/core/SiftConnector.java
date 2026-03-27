@@ -154,13 +154,13 @@ class SiftConnector<Ctx extends SiftContext> extends BaseSiftPattern<Ctx> implem
 
     /** {@inheritDoc} */
     @Override
-    public SiftPattern<Root> absoluteEnd() {
+    public SiftPattern<Root> andNothingElseAbsolutely() {
         return new SiftConnector<>(this, visitor -> visitor.visitAnchor(RegexSyntax.END_OF_STRING_ABSOLUTE));
     }
 
     /** {@inheritDoc} */
     @Override
-    public SiftPattern<Root> endBeforeOptionalNewline() {
+    public SiftPattern<Root> andNothingElseBeforeFinalNewline() {
         return new SiftConnector<>(this, visitor -> {
             visitor.visitFeature(RegexFeature.END_BEFORE_NEWLINE_ANCHOR);
             visitor.visitAnchor(RegexSyntax.END_OF_STRING_BEFORE_NEWLINE);

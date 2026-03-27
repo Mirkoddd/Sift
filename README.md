@@ -112,7 +112,8 @@ implementation 'com.mirkoddd:sift-engine-graalvm:<latest>'
 
 | Method | Generates | Use when |
 |---|---|---|
-| `Sift.fromStart()` | `^...` | Validating an entire string |
+| `Sift.fromStart()` | `^...` | Validating from the start of a line (affected by `MULTILINE` flag) |
+| `Sift.fromAbsoluteStart()` | `\A...` | Validating from the absolute start of the string (CRLF/Multi-Line safe) |
 | `Sift.fromAnywhere()` | `...` | Building reusable fragments or searching within text |
 | `Sift.fromWordBoundary()` | `\b...` | Matching whole words |
 | `Sift.fromPreviousMatchEnd()` | `\G...` | Iterative parsing |
@@ -125,9 +126,9 @@ implementation 'com.mirkoddd:sift-engine-graalvm:<latest>'
 | `.shake()` | Returns the raw regex `String` |
 | `.sieve()` | Compiles with the default JDK engine → `SiftCompiledPattern` |
 | `.sieveWith(engine)` | Compiles with a custom engine → `SiftCompiledPattern` |
-| `.andNothingElse()` | Appends `$` and seals the pattern — affected by `MULTILINE` flag |
-| `.absoluteEnd()` | Appends `\z` — absolute end of string, never affected by flags or trailing newlines |
-| `.endBeforeOptionalNewline()` | Appends `\Z` — end of string, or just before a final `\n` |
+| `.andNothingElse()` | Appends `$` and seals the pattern — affected by `MULTILINE` flag and trailing newlines |
+| `.andNothingElseAbsolutely()` | Appends `\z` — absolute end of string, completely immune to multi-line and CRLF injection bypasses |
+| `.andNothingElseBeforeFinalNewline()` | Appends `\Z` — end of string, or just before a final `\n` |
 ---
 
 ## Examples
@@ -157,7 +158,7 @@ String logRegex = Sift.fromStart()
 // Result: ^[0-9]{4}-[0-9]{2}-[0-9]{2} .+$
 ```
 
-> **Root vs Fragment:** Patterns built with `fromStart()` or closed with `andNothingElse()`, `absoluteEnd()`, or `endBeforeOptionalNewline()` become `SiftPattern<Root>` — they are sealed and cannot be embedded.
+> **Root vs Fragment:** Patterns built with `fromStart()` or `fromAbsoluteStart()`, or closed with `andNothingElse()`, `andNothingElseAbsolutely()`, or `andNothingElseBeforeFinalNewline()` become `SiftPattern<Root>` — they are sealed and cannot be embedded.
 ---
 
 ### 2. Data Extraction — Beyond Pattern Matching
@@ -430,7 +431,7 @@ which can also be called standalone for more control over the locale resolution.
 | Regex engine | JDK only | Pluggable (JDK, RE2J, GraalVM, etc...) |
 | Dependencies | — | Zero (sift-core) |
 | Human-readable explanation | Not possible | `pattern.explain()` with i18n support |
-
+| CRLF / Header Injection | Manual anchor management (`\z`) | Native API (`andNothingElseAbsolutely()`) |
 ---
 
 ## Going Further
@@ -438,6 +439,8 @@ which can also be called standalone for more control over the locale resolution.
 - **[Sift Cookbook](COOKBOOK.md)** — Advanced recipes: TSV log parsing, UUID validation, lookarounds, data extraction with named captures, conditional patterns, and more.
 - **[Javadoc — sift-core](https://javadoc.io/doc/com.mirkoddd/sift-core)**
 - **[Javadoc — sift-annotations](https://javadoc.io/doc/com.mirkoddd/sift-annotations)**
+- **[Javadoc — sift-engine-re2j](https://javadoc.io/doc/com.mirkoddd/sift-engine-re2j)**
+- **[Javadoc — sift-engine-graalvm](https://javadoc.io/doc/com.mirkoddd/sift-engine-graalvm)**
 - **[Changelog](CHANGELOG.md)**
 - **[Contributing](CONTRIBUTING.md)**
 

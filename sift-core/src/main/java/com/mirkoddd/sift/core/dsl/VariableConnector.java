@@ -69,8 +69,8 @@ public interface VariableConnector<Ctx extends SiftContext> extends Connector<Ct
     SiftPattern<Root> andNothingElse();
 
     @Override
-    SiftPattern<Root> absoluteEnd();
+    SiftPattern<Root> andNothingElseAbsolutely();
 
     @Override
-    SiftPattern<Root> endBeforeOptionalNewline();
+    SiftPattern<Root> andNothingElseBeforeFinalNewline();
 }

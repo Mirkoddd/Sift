@@ -201,7 +201,7 @@ public interface Connector<Ctx extends SiftContext> extends SiftPattern<Ctx> {
      *
      * @return A sealed, anchored Root pattern ready for compilation.
      */
-    SiftPattern<Root> absoluteEnd();
+    SiftPattern<Root> andNothingElseAbsolutely();
 
     /**
      * Finalizes the regex chain by appending {@code \Z} — end of string, or just
@@ -214,5 +214,5 @@ public interface Connector<Ctx extends SiftContext> extends SiftPattern<Ctx> {
      *
      * @return A sealed, anchored Root pattern ready for compilation.
      */
-    SiftPattern<Root> endBeforeOptionalNewline();
+    SiftPattern<Root> andNothingElseBeforeFinalNewline();
 }

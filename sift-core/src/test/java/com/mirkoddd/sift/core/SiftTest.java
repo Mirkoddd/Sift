@@ -769,9 +769,9 @@ class SiftTest {
         }
 
         @Test
-        @DisplayName("absoluteEnd() should generate \\z anchor and ignore MULTILINE flag")
+        @DisplayName("andNothingElseAbsolutely() should generate \\z anchor and ignore MULTILINE flag")
         void testAbsoluteEnd() {
-            String regex = Sift.fromAnywhere().oneOrMore().digits().absoluteEnd().shake();
+            String regex = Sift.fromAnywhere().oneOrMore().digits().andNothingElseAbsolutely().shake();
             assertTrue(regex.endsWith("\\z"));
 
             Pattern p = Pattern.compile(regex, Pattern.MULTILINE);
@@ -785,9 +785,9 @@ class SiftTest {
         }
 
         @Test
-        @DisplayName("endBeforeOptionalNewline() should generate \\Z anchor")
+        @DisplayName("andNothingElseBeforeFinalNewline() should generate \\Z anchor")
         void testEndBeforeOptionalNewline() {
-            String regex = Sift.fromStart().oneOrMore().digits().endBeforeOptionalNewline().shake();
+            String regex = Sift.fromStart().oneOrMore().digits().andNothingElseBeforeFinalNewline().shake();
             assertTrue(regex.endsWith("\\Z"));
 
             // \Z matches at end of string or before a final \n
@@ -1723,9 +1723,9 @@ class SiftTest {
     }
 
     @Test
-    @DisplayName("absoluteEnd() should generate \\z anchor")
+    @DisplayName("andNothingElseAbsolutely() should generate \\z anchor")
     void testAbsoluteEnd() {
-        String regex = Sift.fromStart().oneOrMore().digits().absoluteEnd().shake();
+        String regex = Sift.fromStart().oneOrMore().digits().andNothingElseAbsolutely().shake();
         assertTrue(regex.endsWith("\\z"));
 
         // Matches "123" but not "123\n"
@@ -1734,9 +1734,9 @@ class SiftTest {
     }
 
     @Test
-    @DisplayName("endBeforeOptionalNewline() should generate \\Z anchor")
+    @DisplayName("andNothingElseBeforeFinalNewline() should generate \\Z anchor")
     void testEndBeforeOptionalNewline() {
-        String regex = Sift.fromStart().oneOrMore().digits().endBeforeOptionalNewline().shake();
+        String regex = Sift.fromStart().oneOrMore().digits().andNothingElseBeforeFinalNewline().shake();
         assertTrue(regex.endsWith("\\Z"));
 
         // \Z matches at end of string or before a final \n
