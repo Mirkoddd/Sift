@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.9.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.8.1...sift-v6.9.0) (2026-03-27)
+
+
+### Features
+
+* **api:** rename end-of-string anchors for better readability and update docs ([144e6f6](https://github.com/Mirkoddd/Sift/commit/144e6f6e0a2dfbd5b75cae7733ec2a3dce1df9fa))
+
 ## [6.8.1](https://github.com/Mirkoddd/Sift/compare/sift-v6.8.0...sift-v6.8.1) (2026-03-26)
 
 
