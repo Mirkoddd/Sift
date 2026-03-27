@@ -125,8 +125,9 @@ implementation 'com.mirkoddd:sift-engine-graalvm:<latest>'
 | `.shake()` | Returns the raw regex `String` |
 | `.sieve()` | Compiles with the default JDK engine → `SiftCompiledPattern` |
 | `.sieveWith(engine)` | Compiles with a custom engine → `SiftCompiledPattern` |
-| `.andNothingElse()` | Appends `$` and seals the pattern |
-
+| `.andNothingElse()` | Appends `$` and seals the pattern — affected by `MULTILINE` flag |
+| `.absoluteEnd()` | Appends `\z` — absolute end of string, never affected by flags or trailing newlines |
+| `.endBeforeOptionalNewline()` | Appends `\Z` — end of string, or just before a final `\n` |
 ---
 
 ## Examples
@@ -156,8 +157,7 @@ String logRegex = Sift.fromStart()
 // Result: ^[0-9]{4}-[0-9]{2}-[0-9]{2} .+$
 ```
 
-> **Root vs Fragment:** Patterns built with `fromStart()` or closed with `andNothingElse()` become `SiftPattern<Root>` — they are sealed and cannot be embedded. Attempting to embed a `Root` pattern causes a **compile-time error**. Sift uses the Java type system itself as a safety net.
-
+> **Root vs Fragment:** Patterns built with `fromStart()` or closed with `andNothingElse()`, `absoluteEnd()`, or `endBeforeOptionalNewline()` become `SiftPattern<Root>` — they are sealed and cannot be embedded.
 ---
 
 ### 2. Data Extraction — Beyond Pattern Matching
