@@ -11,7 +11,7 @@ Before writing any code, make sure the project builds and all tests pass on your
 **Requirements:** JDK 17+ (the toolchain handles cross-compilation to Java 8 bytecode automatically).
 ```bash
 # Clone your fork
-git clone https://github.com//Sift.git
+git clone https://github.com/<your-username>/Sift.git
 cd Sift
 
 # Run the full test suite across all modules
