@@ -78,27 +78,27 @@ implementation 'com.mirkoddd:sift-engine-graalvm:<latest>'
     <version>latest</version>
 </dependency>
 
-    <!-- Optional: Jakarta Validation / Hibernate Validator integration -->
+<!-- Optional: Jakarta Validation / Hibernate Validator integration -->
 <dependency>
-<groupId>com.mirkoddd</groupId>
-<artifactId>sift-annotations</artifactId>
-<version>latest</version>
+    <groupId>com.mirkoddd</groupId>
+    <artifactId>sift-annotations</artifactId>
+    <version>latest</version>
 </dependency>
 
 
-    <!-- Optional: Engine GraalVM -->
+<!-- Optional: Engine GraalVM -->
 <dependency>
-<groupId>com.mirkoddd</groupId>
-<artifactId>sift-engine-graalvm</artifactId>
-<version>latest</version>
+    <groupId>com.mirkoddd</groupId>
+    <artifactId>sift-engine-graalvm</artifactId>
+    <version>latest</version>
 </dependency>
 
 
-    <!-- Optional: Engine RE2J -->
+<!-- Optional: Engine RE2J -->
 <dependency>
-<groupId>com.mirkoddd</groupId>
-<artifactId>sift-engine-re2j</artifactId>
-<version>latest</version>
+    <groupId>com.mirkoddd</groupId>
+    <artifactId>sift-engine-re2j</artifactId>
+    <version>latest</version>
 </dependency>
 ```
 
@@ -194,7 +194,7 @@ List<String> prices = Sift.fromAnywhere()
 Sift.fromAnywhere().oneOrMore().lettersUnicode()
     .streamMatches(largeText)
     .filter(word -> word.length() > 5)
-        .forEach(System.out::println);
+    .forEach(System.out::println);
 ```
 
 **Full extraction API:**
@@ -444,3 +444,8 @@ which can also be called standalone for more control over the locale resolution.
 - **[Changelog](CHANGELOG.md)**
 - **[Contributing](CONTRIBUTING.md)**
 
+## Under the Hood
+
+Curious how Sift converts a fluent API chain into a compiled regex without performance overhead? Or want to know how the Type-State pattern catches errors at compile-time?
+
+Check out the [Sift Architecture](ARCHITECTURE.md) to see the magic behind the AST (Abstract Syntax Tree) and learn how easy it is to add your own DSL methods or execution engines.
