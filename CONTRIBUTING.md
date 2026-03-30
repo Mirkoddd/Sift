@@ -4,6 +4,32 @@ Thank you for your interest in contributing to Sift! This project is built with 
 
 To maintain these high standards, we ask that you read and strictly follow the guidelines below before opening a Pull Request (PR).
 
+## 0. Development Setup
+
+Before writing any code, make sure the project builds and all tests pass on your machine.
+
+**Requirements:** JDK 17+ (the toolchain handles cross-compilation to Java 8 bytecode automatically).
+```bash
+# Clone your fork
+git clone https://github.com//Sift.git
+cd Sift
+
+# Run the full test suite across all modules
+./gradlew test
+
+# Run tests + generate the JaCoCo coverage report
+./gradlew test jacocoTestReport
+```
+
+The coverage report for the core module is generated at:
+```
+sift-core/build/reports/jacoco/test/html/index.html
+```
+
+Before submitting a PR, open that file in your browser and verify that line and branch coverage remain at **100%**.
+
+> **Tip:** Before diving into the code, read [ARCHITECTURE.md](ARCHITECTURE.md) — it explains the Lazy AST model and the Visitor Pattern that underpin the entire codebase. It will save you significant time.
+
 ## 1. Commit Messages (Conventional Commits)
 This repository uses a fully automated CI/CD system based on `release-please`. Versions and changelogs are generated automatically by parsing the Git history.
 
