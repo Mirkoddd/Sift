@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.10.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.9.0...sift-v6.10.0) (2026-04-09)
+
+
+### Features
+
+* **core:** optimize AST to unwrap redundant non-capturing groups ([a9af38d](https://github.com/Mirkoddd/Sift/commit/a9af38d1418ce7968f2f0526bef44baf37643da2))
+
 ## [6.9.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.8.1...sift-v6.9.0) (2026-03-27)
 
 
