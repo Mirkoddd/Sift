@@ -236,7 +236,7 @@ class PatternAssembler implements PatternVisitor {
         extractAndCheckGroupsAndRequirements(pattern, null);
         visitFeature(RegexFeature.ATOMIC_GROUP);
 
-        String rawSubPattern = extractRawRegex(pattern);
+        String rawSubPattern = unwrapRedundantGroup(extractRawRegex(pattern));
 
         mainPattern.append(RegexSyntax.ATOMIC_GROUP_OPEN)
                 .append(rawSubPattern)
@@ -265,8 +265,11 @@ class PatternAssembler implements PatternVisitor {
     public void visitCaptureGroup(SiftPattern<?> pattern) {
         flush();
         extractAndCheckGroupsAndRequirements(pattern, null);
+
+        String rawSubPattern = unwrapRedundantGroup(extractRawRegex(pattern));
+
         mainPattern.append(RegexSyntax.GROUP_OPEN)
-                .append(extractRawRegex(pattern))
+                .append(rawSubPattern)
                 .append(RegexSyntax.GROUP_CLOSE);
         canModifyMain = false;
     }
@@ -298,8 +301,10 @@ class PatternAssembler implements PatternVisitor {
             openSyntax = positive ? RegexSyntax.POSITIVE_LOOKBEHIND_OPEN : RegexSyntax.NEGATIVE_LOOKBEHIND_OPEN;
         }
 
+        String rawSubPattern = unwrapRedundantGroup(extractRawRegex(pattern));
+
         mainPattern.append(openSyntax)
-                .append(extractRawRegex(pattern))
+                .append(rawSubPattern)
                 .append(RegexSyntax.GROUP_CLOSE);
 
         canModifyMain = false;
@@ -316,10 +321,12 @@ class PatternAssembler implements PatternVisitor {
         extractAndCheckGroupsAndRequirements(pattern, name);
         visitFeature(RegexFeature.NAMED_CAPTURE);
 
+        String rawSubPattern = unwrapRedundantGroup(extractRawRegex(pattern));
+
         mainPattern.append(RegexSyntax.NAMED_GROUP_OPEN)
                 .append(name)
                 .append(RegexSyntax.NAMED_GROUP_NAME_CLOSE)
-                .append(extractRawRegex(pattern))
+                .append(rawSubPattern)
                 .append(RegexSyntax.GROUP_CLOSE);
 
         canModifyMain = false;
@@ -442,5 +449,52 @@ class PatternAssembler implements PatternVisitor {
             return ((PatternMetadata) pattern).getInternalRawRegex();
         }
         return pattern.shake();
+    }
+
+    private String unwrapRedundantGroup(String regex) {
+        if (!regex.startsWith(RegexSyntax.NON_CAPTURING_GROUP_OPEN) ||
+                !regex.endsWith(RegexSyntax.GROUP_CLOSE)) {
+            return regex;
+        }
+
+        int beginIndex = RegexSyntax.NON_CAPTURING_GROUP_OPEN.length();
+        int endIndex = regex.length() - RegexSyntax.GROUP_CLOSE.length();
+
+        int depth = 1;
+        boolean escaped = false;
+        boolean inClass = false;
+
+        for (int i = beginIndex; i < endIndex; i++) {
+            char c = regex.charAt(i);
+
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+            if (inClass) {
+                if (c == ']') inClass = false;
+                continue;
+            }
+
+            switch (c) {
+                case '\\':
+                    escaped = true;
+                    break;
+                case '[':
+                    inClass = true;
+                    break;
+                case '(':
+                    depth++;
+                    break;
+                case ')':
+                    depth--;
+                    if (depth == 0) {
+                        return regex;
+                    }
+                    break;
+            }
+        }
+
+        return regex.substring(beginIndex, endIndex);
     }
 }

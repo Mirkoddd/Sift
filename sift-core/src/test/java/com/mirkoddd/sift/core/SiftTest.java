@@ -899,7 +899,7 @@ class SiftTest {
 
             String regex = fromAnywhere().of(animal).shake();
 
-            assertEquals("(?>(?:cat|dog))", regex);
+            assertEquals("(?>cat|dog)", regex);
         }
 
         @Test
