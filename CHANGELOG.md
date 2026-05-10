@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.10.1](https://github.com/Mirkoddd/Sift/compare/sift-v6.10.0...sift-v6.10.1) (2026-05-10)
+
+
+### Bug Fixes
+
+* **catalog:** refine IPv4 and IBAN patterns in SiftCatalog ([34cd968](https://github.com/Mirkoddd/Sift/commit/34cd9683d21497095d398ef435e3779594f530b0))
+
 ## [6.10.0](https://github.com/Mirkoddd/Sift/compare/sift-v6.9.0...sift-v6.10.0) (2026-04-09)
 
 
