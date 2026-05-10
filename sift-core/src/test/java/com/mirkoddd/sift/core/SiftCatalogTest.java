@@ -122,6 +122,19 @@ class SiftCatalogTest {
         }
     }
 
+    @Test
+    void shouldRejectIpv4WithLeadingZeros() {
+        // Leading-zero octets are ambiguous: several libraries parse them as octal,
+        // which is a known IP-confusion / SSRF vector (cfr. CVE-2021-29921).
+        try (SiftCompiledPattern ipv4Pattern = SiftCatalog.ipv4().sieve()) {
+            assertFalse(ipv4Pattern.matchesEntire("01.2.3.4"), "Should reject 01 (leading zero, two-digit)");
+            assertFalse(ipv4Pattern.matchesEntire("192.168.001.1"), "Should reject 001 (leading zeros, three-digit)");
+            assertFalse(ipv4Pattern.matchesEntire("010.10.10.10"), "Should reject 010 (octal-like)");
+            assertFalse(ipv4Pattern.matchesEntire("00.0.0.0"), "Should reject 00 (double zero)");
+            assertFalse(ipv4Pattern.matchesEntire("127.0.0.01"), "Should reject leading zero in last octet");
+        }
+    }
+
     // -------------------------------------------------------------------------
     // MAC Address
     // -------------------------------------------------------------------------
@@ -371,6 +384,16 @@ class SiftCatalogTest {
 
             assertFalse(ibanPattern.matchesEntire("1234567890"), "Should reject no country code");
             assertFalse(ibanPattern.matchesEntire("IT60X054"), "Should reject BBAN too short");
+        }
+    }
+
+    @Test
+    void shouldRejectLowercaseIban() {
+        // ISO 13616 mandates uppercase representation for both Country Code and BBAN.
+        try (SiftCompiledPattern ibanPattern = SiftCatalog.iban().sieve()) {
+            assertFalse(ibanPattern.matchesEntire("it60X0542811101000000123456"), "Should reject lowercase Country Code");
+            assertFalse(ibanPattern.matchesEntire("de89370400440532013000"), "Should reject fully lowercase IBAN");
+            assertFalse(ibanPattern.matchesEntire("IT60x0542811101000000123456"), "Should reject lowercase letter in BBAN");
         }
     }
 

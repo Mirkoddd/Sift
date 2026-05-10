@@ -62,20 +62,26 @@ public final class SiftCatalog {
     /**
      * Matches a valid IPv4 address.
      * <p>
-     * Validates that each octet is strictly between 0 and 255.
-     * Prevents matching invalid IPs like {@code 256.100.50.25}.
+     * Validates that each octet is strictly between 0 and 255 and rejects octets with
+     * leading zeros (e.g., {@code 01}, {@code 001}). This is intentional: several network
+     * libraries interpret zero-padded octets as octal numbers, which is a known source of
+     * IP-confusion / SSRF issues (see e.g. CVE-2021-29921).
      *
      * @return A SiftPattern representing an IPv4 address.
      */
     public static SiftPattern<Fragment> ipv4() {
-        // Octet logic: 25[0-5] OR 2[0-4][0-9] OR [01]?[0-9][0-9]?
+        // Octet logic (no leading zeros): 25[0-5] | 2[0-4][0-9] | 1[0-9]{2} | [1-9][0-9] | [0-9]
         SiftPattern<Fragment> octet = anyOf(
                 // 250-255
                 Sift.fromAnywhere().character('2').followedBy('5').then().exactly(1).range('0', '5'),
                 // 200-249
                 Sift.fromAnywhere().character('2').then().exactly(1).range('0', '4').then().exactly(1).digits(),
-                // 0-199
-                Sift.fromAnywhere().optional().range('0', '1').then().exactly(1).digits().then().optional().digits()
+                // 100-199
+                Sift.fromAnywhere().character('1').then().exactly(2).digits(),
+                // 10-99
+                Sift.fromAnywhere().range('1', '9').then().exactly(1).digits(),
+                // 0-9
+                Sift.fromAnywhere().digits()
         );
 
         return Sift.fromAnywhere()
@@ -220,12 +226,13 @@ public final class SiftCatalog {
      * Matches a structural International Bank Account Number (IBAN).
      * <p>
      * <b>Important:</b> This pattern performs <i>syntactic</i> validation of the IBAN format.
-     * It ensures the string matches the international standard shape:
+     * It ensures the string matches the international standard shape (ISO 13616):
      * <ul>
-     * <li>2 letters for the Country Code</li>
+     * <li>2 <b>uppercase</b> letters for the Country Code</li>
      * <li>2 digits for the Check Digits</li>
-     * <li>Between 11 and 30 alphanumeric characters for the Basic Bank Account Number (BBAN)</li>
+     * <li>Between 11 and 30 <b>uppercase</b> alphanumeric characters for the Basic Bank Account Number (BBAN)</li>
      * </ul>
+     * Lowercase input is rejected because ISO 13616 mandates uppercase representation.
      * <p>
      * It does <b>not</b> perform <i>semantic</i> validation, such as:
      * <ul>
@@ -240,9 +247,10 @@ public final class SiftCatalog {
      */
     public static SiftPattern<Fragment> iban() {
         return Sift.fromAnywhere()
-                .exactly(2).letters()                   // Country Code
+                .exactly(2).upperCaseLetters()          // Country Code (ISO 13616: uppercase)
                 .then().exactly(2).digits()             // Check Digits
-                .then().between(11, 30).alphanumeric()  // Basic Bank Account Number
+                .then().between(11, 30).range('A', 'Z')
+                    .including('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') // BBAN
                 .preventBacktracking();
     }
 
