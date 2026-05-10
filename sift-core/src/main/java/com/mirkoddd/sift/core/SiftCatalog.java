@@ -250,7 +250,7 @@ public final class SiftCatalog {
                 .exactly(2).upperCaseLetters()          // Country Code (ISO 13616: uppercase)
                 .then().exactly(2).digits()             // Check Digits
                 .then().between(11, 30).range('A', 'Z')
-                    .including('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') // BBAN
+                .including('0', '1', '2', '3', '4', '5', '6', '7', '8', '9') // BBAN
                 .preventBacktracking();
     }
 
